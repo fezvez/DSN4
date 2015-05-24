@@ -5,6 +5,7 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#include <QVector>
 #include <QSharedPointer>
 #include <QRegExp>
 
@@ -65,26 +66,9 @@ class KnowledgeBase
 public:
     KnowledgeBase();
 
+
 public:
     void setup(QList<LRelation> relations, QList<LRule> rules);
-    void debug();
-
-
-public:
-    QMap<QString, LTerm> getConstantMap();
-    QList<LRelation> evaluateRelation(LRelation relation);
-
-protected:
-    QList<LRelation> evaluate(LRelation r);
-    QList<LRule> ruleSubstitution(LRule rule);
-    LRule buildSkolemRule(LRule originalRule, LRule ruleFromKB);
-    bool isRelationValid(LRelation r);
-
-
-
-private:
-    QList<LRelation> relationList;
-    QList<LRule> ruleList;
 
 
 private:
@@ -96,19 +80,68 @@ private:
     void buildRelationTypesAndQualifiers();
     void buildRulesTypesAndQualifiers();
     void linkBaseToNext();
-    void buildKeywords();
     void generateStratum();
-    void buildFacts();
     void printFreeVariables();
     void buildBaseInitInputDoesPropositions();
+    void buildRolePropositions();
     void buildStandardEvaluationStructures();
     void buildBaseInputEvaluationStructures();
     void buildEvaluationMap();
 
 
-private:
-    void checkArity(LRelation relation);
+    /**
+      * Methods related to Prolog-like evaluation
+      */
+public:
+    void loadTempRelations(const QVector<LRelation> contents);
+    QList<LRelation> evaluateRelation(LRelation relation);
 
+protected:
+    QList<LRelation> evaluate(LRelation r);
+    QList<LRule> ruleSubstitution(LRule rule);
+    LRule buildSkolemRule(LRule originalRule, LRule ruleFromKB);
+    bool isRelationValid(LRelation r);
+    
+    QList<LRelation> evaluate2(LRelation r);
+    
+    
+
+private:
+    // The only really important thing for evaluation
+    // Usually everything except base, init, input and does
+    QList<LRelation> evaluationRelations;       // Relations that never changes
+    QList<LRule> evaluationRules;               // Rules that never changes
+    QList<LRelation> evaluationTempRelations;   // For the current state
+
+    // Utility member variables to access the two previous list members easily
+    QMap<LTerm, QList<LRule>> constantToRuleEvaluationMap;
+    QMap<LTerm, QList<LRelation>> constantToRelationEvaluationMap;
+    QMap<LTerm, QList<LRelation>> constantToTempRelationEvaluationMap;
+
+    static int skolemNumber;
+
+
+
+private:
+
+
+
+
+
+
+
+
+
+
+
+    /**
+  * All the knowledge base, indexed by the object constant at the very "start"
+  */
+
+public:
+    QMap<QString, LTerm> getConstantMap();
+
+    // Helper functions to guarantee that everyone uses the same objects
 public:
     LRule manageRule(LRule r);
     LRelation manageRelation(LRelation r);
@@ -118,33 +151,35 @@ public:
     LTerm manageRelationConstant(LTerm c);
     LTerm manageObjectConstant(LTerm c);
 
-private:
-    // Helper function
-    QStringList split(QString line);
-
-    QRegExp ruleRegExp;
-    QRegExp whitespaceRegExp;
-    QRegExp leftPar;
-    QRegExp rightPar;
-    QRegExp inputRegExp;
-    QRegExp nextRegExp;
-
-
-
 protected:
+    QList<LRelation> relationList;
+    QList<LRule> ruleList;
+
     QMap<QString, LTerm> constantMap;
     QSet<LTerm> objectConstantSet;
     QSet<LTerm> functionConstantSet;
     QSet<LTerm> relationConstantSet;
 
+    QMap<LTerm, QList<LRule>> constantToRuleMap;
+    QMap<LTerm, QList<LRelation>> constantToRelationMap;
+
+
+/**
+  * Keywords and shit
+  */
+public:
+    const QMap<QString, LRelation>& getInitPropositions() const;
+    const QMap<QString, LRelation>& getRoles() const;
+
+protected:
     QMap<Logic::LOGIC_KEYWORD, QList<LRelation>> mapTypeToRelationContainer;
     QMap<Logic::LOGIC_KEYWORD, QList<LRule>> mapTypeToRuleContainer;
 
     QMap<Logic::LOGIC_QUALIFIER, QList<LRelation>> mapQualifierToRelationContainer;
     QMap<Logic::LOGIC_QUALIFIER, QList<LRule>> mapQualifierToRuleContainer;
 
-    QList<LRelation> baseRelations; // Qualifier
-    QList<LRelation> initRelations; // Qualifier
+    QList<LRelation> baseRelations;
+    QList<LRelation> initRelations;
     QList<LRelation> standardQualRelations; // Everything else
 
     QList<LRelation> nextRelations;
@@ -156,9 +191,8 @@ protected:
     QList<LRelation> doesRelations;
     QList<LRelation> standardTypeRelations;     // Everything else
 
-
-    QList<LRule> baseRules;         // Qualifier
-    QList<LRule> initRules;         // Qualifier
+    QList<LRule> baseRules;
+    QList<LRule> initRules;
     QList<LRule> standardQualRules;     // Everything else
 
     QList<LRule> nextRules;
@@ -171,37 +205,48 @@ protected:
     QList<LRule> standardTypeRules;     // Everything else
 
 
-
-    // The only really important thing for evaluation
-    QList<LRelation> evaluationRelations; // role + standard relations
-    QList<LRule> evaluationRules; // next + role + goal + legal + terminal + standard rules
-
-
-
-    QMap<LTerm, QList<LRule>> constantToRuleMap;
-    QMap<LTerm, QList<LRelation>> constantToRelationMap;
-
-public:
-    QMap<LTerm, QList<LRule>> constantToRuleEvaluationMap;
-    QMap<LTerm, QList<LRelation>> constantToRelationEvaluationMap;
-
-private:
+    //
     QMap<LTerm, LTerm> mapNextToBase;
     QMap<LTerm, LTerm> mapBaseToNext;
-
-    QMap<LTerm, int> arity;
-    QMap<LTerm, LStratum> stratumMap;
-    QList<QList<LTerm>> stratifiedConstants;
 
     QMap<QString, LRelation> basePropositions;
     QMap<QString, LRelation> initPropositions;
     QMap<QString, LRelation> inputPropositions; // either this line
     QMap<QString, LRelation> doesPropositions;  // or that one will disappear
 
-    QSet<LTerm> baseConstants;
+    QMap<QString, LRelation> rolePropositions;
+
+    QMap<QString, LTerm> baseConstants;
+
+
+
+    /**
+      * Misc
+      */
 
 public:
-    static int skolemNumber;
+    void debug();
+
+private:
+    void checkArity(LRelation relation);
+    QMap<LTerm, int> arity;
+
+private:
+    QMap<LTerm, LStratum> stratumMap;
+    QList<QList<LTerm>> stratifiedConstants;
+
+
+private:
+    QStringList split(QString line);
+    QRegExp ruleRegExp;
+    QRegExp whitespaceRegExp;
+    QRegExp leftPar;
+    QRegExp rightPar;
+    QRegExp inputRegExp;
+    QRegExp nextRegExp;
+
+
+
 };
 
 

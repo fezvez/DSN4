@@ -7,6 +7,14 @@
 #include <QSharedPointer>
 
 
+/**
+ * Typical example of unification equation
+ * f(a,g(X,Y)) = f(X,Z)
+ * where f and g are functional constants
+ * You end up with the substitution :
+ * X->a
+ * Z->g(a,Y)
+ */
 
 class Unification_Equation;
 typedef QSharedPointer<Unification_Equation> UEquation;

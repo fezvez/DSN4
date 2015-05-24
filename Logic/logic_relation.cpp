@@ -134,6 +134,11 @@ Logic::LOGIC_QUALIFIER Logic_Relation::getQualifier(){
     return qualifier;
 }
 
+void Logic_Relation::setQualifier(Logic::LOGIC_QUALIFIER q){
+    qualifier = q;
+    buildName();
+}
+
 bool Logic_Relation::isNegation(){
     return negation;
 }

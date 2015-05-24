@@ -19,11 +19,11 @@ Unification_Problem::Unification_Problem(LRelation relation1, LRelation relation
     solve();
 }
 
-
-
 Unification_Problem::Unification_Problem(QList<UEquation> eqs){
     equationsOrigin = QList<UEquation>(eqs);
 }
+
+
 
 void Unification_Problem::addEquation(UEquation eq){
     equationsOrigin.append(eq);
@@ -89,8 +89,8 @@ void Unification_Problem::solve(){
                 break;
 
             case(VARIABLE):
-                bool isVariableSubstitutionValid;
-                isVariableSubstitutionValid = true;
+//                bool isVariableSubstitutionValid;
+//                isVariableSubstitutionValid = true;
                 switch(type2){
                 case(CONSTANT):
                     break;

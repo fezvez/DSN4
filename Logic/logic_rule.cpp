@@ -18,6 +18,8 @@ LRule Logic_Rule::clone(){
     return LRule(new Logic_Rule(head->clone(), clonedBody));
 }
 
+// TODO
+// Check if it simpler to do return freeVariables.isEmpty();
 bool Logic_Rule::isGround() const{
     for(LRelation relation : body)
     {

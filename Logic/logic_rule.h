@@ -14,12 +14,11 @@ public:
     Logic_Rule(LRelation h, QList<LRelation> b);
     LRule clone();
 
-    bool isGround() const;
-
     LRelation getHead();
     QList<LRelation> getBody();
     bool isBodyEmpty();
-    //    LRelation getFirstUngroundedRelation();
+    bool isGround() const;
+
     QSet<QString> getFreeVariables();
     QSet<QString> buildFreeVariables();
     void substitute(LTerm v, LTerm t);
@@ -32,7 +31,6 @@ protected:
     LRelation head;
     QList<LRelation> body;
     QSet<QString> freeVariables;
-
 
 
 private:

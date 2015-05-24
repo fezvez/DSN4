@@ -5,6 +5,7 @@
 #include <QtCore>
 
 #include "knowledgebase.h"
+#include "StateMachine/proverstatemachine.h"
 
 Parser::Parser(QObject *parent):
     QObject(parent)
@@ -30,8 +31,13 @@ void Parser::loadKif(const QStringList & sl){
     cleanFile();
     generateHerbrand();
 
-    KnowledgeBase kb;
-    kb.setup(relationList, ruleList);
+
+
+    // HACK TO DEBUG
+    //ProverStateMachine prover;
+    //prover.initialize(relationList, ruleList);
+//    KnowledgeBase kb;
+//    kb.setup(relationList, ruleList);
 }
 
 void Parser::debugKB(){
@@ -41,12 +47,14 @@ void Parser::debugKB(){
     kif << "(f a)";
     kif << "(p b a)";
     kif << "(p a b)";
-    kif << "(p (q a) c)";
+    kif << "(p a c)";
     kif << "(p c c)";
-        kif << "(p c d)";
+    kif << "(p c d)";
     kif << "( <= (q ?x) (p ?x ?y) )";
     kif << "( <= (r ?x ?y) (p ?y ?x) )";
     kif << "( <= (s ?x) (q ?x) (r ?x ?y))";
+
+    kif << "( <= (t ?x ?y) (p ?x ?y) (not (p ?y ?x)))";
     loadKif(kif);
 
 
@@ -54,7 +62,7 @@ void Parser::debugKB(){
     kb.setup(relationList, ruleList);
 
     qDebug() << "\n\nFinished with KB\n\n";
-    LRelation r = processRelation(QString("(p ?x)"));
+    LRelation r = processRelation(QString("(t ?x ?y)"));
     QList<LRelation> answer = kb.evaluateRelation(r);
     for(LRelation relationAnswer : answer){
         qDebug() << "Answer : " << relationAnswer->toString();
@@ -168,6 +176,8 @@ void Parser::processKifLine(QString line){
         Q_ASSERT(relation->isGround());
     }
 }
+
+
 
 
 

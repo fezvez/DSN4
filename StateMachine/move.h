@@ -3,19 +3,20 @@
 
 #include <QSharedPointer>
 
-#include "../Logic/logic_term.h"
+#include "../Logic/logic_relation.h"
 
 class Move;
 typedef QSharedPointer<Move> PMove;
 class Move
 {
 public:
-    Move(LTerm m);
+    Move(LRelation m);
 
-    LTerm getMove();
+    LRelation getMove();
+    QString toString();
 
 private:
-    LTerm move;
+    LRelation does;
 };
 
 #endif // MOVE_H

@@ -27,34 +27,25 @@ void KnowledgeBase::setup(QList<LRelation> relations, QList<LRule> rules){
 
     createRegExp();
     storeConstants();
-    printConstants();
+    printConstants();   // Debug
     linkBaseToNext();
     buildRelationTypesAndQualifiers();
     buildRulesTypesAndQualifiers();
-
-
-    buildArity();
-    printConstantsWithArity();
-
-    //buildFacts();
-    printFreeVariables();
-
     buildBaseInitInputDoesPropositions();
+    buildRolePropositions();
+    buildStandardEvaluationStructures();
 
-    //generateStratum();
+    //    buildArity();
+    //    printConstantsWithArity();
+    //    printFreeVariables();
+    //    generateStratum();
 
+    //debug();
 }
 
 
 void KnowledgeBase::debug(){
-    for(LRule rule : ruleList){
-        qDebug() << "Rule " << rule->toString();
-        bool isGround = rule->isGround();
-        if(isGround){
-            qDebug() << "Rule is ground";
-            continue;
-        }
-    }
+
 }
 
 
@@ -63,16 +54,21 @@ QMap<QString, LTerm> KnowledgeBase::getConstantMap(){
 }
 
 
-
+/**
+ * @brief KnowledgeBase::evaluateRelation
+ * @param relation
+ * @return
+ * Takes a relation (optionnaly with variables) and returns all the grounded
+ * relations that are true (given the current )
+ */
 QList<LRelation> KnowledgeBase::evaluateRelation(LRelation relation){
     Q_ASSERT(!relation->isNegation());
-
+    //    qDebug() << "KnowledgeBase::evaluateRelation";
     LRelation updatedRelation = manageRelation(relation);   // Every constant is now a copy from the knowledge base
 
-    //    qDebug() << "KnowledgeBase::evaluateRelation";
 
-    LTerm head = updatedRelation->getHead();
-    //qDebug() << "Head is " << head->toString();
+    //    LTerm head = updatedRelation->getHead();
+    //    qDebug() << "Head is " << head->toString();
 
     return evaluate(updatedRelation);
 }
@@ -93,44 +89,58 @@ QList<LRelation> KnowledgeBase::evaluate(LRelation r){
 
 
     while (!possibleAnswers.isEmpty()) {
-        //        qDebug() << "\nKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
+                qDebug() << "\nKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
         LRule possibleRule = possibleAnswers.last();
         possibleAnswers.removeLast();
 
+        // If the rule is fully grounded
         if(possibleRule->getHead()->isGround()){
+            // If we know it's already true for that grounding, we can discard it
             if(answerString.contains(possibleRule->getHead()->toString())){
                 continue;
             }
         }
 
+        // If the body is empty, we have an answer to our evaluation query
         if(possibleRule->isBodyEmpty()){
             //            qDebug() << "We have an answer : " << possibleRule->getHead()->toString();
             answer.append(possibleRule->getHead());
             answerString << possibleRule->getHead()->toString();
             continue;
         }
+
+        // Else, we take the first relation and process it
         QList<LRule> substitutions = ruleSubstitution(possibleRule);
         possibleAnswers.append(substitutions);
     }
-    if(answer.isEmpty()){
-        //        qDebug() << "No answer";
-    }
+    //    if(answer.isEmpty()){
+    //                qDebug() << "No answer";
+    //    }
     return answer;
 }
 
-
+/**
+ * @brief KnowledgeBase::ruleSubstitution
+ * @param rule
+ * @return
+ * Take the first relation of the body :
+ *  - substitute it with a relation from constantToRelationEvaluationMap
+ *  - substitute it with a rule from constantToRuleEvaluationMap
+ */
 QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
-    //    qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
+        qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
     QList<LRule> answer;
 
     LRelation firstRelation = rule->getBody().first();
     LTerm head = firstRelation->getHead();
 
+
+
     // Substitute with facts
     if(constantToRelationEvaluationMap.contains(head)){
         QList<LRelation> canBeSubstituted = constantToRelationEvaluationMap[head];
         for(LRelation r : canBeSubstituted){
-            //            qDebug() << "\n    Sub possible with relation " << r->toString();
+                        qDebug() << "\n    Sub possible with relation " << r->toString();
             UProblem unification = UProblem(new Unification_Problem(firstRelation, r));
             if(unification->isUnificationValid()){
 
@@ -148,12 +158,33 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
         }
     }
 
+    // Substitute with temporary facts
+    if(constantToTempRelationEvaluationMap.contains(head)){
+        QList<LRelation> canBeSubstituted = constantToTempRelationEvaluationMap[head];
+        for(LRelation r : canBeSubstituted){
+                        qDebug() << "\n    Sub possible with temp relation " << r->toString();
+            UProblem unification = UProblem(new Unification_Problem(firstRelation, r));
+            if(unification->isUnificationValid()){
+
+                LRule tempRule = unification->applySubstitution(rule);
+                //                qDebug() << "    Unification is valid and gives : " << tempRule->toString();
+                //unification->printSolverResults();
+
+                QList<LRelation> endOfBody = tempRule->getBody();
+                endOfBody.removeFirst();
+
+                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), endOfBody)));
+                //                qDebug() << "    Partial Answer : " << partialAnswer->toString();
+                answer.append(partialAnswer);
+            }
+        }
+    }
 
     // Substitute with rule
     if(constantToRuleEvaluationMap.contains(head)){
         QList<LRule> canBeSubstituted = constantToRuleEvaluationMap[head];
         for(LRule r : canBeSubstituted){
-            //            qDebug() << "\n    Sub possible with rule" << r->toString();
+                        qDebug() << "\n    Sub possible with rule" << r->toString();
             LRule skolemRule = buildSkolemRule(rule, r);
             //            qDebug() << "    Which is updated in " << skolemRule->toString();
             UProblem unification = UProblem(new Unification_Problem(firstRelation, skolemRule->getHead()));
@@ -180,7 +211,14 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
     return answer;
 }
 
-
+/**
+ * @brief KnowledgeBase::buildSkolemRule
+ * @param originalRule
+ * @param ruleFromKB
+ * @return
+ * We have the first relation of the body, and we want to substitute it with a rule in our KB
+ * It's necessary to rename variables in the body of this rule to prevent name clashing
+ */
 LRule KnowledgeBase::buildSkolemRule(LRule originalRule, LRule ruleFromKB){
     LRule answer = ruleFromKB->clone();
 
@@ -206,7 +244,8 @@ LRule KnowledgeBase::buildSkolemRule(LRule originalRule, LRule ruleFromKB){
         QString skolemVariable;
         bool readableSkolem = false;
 
-
+        // First try
+        // Try to add a character to the end of the name of the variable
         for(int i=0; i<26; ++i){
             QChar c(97+25-i);
             QString s("?");
@@ -227,8 +266,9 @@ LRule KnowledgeBase::buildSkolemRule(LRule originalRule, LRule ruleFromKB){
             readableSkolem = true;
             skolemVariable = s;
             break;
-
         }
+        // Second try
+        // Add a number that is guaranteed to be unique
         if(!readableSkolem){
             skolemVariable = QString("SK_").append(QString::number(KnowledgeBase::skolemNumber));
             skolemNumber++;
@@ -247,7 +287,10 @@ LRule KnowledgeBase::buildSkolemRule(LRule originalRule, LRule ruleFromKB){
 
 
 
-
+/**
+ * @brief KnowledgeBase::createRegExp
+ * Regular expressions for parsing
+ */
 void KnowledgeBase::createRegExp(){
     ruleRegExp = QRegExp("<=");
     whitespaceRegExp = QRegExp("\\s+");
@@ -257,6 +300,14 @@ void KnowledgeBase::createRegExp(){
     nextRegExp = QRegExp("^next_");
 }
 
+/**
+ * @brief KnowledgeBase::storeConstants
+ * We have :
+ *  - object constants
+ *  - relation constants
+ *  - function constants
+ * Let's store all of them in memory
+ */
 void KnowledgeBase::storeConstants(){
     qDebug() << "Store constants";
     constantMap.clear();
@@ -374,6 +425,8 @@ void KnowledgeBase::printConstants(){
         qDebug() << "Function constant : " << constant->toString();
     }
 
+    qDebug() << "Constant map size " << constantMap.size();
+
     Q_ASSERT((objectConstantSet.size() + functionConstantSet.size() + relationConstantSet.size()) == constantMap.size());
 }
 
@@ -390,7 +443,12 @@ void KnowledgeBase::printConstantsWithArity(){
     }
 }
 
-
+/**
+ * @brief KnowledgeBase::linkBaseToNext
+ * next(cell(1,1,x)) is obviously linked to base(cell(1,1,x))
+ * We just need to make this relation explicit
+ * So what computing the next state will just result in looking at the next propositions
+ */
 void KnowledgeBase::linkBaseToNext(){
     mapNextToBase.clear();
     mapBaseToNext.clear();
@@ -410,7 +468,7 @@ void KnowledgeBase::linkBaseToNext(){
     for(LTerm term : mapNextToBase.keys()){
         QString stringConstant = term->toString();
         if(!Logic::mapString2GDLType.contains(stringConstant)){
-            Logic::mapString2GDLType[stringConstant] = Logic::LOGIC_TYPE::NEXT;
+            Logic::mapString2GDLType[stringConstant] = Logic::LOGIC_KEYWORD::NEXT;
         }
     }
 
@@ -428,6 +486,12 @@ void KnowledgeBase::linkBaseToNext(){
 }
 
 
+/**
+ * @brief KnowledgeBase::buildRelationTypesAndQualifiers
+ * A Qualifier is an "invisible" keyword such as base, init or true
+ * They are present to explicitely tell what is the "minimal description" of the game state
+ * A Type is a GDL keyword (role, terminal...)
+ */
 void KnowledgeBase::buildRelationTypesAndQualifiers(){
     qDebug() << "\n\nORDERED RELATIONS";
     qDebug() << "There are " << relationList.size() << " relations";
@@ -452,14 +516,14 @@ void KnowledgeBase::buildRelationTypesAndQualifiers(){
     mapQualifierToRelationContainer.insert(Logic::LOGIC_QUALIFIER::NO_QUAL, standardQualRelations);
 
     mapTypeToRelationContainer.clear();
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::NEXT, nextRelations);
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::ROLE, roleRelations);
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::GOAL, goalRelations);
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::TERMINAL, terminalRelations);
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::LEGAL, legalRelations);
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::INPUT, inputRelations);
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::DOES, doesRelations);
-    mapTypeToRelationContainer.insert(Logic::LOGIC_TYPE::NO_TYPE, standardTypeRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::NEXT, nextRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::ROLE, roleRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::GOAL, goalRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::TERMINAL, terminalRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::LEGAL, legalRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::INPUT, inputRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::DOES, doesRelations);
+    mapTypeToRelationContainer.insert(Logic::LOGIC_KEYWORD::NO_KEYWORD, standardTypeRelations);
 
 
 
@@ -474,7 +538,7 @@ void KnowledgeBase::buildRelationTypesAndQualifiers(){
 
 
     for(LRelation relation:relationList){
-        Logic::LOGIC_TYPE type = Logic::getGDLTypeFromString(relation->getHead()->toString());
+        Logic::LOGIC_KEYWORD type = Logic::getGDLKeywordFromString(relation->getHead()->toString());
         if(mapTypeToRelationContainer.contains(type)){
             mapTypeToRelationContainer[type].append(relation);
             continue;
@@ -486,7 +550,7 @@ void KnowledgeBase::buildRelationTypesAndQualifiers(){
         //            continue;
         //        }
 
-        mapTypeToRelationContainer[Logic::NO_TYPE].append(relation);
+        mapTypeToRelationContainer[Logic::NO_KEYWORD].append(relation);
     }
 
     baseRelations = mapQualifierToRelationContainer[Logic::BASE];
@@ -501,7 +565,7 @@ void KnowledgeBase::buildRelationTypesAndQualifiers(){
     legalRelations = mapTypeToRelationContainer[Logic::LEGAL];
     inputRelations = mapTypeToRelationContainer[Logic::INPUT];
     doesRelations = mapTypeToRelationContainer[Logic::DOES];
-    standardTypeRelations = mapTypeToRelationContainer[Logic::NO_TYPE];
+    standardTypeRelations = mapTypeToRelationContainer[Logic::NO_KEYWORD];
     Q_ASSERT(!mapTypeToRelationContainer.contains(Logic::DISTINCT));
 
     qDebug() << "\nPrinting relation qualifiers";
@@ -513,19 +577,21 @@ void KnowledgeBase::buildRelationTypesAndQualifiers(){
     }
 
     qDebug() << "\nPrinting relation types";
-    for(Logic::LOGIC_TYPE type : mapTypeToRelationContainer.keys()){
+    for(Logic::LOGIC_KEYWORD type : mapTypeToRelationContainer.keys()){
         QList<LRelation> container = mapTypeToRelationContainer[type];
         for(LRelation relation : container){
-            qDebug() << "Relation of type " << Logic::getStringFromGDLType(type) << "\t: " << relation->toString();
+            qDebug() << "Relation of type " << Logic::getStringFromGDLKeyword(type) << "\t: " << relation->toString();
         }
     }
-
-
-
 }
 
 
-
+/**
+ * @brief KnowledgeBase::buildRulesTypesAndQualifiers
+ * A Qualifier is an "invisible" keyword such as base, init or true
+ * They are present to explicitely tell what is the "minimal description" of the game state
+ * A Type is a GDL keyword (role, terminal...)
+ */
 void KnowledgeBase::buildRulesTypesAndQualifiers(){
     qDebug() << "\n\nORDERED RULES";
     qDebug() << "There are " << ruleList.size() << " rules";
@@ -551,14 +617,14 @@ void KnowledgeBase::buildRulesTypesAndQualifiers(){
     mapQualifierToRuleContainer.insert(Logic::LOGIC_QUALIFIER::NO_QUAL, standardQualRules);
 
     mapTypeToRuleContainer.clear();
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::NEXT, nextRules);
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::ROLE, roleRules);
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::GOAL, goalRules);
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::TERMINAL, terminalRules);
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::LEGAL, legalRules);
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::INPUT, inputRules);
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::DOES, doesRules);
-    mapTypeToRuleContainer.insert(Logic::LOGIC_TYPE::NO_TYPE, standardTypeRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::NEXT, nextRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::ROLE, roleRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::GOAL, goalRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::TERMINAL, terminalRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::LEGAL, legalRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::INPUT, inputRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::DOES, doesRules);
+    mapTypeToRuleContainer.insert(Logic::LOGIC_KEYWORD::NO_KEYWORD, standardTypeRules);
 
 
     for(LRule rule : ruleList){
@@ -571,7 +637,7 @@ void KnowledgeBase::buildRulesTypesAndQualifiers(){
     }
 
     for(LRule rule : ruleList){
-        Logic::LOGIC_TYPE type = Logic::getGDLTypeFromString(rule->getHead()->getHead()->toString());
+        Logic::LOGIC_KEYWORD type = Logic::getGDLKeywordFromString(rule->getHead()->getHead()->toString());
         if(mapTypeToRuleContainer.contains(type)){
             mapTypeToRuleContainer[type].append(rule);
             continue;
@@ -582,7 +648,7 @@ void KnowledgeBase::buildRulesTypesAndQualifiers(){
             continue;
         }
 
-        mapTypeToRuleContainer[Logic::NO_TYPE].append(rule);
+        mapTypeToRuleContainer[Logic::NO_KEYWORD].append(rule);
     }
 
     baseRules = mapQualifierToRuleContainer[Logic::BASE];
@@ -597,7 +663,7 @@ void KnowledgeBase::buildRulesTypesAndQualifiers(){
     legalRules = mapTypeToRuleContainer[Logic::LEGAL];
     inputRules = mapTypeToRuleContainer[Logic::INPUT];
     doesRules = mapTypeToRuleContainer[Logic::DOES];
-    standardTypeRules = mapTypeToRuleContainer[Logic::NO_TYPE];
+    standardTypeRules = mapTypeToRuleContainer[Logic::NO_KEYWORD];
     Q_ASSERT(!mapTypeToRuleContainer.contains(Logic::DISTINCT));
 
 
@@ -610,10 +676,10 @@ void KnowledgeBase::buildRulesTypesAndQualifiers(){
         }
     }
     qDebug() << "\nPrinting rule types";
-    for(Logic::LOGIC_TYPE type : mapTypeToRuleContainer.keys()){
+    for(Logic::LOGIC_KEYWORD type : mapTypeToRuleContainer.keys()){
         QList<LRule> container = mapTypeToRuleContainer[type];
         for(LRule rule : container){
-            qDebug() << "Rule of type \t" << Logic::getStringFromGDLType(type) << "\t: " << rule->toString();
+            qDebug() << "Rule of type \t" << Logic::getStringFromGDLKeyword(type) << "\t: " << rule->toString();
         }
     }
 
@@ -643,8 +709,16 @@ void KnowledgeBase::buildRulesTypesAndQualifiers(){
     };
  */
 
+/**
+ * @brief KnowledgeBase::buildStandardEvaluationStructures
+ * This is what you need to compute the next state
+ * Remove :
+ *  - The "base" relations/rules
+ *  - The "init" relations/rules
+ *  - The "input" relations/rules
+ *  - The "does" relations/rules
+ */
 void KnowledgeBase::buildStandardEvaluationStructures(){
-    // Remove base init does input
     evaluationRules.clear();
     for(LRule rule : ruleList){
         LRelation ruleHead = rule->getHead();
@@ -658,7 +732,7 @@ void KnowledgeBase::buildStandardEvaluationStructures(){
         }
         
         LTerm constant = ruleHead->getHead();
-        Logic::LOGIC_TYPE type = constant->getType();
+        Logic::LOGIC_KEYWORD type = constant->getKeyword();
         switch(type){
         case(Logic::INPUT):
         case(Logic::DOES):
@@ -672,13 +746,37 @@ void KnowledgeBase::buildStandardEvaluationStructures(){
     
 
     evaluationRelations.clear();
-    evaluationRelations += standardQualRelations;
+    for(LRelation relation : relationList){
+        Logic::LOGIC_QUALIFIER qual = relation->getQualifier();
+        switch(qual){
+        case(Logic::BASE):
+        case(Logic::INIT):
+            continue;
+        default:
+            break;
+        }
+
+        LTerm constant = relation->getHead();
+        Logic::LOGIC_KEYWORD type = constant->getKeyword();
+        switch(type){
+        case(Logic::INPUT):
+        case(Logic::DOES):
+            continue;
+        default:
+            break;
+        }
+
+        evaluationRelations.append(relation);
+    }
 
     buildEvaluationMap();
-    
-    
 }
 
+/**
+ * @brief KnowledgeBase::buildBaseInputEvaluationStructures
+ * This is what you need to compute the base and input propositions
+ * This literally is used only once, at the beginning of the game
+ */
 void KnowledgeBase::buildBaseInputEvaluationStructures(){
     evaluationRules.clear();
     evaluationRules = ruleList;
@@ -689,6 +787,9 @@ void KnowledgeBase::buildBaseInputEvaluationStructures(){
     buildEvaluationMap();
 }
 
+/**
+ * @brief KnowledgeBase::buildEvaluationMap
+ */
 void KnowledgeBase::buildEvaluationMap(){
     constantToRelationEvaluationMap.clear();
     for(LRelation relation : evaluationRelations){
@@ -709,25 +810,45 @@ void KnowledgeBase::buildEvaluationMap(){
     }
 
 #ifndef QT_NO_DEBUG
-//    qDebug() << "\nCONSTANT TO RELATION MAP";
-//    for(LTerm relationConstant : constantToRelationMap.keys()){
-//        for(LRelation r : constantToRelationMap[relationConstant]){
-//            qDebug() << "Relation constant " << relationConstant->toString() << "\tleads to relation " << r->toString();
-//        }
-//    }
+    //    qDebug() << "\nCONSTANT TO RELATION MAP";
+    //    for(LTerm relationConstant : constantToRelationMap.keys()){
+    //        for(LRelation r : constantToRelationMap[relationConstant]){
+    //            qDebug() << "Relation constant " << relationConstant->toString() << "\tleads to relation " << r->toString();
+    //        }
+    //    }
 
-//    qDebug() << "\nCONSTANT TO RULE MAP";
-//    for(LTerm relationConstant : constantToRuleMap.keys()){
-//        for(LRule r : constantToRuleMap[relationConstant]){
-//            Q_ASSERT(relationConstant.data() == constantMap[QString(relationConstant->toString())].data());
-//            qDebug() << "Relation constant " << relationConstant->toString() << "\tleads to rule " << r->toString();
-//        }
-//    }
+    //    qDebug() << "\nCONSTANT TO RULE MAP";
+    //    for(LTerm relationConstant : constantToRuleMap.keys()){
+    //        for(LRule r : constantToRuleMap[relationConstant]){
+    //            Q_ASSERT(relationConstant.data() == constantMap[QString(relationConstant->toString())].data());
+    //            qDebug() << "Relation constant " << relationConstant->toString() << "\tleads to rule " << r->toString();
+    //        }
+    //    }
 #endif
+}
+
+void KnowledgeBase::loadTempRelations(const QVector<LRelation> contents){
+    evaluationTempRelations.clear();
+    constantToTempRelationEvaluationMap.clear();
+
+    for(LRelation relation : contents){
+        evaluationTempRelations.append(relation);
+
+        LTerm head = relation->getHead();
+        if(!constantToTempRelationEvaluationMap.contains(head)){
+            constantToTempRelationEvaluationMap.insert(head, QList<LRelation>());
+        }
+        constantToTempRelationEvaluationMap[head].append(relation);
+    }
 }
 
 
 
+/**
+ * @brief KnowledgeBase::buildArity
+ * I thought this would be useful, but it's just a debugging tool as of now
+ *
+ */
 void KnowledgeBase::buildArity(){
     constantToRelationMap.clear();
     constantToRuleMap.clear();
@@ -745,8 +866,6 @@ void KnowledgeBase::buildArity(){
         }
         constantToRuleMap[head].append(rule);
     }
-
-
 
 
     arity.clear();
@@ -826,7 +945,11 @@ void KnowledgeBase::buildArity(){
 }
 
 
-// Is just a debugging tool
+/**
+ * @brief KnowledgeBase::checkArity
+ * @param relation
+ * Debugging tool
+ */
 void KnowledgeBase::checkArity(LRelation relation){
     LTerm relationHead = relation->getHead();
     int ar = relation->getBody().size();
@@ -928,26 +1051,11 @@ void KnowledgeBase::generateStratum(){
 }
 
 
-void KnowledgeBase::buildFacts(){
-
-    //        qDebug() << "Facts";
-    //        for(LRelation baseRelation : baseRelations){
-    //            if(!factsMap.contains(baseRelation))
-    //                factsMap.insert(baseRelation, false);
-    //        }
-
-    //        for(LRule baseRule : baseRules){
-    //            qDebug() << "Rule " << baseRule->toString();
-    //            QList<LRelation> relations = computeBaseRelation(baseRule);
-    //            for(LRelation r : relations){
-    //                if(!factsMap.contains(r))
-    //                    factsMap.insert(r, false);
-    //            }
-    //        }
 
 
-}
-
+/**
+ * @brief KnowledgeBase::buildBaseInitInputDoesPropositions
+ */
 void KnowledgeBase::buildBaseInitInputDoesPropositions(){
     qDebug() << "\nBASE AND INPUT PROPOSITIONS";
 
@@ -981,18 +1089,18 @@ void KnowledgeBase::buildBaseInitInputDoesPropositions(){
     baseConstants.clear();
     for(LRelation relation : basePropositions.values()){
         LTerm head = relation->getHead();
-        if(!baseConstants.contains(head)){
-            baseConstants << head;
-        }
+        baseConstants.insert(head->toString(), head);
     }
 
-    for(LTerm term : baseConstants){
+    for(LTerm term : baseConstants.values()){
         qDebug() << "Base constant : " << term->toString();
     }
 
     initPropositions.clear();
     for(LRelation relation : initRelations){
-        initPropositions[relation->toString()] = relation;
+        LRelation relationWithoutInit = relation->clone();
+        relationWithoutInit->setQualifier(Logic::LOGIC_QUALIFIER::NO_QUAL);
+        initPropositions[relationWithoutInit->toString()] = relationWithoutInit;
     }
 
     for(LRule rule : initRules){
@@ -1060,10 +1168,35 @@ void KnowledgeBase::buildBaseInitInputDoesPropositions(){
     }
 }
 
+void KnowledgeBase::buildRolePropositions(){
+    rolePropositions.clear();
+    for(LRelation relation : roleRelations){
+        rolePropositions.insert(relation->toString(), relation);
+    }
+
+    for(LRule rule : roleRules){
+        qDebug () << "Role rule " << rule->toString();
+        LRelation head = rule->getHead();
+        QList<LRelation> evaluate = evaluateRelation(head);
+        for(LRelation relation : evaluate){
+            rolePropositions.insert(relation->toString(), relation);
+        }
+    }
+}
+
+const QMap<QString, LRelation>& KnowledgeBase::getInitPropositions() const{
+    return initPropositions;
+}
+
+const QMap<QString, LRelation>& KnowledgeBase::getRoles() const{
+    return rolePropositions;
+}
 
 
-
-
+/**
+ * @brief KnowledgeBase::printFreeVariables
+ * Debug?
+ */
 void KnowledgeBase::printFreeVariables(){
     qDebug() <<"\nPRINT FREE VARIABLES";
 

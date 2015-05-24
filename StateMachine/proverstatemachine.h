@@ -16,21 +16,28 @@ public:
     void initialize(QList<LRelation> relations, QList<LRule> rules);
 
 
-    int getGoal(MachineState state, Role role);
-    bool isTerminal(MachineState state);
-    QList<Role> getRoles();
+    int getGoal(const MachineState& state, Role role);
+    bool isTerminal(const MachineState& state);
+    QVector<Role> getRoles();
     MachineState getInitialState();
-    QList<Move> getLegalMoves(MachineState state, Role role);
-    MachineState getNextState(MachineState state, QList<Move> moves);
+    QList<Move> getLegalMoves(const MachineState& state, Role role);
+    MachineState getNextState(const MachineState& state, QList<Move> moves);
 
 private:
     void buildInitialState();
     void buildRoles();
+    void buildGoalQueries();
+
+
+    void loadState(const MachineState& state);
 
 private:
-    PMachineState initialState;
+
     KnowledgeBase KB;
-    QList<Role> roles;
+    MachineState initialState;
+    QVector<Role> roles;
+
+    QMap<LTerm, LRelation> goalQueries;
 };
 
 #endif // PROVERSTATEMACHINE_H

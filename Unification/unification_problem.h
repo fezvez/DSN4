@@ -7,6 +7,11 @@
 
 #include "Logic/logic_rule.h"
 
+/**
+ * Unification_Problem unifies 2 relations
+ * It does so by matching terms with each other (Unification_Equation)
+ */
+
 class Unification_Problem;
 typedef QSharedPointer<Unification_Problem> UProblem;
 
@@ -35,14 +40,15 @@ public:
     void applySubstitutionInPlace(LRelation r);
     void applySubstitutionInPlace(LRule r);
 
+    // Should only be called after solve() is called
     bool isUnificationValid();
 
 
 private:
-    QList<UEquation> equationsOrigin;
-    QList<UEquation> equations;
-    QList<UEquation> equationsTemp;
-    QList<UEquation> equationsChecked;
+    QList<UEquation> equationsOrigin;   // The original equations, nothing more
+    QList<UEquation> equations;         // The current set of equations being analyzed
+    QList<UEquation> equationsTemp;     // While we empty "equations" we fill equationsTemp. When "equations is empty" we do equations = equationsTemp
+    QList<UEquation> equationsChecked;  // When we are done (because we have obtained a substitution Variable -> something) we put it here
 
     bool isValid;
     QString solverMessage;

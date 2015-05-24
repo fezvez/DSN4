@@ -10,9 +10,16 @@ typedef QSharedPointer<Role> PRole;
 class Role
 {
 public:
-    Role(LTerm r);
+    // Dangerous, don't use this one, the LTerm will be a dangling pointer
+    // Only here because QVector requires a default constructor
+    Role();
 
-    LTerm getRole();
+
+    Role(LTerm r);
+    Role(const Role& r);
+
+    const LTerm getRole() const;
+    QString toString() const;
 
 private:
     LTerm role;

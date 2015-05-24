@@ -20,6 +20,7 @@ public:
     LTerm getHead();
     QList<LTerm> getBody();
     Logic::LOGIC_QUALIFIER getQualifier();
+    void setQualifier(Logic::LOGIC_QUALIFIER q);
     bool isNegation();
 
     QSet<QString> getFreeVariables();

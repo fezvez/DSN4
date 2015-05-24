@@ -12,7 +12,6 @@ TEMPLATE = app
 CONFIG += c++11
 
 QMAKE_MAC_SDK = macosx10.9
-
 QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -std=gnu0x -stdlib=libc+
 
 SOURCES += main.cpp\

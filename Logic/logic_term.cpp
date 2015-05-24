@@ -230,3 +230,11 @@ void Logic_Term::printDebug(){
         break;
     }
 }
+
+Logic::LOGIC_KEYWORD Logic_Term::getKeyword(){
+    return keyword;
+}
+
+void Logic_Term::setKeyword(Logic::LOGIC_KEYWORD k){
+    keyword = k;
+}

@@ -15,12 +15,12 @@ public:
     virtual void initialize(QList<LRelation> relations, QList<LRule> rules) = 0;
 
 
-    virtual int getGoal(MachineState state, Role role) = 0;
-    virtual bool isTerminal(MachineState state) = 0;
-    virtual QList<Role> getRoles() = 0;
+    virtual int getGoal(const MachineState& state, Role role) = 0;
+    virtual bool isTerminal(const MachineState& state) = 0;
+    virtual QVector<Role> getRoles() = 0;
     virtual MachineState getInitialState() = 0;
-    virtual QList<Move> getLegalMoves(MachineState state, Role role) = 0;
-    virtual MachineState getNextState(MachineState state, QList<Move> moves) = 0;
+    virtual QList<Move> getLegalMoves(const MachineState& state, Role role) = 0;
+    virtual MachineState getNextState(const MachineState& state, QList<Move> moves) = 0;
 
 
     /**

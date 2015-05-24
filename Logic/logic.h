@@ -18,8 +18,8 @@ public:
         TRUE
     };
 
-    enum LOGIC_TYPE{
-        NO_TYPE,
+    enum LOGIC_KEYWORD{
+        NO_KEYWORD,
         NEXT,
         ROLE,
         GOAL,
@@ -47,8 +47,8 @@ public:
     static QMap<QString, LOGIC_QUALIFIER> mapString2GDLQualifier;
     static QMap<LOGIC_QUALIFIER, QString> mapGDLQualifier2String;
 
-    static QMap<QString, LOGIC_TYPE> mapString2GDLType;
-    static QMap<LOGIC_TYPE, QString> mapGDLType2String;
+    static QMap<QString, LOGIC_KEYWORD> mapString2GDLType;
+    static QMap<LOGIC_KEYWORD, QString> mapGDLType2String;
 
     static void init(){
         mapString2GDLQualifier.clear();
@@ -65,24 +65,24 @@ public:
 
 
         mapString2GDLType.clear();
-        mapString2GDLType.insert(QString("no_type"), LOGIC_TYPE::NO_TYPE);
-        mapString2GDLType.insert(QString("next"), LOGIC_TYPE::NEXT);
-        mapString2GDLType.insert(QString("role"), LOGIC_TYPE::ROLE);
-        mapString2GDLType.insert(QString("goal"), LOGIC_TYPE::GOAL);
-        mapString2GDLType.insert(QString("terminal"), LOGIC_TYPE::TERMINAL);
-        mapString2GDLType.insert(QString("legal"), LOGIC_TYPE::LEGAL);
-        mapString2GDLType.insert(QString("input"), LOGIC_TYPE::INPUT);
-        mapString2GDLType.insert(QString("does"), LOGIC_TYPE::DOES);
+        mapString2GDLType.insert(QString("no_type"), LOGIC_KEYWORD::NO_KEYWORD);
+        mapString2GDLType.insert(QString("next"), LOGIC_KEYWORD::NEXT);
+        mapString2GDLType.insert(QString("role"), LOGIC_KEYWORD::ROLE);
+        mapString2GDLType.insert(QString("goal"), LOGIC_KEYWORD::GOAL);
+        mapString2GDLType.insert(QString("terminal"), LOGIC_KEYWORD::TERMINAL);
+        mapString2GDLType.insert(QString("legal"), LOGIC_KEYWORD::LEGAL);
+        mapString2GDLType.insert(QString("input"), LOGIC_KEYWORD::INPUT);
+        mapString2GDLType.insert(QString("does"), LOGIC_KEYWORD::DOES);
 
         mapGDLType2String.clear();
-        mapGDLType2String.insert(LOGIC_TYPE::NO_TYPE ,QString("no_type"));
-        mapGDLType2String.insert(LOGIC_TYPE::NEXT ,QString("next"));
-        mapGDLType2String.insert(LOGIC_TYPE::ROLE ,QString("role"));
-        mapGDLType2String.insert(LOGIC_TYPE::GOAL ,QString("goal"));
-        mapGDLType2String.insert(LOGIC_TYPE::TERMINAL,QString("terminal"));
-        mapGDLType2String.insert(LOGIC_TYPE::LEGAL,QString("legal"));
-        mapGDLType2String.insert(LOGIC_TYPE::INPUT,QString("input"));
-        mapGDLType2String.insert(LOGIC_TYPE::DOES ,QString("does"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::NO_KEYWORD ,QString("no_type"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::NEXT ,QString("next"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::ROLE ,QString("role"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::GOAL ,QString("goal"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::TERMINAL,QString("terminal"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::LEGAL,QString("legal"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::INPUT,QString("input"));
+        mapGDLType2String.insert(LOGIC_KEYWORD::DOES ,QString("does"));
     }
 
     static LOGIC_QUALIFIER getGDLQualifierFromString(const QString & s){
@@ -99,14 +99,14 @@ public:
         return QString("Qualifier unknown");
     }
 
-    static LOGIC_TYPE getGDLTypeFromString(const QString & s){
+    static LOGIC_KEYWORD getGDLKeywordFromString(const QString & s){
         if(mapString2GDLType.contains(s)){
             return mapString2GDLType[s];
         }
-        return LOGIC_TYPE::NO_TYPE;
+        return LOGIC_KEYWORD::NO_KEYWORD;
     }
 
-    static QString getStringFromGDLType(LOGIC_TYPE t){
+    static QString getStringFromGDLKeyword(LOGIC_KEYWORD t){
         if(mapGDLType2String.contains(t)){
             return mapGDLType2String[t];
         }

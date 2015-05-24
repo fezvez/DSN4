@@ -35,6 +35,10 @@ public:
     QList<LTerm> getBody();
     QMap<QString, QList<LTerm> > getFreeVariables();
 
+
+    Logic::LOGIC_KEYWORD getKeyword();
+    void setKeyword(Logic::LOGIC_KEYWORD k);
+
     void substitute(LTerm v, LTerm t);
 
 private:
@@ -48,6 +52,7 @@ private:
 
 private:
     LOGIC_TERM_TYPE type;
+    Logic::LOGIC_KEYWORD keyword;
     LTerm head;
     QList<LTerm> body;
     QMap<QString, QList<LTerm> > freeVariables;
