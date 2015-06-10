@@ -16,13 +16,13 @@
  * Z->g(a,Y)
  */
 
-class Unification_Equation;
-typedef QSharedPointer<Unification_Equation> UEquation;
+class Unification_Term;
+typedef QSharedPointer<Unification_Term> UTerm;
 
-class Unification_Equation
+class Unification_Term
 {
 public:
-    Unification_Equation(LTerm t1, LTerm t2);
+    Unification_Term(LTerm t1, LTerm t2);
 
     LTerm getTerm1();
     LTerm getTerm2();
@@ -31,7 +31,7 @@ public:
 
     QString toString();
 
-    UEquation clone();
+    UTerm clone();
     void substitute(LTerm var, LTerm term);
 
 private:

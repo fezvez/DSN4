@@ -1,56 +1,58 @@
-#include "unification_problem.h"
+#include "unification_relation.h"
 
 #include "parser.h"
 
 #include <QDebug>
 
-Unification_Problem::Unification_Problem(){
+Unification_Relation::Unification_Relation(){
 
 }
 
-Unification_Problem::Unification_Problem(LRelation relation1, LRelation relation2){
+Unification_Relation::Unification_Relation(LRelation relation1, LRelation relation2){
+    addEquation(UTerm(new Unification_Term(relation1->getHead(), relation2->getHead())));
+
     QList<LTerm> body1 = relation1->getBody();
     QList<LTerm> body2 = relation2->getBody();
 
     int size = body1.size();
     for(int i=0; i<size; ++i){
-        addEquation(UEquation(new Unification_Equation(body1[i], body2[i])));
+        addEquation(UTerm(new Unification_Term(body1[i], body2[i])));
     }
     solve();
 }
 
-Unification_Problem::Unification_Problem(QList<UEquation> eqs){
-    equationsOrigin = QList<UEquation>(eqs);
+Unification_Relation::Unification_Relation(QList<UTerm> eqs){
+    equationsOrigin = QList<UTerm>(eqs);
+    solve();
 }
 
 
 
-void Unification_Problem::addEquation(UEquation eq){
+void Unification_Relation::addEquation(UTerm eq){
     equationsOrigin.append(eq);
 }
 
-void Unification_Problem::clear(){
+void Unification_Relation::clear(){
     equationsOrigin.clear();
 }
 
-bool Unification_Problem::isUnificationValid(){
+bool Unification_Relation::isUnificationValid(){
     return isValid;
 }
 
-void Unification_Problem::solve(){
+void Unification_Relation::solve(){
 //    qDebug() << "\n    Unification_Problem::Solve";
 
     equations.clear();
     equationsTemp.clear();
-    equationsChecked.clear();
+    substitutions.clear();
 
     equations = equationsOrigin;
     solverMessage = QString("Unification succesful");
     isValid = true;
 
     bool isFinished;
-    UEquation swap;
-
+    UTerm swap;
 
 
     int cycleNb = 0;
@@ -58,7 +60,7 @@ void Unification_Problem::solve(){
 
         while(!equations.isEmpty()){
 
-            UEquation equation = equations.back();
+            UTerm equation = equations.back();
             equations.pop_back();
 //            qDebug() << "        Equation " << equation->toString();
 
@@ -78,7 +80,7 @@ void Unification_Problem::solve(){
                     }
                     break;
                 case(VARIABLE):
-                    swap = UEquation(new Unification_Equation(term2, term1));
+                    swap = UTerm(new Unification_Term(term2, term1));
                     equationsTemp.append(swap);
                     break;
                 case(FUNCTION):
@@ -97,7 +99,7 @@ void Unification_Problem::solve(){
                 case(VARIABLE):
                     break;
                 case(FUNCTION):
-                    QMap<QString, QList<LTerm> > freeVariables = term2->getFreeVariables();
+                    QSet<QString> freeVariables = term2->getFreeVariables();
                     if(freeVariables.contains(term1->toString())){
                         solverMessage = QString("Error variable is already in the function in : ").append(equation->toString());
                         isValid = false;
@@ -108,16 +110,16 @@ void Unification_Problem::solve(){
                 if(!isValid){
                     break;
                 }
-                for(UEquation eq : equations){
+                for(UTerm eq : equations){
                     eq->substitute(term1, term2);
                 }
-                for(UEquation eq : equationsTemp){
+                for(UTerm eq : equationsTemp){
                     eq->substitute(term1, term2);
                 }
-                for(UEquation eq : equationsChecked){
+                for(UTerm eq : substitutions){
                     eq->substitute(term1, term2);
                 }
-                equationsChecked.append(equation);
+                substitutions.append(equation);
                 break;
 
             case(FUNCTION):
@@ -127,7 +129,7 @@ void Unification_Problem::solve(){
                     isValid = false;
                     break;
                 case(VARIABLE):
-                    swap = UEquation(new Unification_Equation(term2, term1));
+                    swap = UTerm(new Unification_Term(term2, term1));
                     equationsTemp.append(swap);
                     break;
                 case(FUNCTION):
@@ -140,7 +142,7 @@ void Unification_Problem::solve(){
                     QList<LTerm> body1 = term1->getBody();
                     QList<LTerm> body2 = term2->getBody();
                     for(int i=0; i<size; ++i){
-                        UEquation newEquation = UEquation(new Unification_Equation(body1[i], body2[i]));
+                        UTerm newEquation = UTerm(new Unification_Term(body1[i], body2[i]));
                         equationsTemp.append(newEquation);
                     }
                     break;
@@ -164,202 +166,8 @@ void Unification_Problem::solve(){
     }
 }
 
-void Unification_Problem::debug(){
-    Parser parser;
 
-
-
-    if(false){
-        qDebug() << "\n\nCreating terms";
-
-        LTerm a = parser.parseTerm("a");
-        LTerm b = parser.parseTerm("b");
-        LTerm c = parser.parseTerm("c");
-        LTerm x = parser.parseTerm("?x");
-        LTerm y = parser.parseTerm("?y");
-        LTerm z = parser.parseTerm("?z");
-        LTerm fx = parser.parseTerm("(f ?x)");
-        LTerm fy = parser.parseTerm("(f ?y)");
-        LTerm fz = parser.parseTerm("(f ?z)");
-        LTerm gxx = parser.parseTerm("(g ?x ?x)");
-        LTerm gab = parser.parseTerm("(g a b)");
-        LTerm gxy = parser.parseTerm("(g ?x ?y)");
-        LTerm gyz = parser.parseTerm("(g ?y ?z)");
-        LTerm hxfx = parser.parseTerm("(h ?x (f ?x))");
-        LTerm hxgxy = parser.parseTerm("(h ?x (g ?x ?y))");
-
-
-        // Substitution check :
-
-        qDebug() << "\n\nSubstitution check";
-
-        qDebug() << "\nSubstituting " << x->toString()
-                 << " with " << y->toString()
-                 << " in " << fx->toString();
-        fx->printDebug();
-        fx->substitute(x, y);
-        fx->printDebug();
-
-        qDebug() << "\nSubstituting " << x->toString()
-                 << " with " << y->toString()
-                 << " in " << gxx->toString();
-        gxx->printDebug();
-        gxx->substitute(x, y);
-        gxx->printDebug();
-
-        qDebug() << "\nSubstituting " << x->toString()
-                 << " with " << y->toString()
-                 << " in " << gxy->toString();
-        gxy->printDebug();
-        gxy->substitute(x, y);
-        gxy->printDebug();
-
-        qDebug() << "\nSubstituting " << x->toString()
-                 << " with " << y->toString()
-                 << " in " << hxgxy->toString();
-        hxgxy->printDebug();
-        hxgxy->substitute(x, y);
-        hxgxy->printDebug();
-
-        qDebug() << "\nSubstituting " << x->toString()
-                 << " with " << z->toString()
-                 << " in " << hxgxy->toString();
-        hxgxy->printDebug();
-        hxgxy->substitute(x, z);
-        hxgxy->printDebug();
-
-        qDebug() << "\nSubstituting " << y->toString()
-                 << " with " << fz->toString()
-                 << " in " << hxgxy->toString();
-        hxgxy->printDebug();
-        hxgxy->substitute(y, fz);
-        hxgxy->printDebug();
-    }
-
-    if(true){
-        qDebug() << "\n\nCreating terms";
-
-        LTerm a = parser.parseTerm("a");
-        LTerm b = parser.parseTerm("b");
-        LTerm c = parser.parseTerm("c");
-        LTerm x = parser.parseTerm("?x");
-        LTerm y = parser.parseTerm("?y");
-        LTerm z = parser.parseTerm("?z");
-        LTerm fx = parser.parseTerm("(f ?x)");
-        LTerm fy = parser.parseTerm("(f ?y)");
-        LTerm fz = parser.parseTerm("(f ?z)");
-        LTerm gxx = parser.parseTerm("(g ?x ?x)");
-        LTerm gab = parser.parseTerm("(g a b)");
-        LTerm gxy = parser.parseTerm("(g ?x ?y)");
-        LTerm gyz = parser.parseTerm("(g ?y ?z)");
-        LTerm hxfx = parser.parseTerm("(h ?x (f ?x))");
-        LTerm hxgxy = parser.parseTerm("(h ?x (g ?x ?y))");
-        LTerm hfzw = parser.parseTerm("(h (f ?z) ?w)");
-
-        qDebug() << "\n\nRunning solver";
-        UEquation eq1;
-        UEquation eq2;
-        UEquation eq3;
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(a, x));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(x, a));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(a, b));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(!isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(a, fx));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(!isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(b, hxgxy));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(!isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(x, fy));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(x, gxy));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(!isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(y, hxgxy));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(!isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(gxx, gab));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(!isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(a, a));
-        eq2 = UEquation(new Unification_Equation(a, x));
-        addEquation(eq1);
-        addEquation(eq2);
-        solve();
-        printSolverResults();
-        Q_ASSERT(isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(x, fy));
-        eq2 = UEquation(new Unification_Equation(y, gxx));
-        addEquation(eq1);
-        addEquation(eq2);
-        solve();
-        printSolverResults();
-        Q_ASSERT(!isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(gxy, gyz));
-        addEquation(eq1);
-        solve();
-        printSolverResults();
-        Q_ASSERT(isValid);
-
-        clear();
-        eq1 = UEquation(new Unification_Equation(hxgxy, hfzw));
-        addEquation(eq1);
-        addEquation(eq2);
-        solve();
-        printSolverResults();
-        Q_ASSERT(isValid);
-    }
-}
-
-void Unification_Problem::printSolverResults(){
+void Unification_Relation::printSolverResults(){
     qDebug() << "\n    Solver results";
     if(isValid){
         qDebug() << "        Unification exists";
@@ -369,76 +177,92 @@ void Unification_Problem::printSolverResults(){
 
     }
     qDebug() << "        Print " << equationsOrigin.size() << " original equations";
-    for(UEquation e : equationsOrigin){
+    for(UTerm e : equationsOrigin){
         qDebug() << "            " << e->toString();
     }
     if(!isValid){
         return;
     }
     qDebug() << "        These equations become ";
-    for(UEquation e : equationsOrigin){
+    for(UTerm e : equationsOrigin){
         qDebug() <<  "            " << applySubstitution(e)->toString();
     }
 
-    qDebug() << "        Thanks to the " << equationsChecked.size() << " substitutions";
-    for(UEquation e : equationsChecked){
+    qDebug() << "        Thanks to the " << substitutions.size() << " substitutions";
+    for(UTerm e : substitutions){
         qDebug() <<  "            " << e->toString();
     }
 }
 
-void Unification_Problem::applySubstitutionInPlace(LTerm t){
-    for(UEquation sub : equationsChecked){
+void Unification_Relation::applySubstitutionInPlace(LTerm t){
+    for(UTerm sub : substitutions){
         t->substitute(sub->getTerm1(), sub->getTerm2());
     }
 }
 
-void Unification_Problem::applySubstitutionInPlace(UEquation e){
+void Unification_Relation::applySubstitutionInPlace(UTerm e){
     applySubstitutionInPlace(e->getTerm1());
     applySubstitutionInPlace(e->getTerm2());
 }
 
-void Unification_Problem::applySubstitutionInPlace(LRelation r){
+void Unification_Relation::applySubstitutionInPlace(LRelation r){
     for(LTerm term : r->getBody()){
         applySubstitutionInPlace(term);
     }
-    r->setIsNameCorrect(false);
 }
 
-void Unification_Problem::applySubstitutionInPlace(LRule r){
+void Unification_Relation::applySubstitutionInPlace(LRule r){
     applySubstitutionInPlace(r->getHead());
     for(LRelation relation : r->getBody()){
         applySubstitutionInPlace(relation);
     }
-    r->setIsNameCorrect(false);
 
 }
 
-LTerm Unification_Problem::applySubstitution(LTerm t){
-    LTerm answer = t->clone();
+
+LTerm Unification_Relation::applySubstitution(LTerm t){
+    LTerm answer = Logic_Term::clone(t);
     applySubstitutionInPlace(answer);
     return answer;
 }
 
-UEquation Unification_Problem::applySubstitution(UEquation e){
-    UEquation answer = e->clone();
+UTerm Unification_Relation::applySubstitution(UTerm e){
+    UTerm answer = e->clone();
     applySubstitutionInPlace(answer);
     return answer;
 }
 
-
-
-LRelation Unification_Problem::applySubstitution(LRelation r){
+LRelation Unification_Relation::applySubstitution(LRelation r){
     LRelation answer = r->clone();
     applySubstitutionInPlace(answer);
     return answer;
 }
 
-LRule Unification_Problem::applySubstitution(LRule r){
+LRule Unification_Relation::applySubstitution(LRule r){
     LRule answer = r->clone();
     applySubstitutionInPlace(answer);
     return answer;
 }
 
+QList<UTerm> Unification_Relation::getSubstitutions(){
+    return substitutions;
+}
 
+QString Unification_Relation::toString(){
+    QString answer;
+    answer += QString("Unification_Relation validity is ");
+    if(isValid){
+        answer += QString("true\n");
+        for(UTerm term : substitutions){
+            answer += "\t" + term->toString() + "\n";
+        }
+    }
+    else{
+        answer += QString("false\n");
+    }
+    return answer;
+}
 
-
+QString Unification_Relation::getSolverMessage(){
+    return solverMessage;
+}

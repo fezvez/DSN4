@@ -3,21 +3,17 @@
 #include <QDebug>
 
 Logic_Relation::Logic_Relation(LTerm h, QList<LTerm> b, Logic::LOGIC_QUALIFIER q, bool n):
-    head(h),
-    body(b),
     qualifier(q),
     negation(n)
 {
+    head = Logic_Term::clone(h);
+    body = Logic_Term::cloneList(b);
     buildName();
     buildFreeVariables();
 }
 
 LRelation Logic_Relation::clone(){
-    QList<LTerm> clonedBody;
-    for(LTerm term : body){
-        clonedBody.append(term->clone());
-    }
-    return LRelation(new Logic_Relation(head->clone(), clonedBody, qualifier, negation));
+    return LRelation(new Logic_Relation(Logic_Term::clone(head), Logic_Term::cloneList(body), qualifier, negation));
 }
 
 
@@ -32,8 +28,40 @@ bool Logic_Relation::isGround() const{
     return true;
 }
 
+LTerm Logic_Relation::getRelationConstant(){
+    return head;
+}
 
+LTerm Logic_Relation::getHead(){
+    return head;
+}
 
+QList<LTerm> Logic_Relation::getBody(){
+    return body;
+}
+
+Logic::LOGIC_QUALIFIER Logic_Relation::getQualifier(){
+    return qualifier;
+}
+
+void Logic_Relation::setQualifier(Logic::LOGIC_QUALIFIER q){
+    qualifier = q;
+    buildName();
+}
+
+bool Logic_Relation::isNegation(){
+    return negation;
+}
+
+void Logic_Relation::setNegation(bool b){
+    negation = b;
+}
+
+QSet<QString> Logic_Relation::getFreeVariables(){
+    return freeVariables;
+}
+
+// Inherited
 void Logic_Relation::buildName(){
     name = getHead()->toString();
     switch(body.size()){
@@ -65,8 +93,6 @@ void Logic_Relation::buildName(){
     if(negation){
         name = QString("(not ") + name + ")";
     }
-
-    isNameCorrect = true;
 }
 
 
@@ -79,9 +105,7 @@ QSet<QString> Logic_Relation::buildFreeVariables(){
             freeVariables << term->toString();
             break;
         case(FUNCTION):
-            for(QString key : term->getFreeVariables().keys()){
-                freeVariables << key;
-            }
+            freeVariables += term->getFreeVariables();
             break;
         default:
             break;
@@ -92,6 +116,7 @@ QSet<QString> Logic_Relation::buildFreeVariables(){
 }
 
 void Logic_Relation::substitute(LTerm v, LTerm t){
+    Q_ASSERT(v->getType() == LOGIC_TERM_TYPE::VARIABLE);
     QString variableName = v->toString();
     if(freeVariables.contains(variableName)){
         //qDebug() << "Logic_Relation::substitutewith term " << t->toString() << " and var "  << variableName << " in relation " << toString();
@@ -99,46 +124,27 @@ void Logic_Relation::substitute(LTerm v, LTerm t){
             bodyTerm->substitute(v, t);
         }
 
-        // Update free variables
-        switch(t->getType()){
-        case(VARIABLE):
-            freeVariables << t->toString();
-            break;
-        case(FUNCTION):
-            for(QString s : t->getFreeVariables().keys()){
-                freeVariables << s; // Insert s if it isn't there already
-            }
-            break;
-        default:
-            break;
-        }
+        // Update name
+        buildName();
 
-        isNameCorrect = false;
+        // Update free variables
+        freeVariables.remove(variableName);
+        addFreeVariables(t);
+    }
+}
+
+void Logic_Relation::addFreeVariables(LTerm term){
+    switch(term->getType()){
+    case(VARIABLE):
+        freeVariables << term->toString();
+        break;
+    case(FUNCTION):
+        freeVariables += term->getFreeVariables();
+        break;
+    default:
+        break;
     }
 }
 
 
-LTerm Logic_Relation::getRelationConstant(){
-    return head;
-}
 
-LTerm Logic_Relation::getHead(){
-    return getRelationConstant();
-}
-
-QList<LTerm> Logic_Relation::getBody(){
-    return body;
-}
-
-Logic::LOGIC_QUALIFIER Logic_Relation::getQualifier(){
-    return qualifier;
-}
-
-void Logic_Relation::setQualifier(Logic::LOGIC_QUALIFIER q){
-    qualifier = q;
-    buildName();
-}
-
-bool Logic_Relation::isNegation(){
-    return negation;
-}

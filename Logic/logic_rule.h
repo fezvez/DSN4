@@ -18,24 +18,22 @@ public:
     QList<LRelation> getBody();
     bool isBodyEmpty();
     bool isGround() const;
-
     QSet<QString> getFreeVariables();
-    QSet<QString> buildFreeVariables();
+
+
     void substitute(LTerm v, LTerm t);
+
 
 private:
     void buildName();
+    QSet<QString> buildFreeVariables();
+    void addFreeVariables(LTerm term);
 
 
 protected:
     LRelation head;
     QList<LRelation> body;
     QSet<QString> freeVariables;
-
-
-private:
-    QSet<QString> mapString2Variables;
-
 };
 
 #endif // LOGIC_RULE_H

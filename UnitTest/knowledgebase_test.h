@@ -1,12 +1,17 @@
 #ifndef KNOWLEDGEBASE_TEST_H
 #define KNOWLEDGEBASE_TEST_H
 
+#include <QtTest/QtTest>
+#include <QObject>
 
-class KnowledgeBase_Test
+#include "../knowledgebase.h"
+class KnowledgeBase_Test : public QObject
 {
-public:
-    KnowledgeBase_Test();
-    ~KnowledgeBase_Test();
+    Q_OBJECT
+private slots:
+    void toUpper();
+
+    void KB_01();
 };
 
 #endif // KNOWLEDGEBASE_TEST_H

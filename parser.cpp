@@ -22,53 +22,23 @@ void Parser::createRegExp(){
     nextRegExp = QRegExp("^next_");
 }
 
+QList<LRule> Parser::getRules(){
+    return ruleList;
+}
+
+QList<LRelation> Parser::getRelations(){
+    return relationList;
+}
+
+
 
 void Parser::loadKif(const QStringList & sl){
     // Load file
     qDebug() << "\n\nLOAD KIF LINES";
-    rawKif.append(sl);
+    rawKif = sl;
 
     cleanFile();
     generateHerbrand();
-
-
-
-    // HACK TO DEBUG
-    //ProverStateMachine prover;
-    //prover.initialize(relationList, ruleList);
-//    KnowledgeBase kb;
-//    kb.setup(relationList, ruleList);
-}
-
-void Parser::debugKB(){
-    qDebug() << "\n\nDEBUG KB";
-
-    QStringList kif;
-    kif << "(f a)";
-    kif << "(p b a)";
-    kif << "(p a b)";
-    kif << "(p a c)";
-    kif << "(p c c)";
-    kif << "(p c d)";
-    kif << "( <= (q ?x) (p ?x ?y) )";
-    kif << "( <= (r ?x ?y) (p ?y ?x) )";
-    kif << "( <= (s ?x) (q ?x) (r ?x ?y))";
-
-    kif << "( <= (t ?x ?y) (p ?x ?y) (not (p ?y ?x)))";
-    loadKif(kif);
-
-
-    KnowledgeBase kb;
-    kb.setup(relationList, ruleList);
-
-    qDebug() << "\n\nFinished with KB\n\n";
-    LRelation r = processRelation(QString("(t ?x ?y)"));
-    QList<LRelation> answer = kb.evaluateRelation(r);
-    for(LRelation relationAnswer : answer){
-        qDebug() << "Answer : " << relationAnswer->toString();
-    }
-
-
 }
 
 /**
@@ -164,14 +134,14 @@ void Parser::processKifLine(QString line){
     // If it is a rule
     if(line.contains(ruleRegExp)){
         LRule rule = processRule(line);
-        qDebug() << "New rule processed : " << rule->toString();
+        //qDebug() << "New rule processed : " << rule->toString();
         ruleList.append(rule);
     }
 
     // Else, it is a relation
     else{
         LRelation relation = processRelation(line);
-        qDebug() << "New relation processed : " << relation->toString();
+        //qDebug() << "New relation processed : " << relation->toString();
         relationList.append(relation);
         Q_ASSERT(relation->isGround());
     }
@@ -182,7 +152,7 @@ void Parser::processKifLine(QString line){
 
 
 LRule Parser::processRule(QString line){
-    qDebug() << "Rule " << line;
+    //qDebug() << "Rule " << line;
 
     QStringList splitLine = split(line);
 
@@ -200,7 +170,7 @@ LRule Parser::processRule(QString line){
 
 
 LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool isNegative, bool isNext){
-    qDebug() << "Relational sentence " << line;
+    //qDebug() << "Relational sentence " << line;
 
     LRelation answer;
     QStringList splitLine = split(line);
@@ -210,9 +180,9 @@ LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool i
     Q_ASSERT(!(q!=Logic::NO_QUAL && isNext));
     Q_ASSERT(!(isNext && isNegative));
 
-    qDebug() << "First element is " << splitLine[0];
+    //qDebug() << "First element is " << splitLine[0];
     Logic::LOGIC_QUALIFIER qualifier = Logic::getGDLQualifierFromString(splitLine[0]);
-    qDebug() << "Qualifier is : " << Logic::getStringFromGDLQualifier(qualifier);
+    //qDebug() << "Qualifier is : " << Logic::getStringFromGDLQualifier(qualifier);
 
     if(qualifier != Logic::LOGIC_QUALIFIER::NO_QUAL){
         Q_ASSERT(splitLine.size() == 2);
@@ -228,7 +198,7 @@ LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool i
 
     if(splitLine[0] == QString("not")){
         Q_ASSERT(splitLine.size() == 2);
-        LRelation relation = processRelation(splitLine[1], q, true, isNext);
+        LRelation relation = processRelation(splitLine[1], q, !isNegative, isNext);
         return relation;
     }
 
@@ -239,7 +209,7 @@ LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool i
     if(isNext){
         relationConstant = QString("next_").append(relationConstant);
     }
-    qDebug() << "Relation constant is : " << relationConstant;
+    //qDebug() << "Relation constant is : " << relationConstant;
 
     LTerm head = LTerm(new Logic_Term(relationConstant, CONSTANT));
 
@@ -253,17 +223,17 @@ LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool i
 }
 
 LTerm Parser::processTerm(QString line){
-    qDebug() << "Term " << line;
+    //qDebug() << "Term " << line;
     QStringList splitLine = split(line);
 
     if(splitLine.size() == 1){
         if(splitLine[0][0] == QChar('?')){
-            qDebug() << "Variable " << splitLine[0];
+            //qDebug() << "Variable " << splitLine[0];
             LTerm answer = LTerm(new Logic_Term(splitLine[0], VARIABLE));
             return answer.staticCast<Logic_Term>();
         }
         else{
-            qDebug() << "Constant " << splitLine[0];
+            //qDebug() << "Constant " << splitLine[0];
             LTerm answer = LTerm(new Logic_Term(splitLine[0], CONSTANT));
             return answer.staticCast<Logic_Term>();
         }
@@ -274,18 +244,18 @@ LTerm Parser::processTerm(QString line){
 }
 
 LTerm Parser::processFunction(QString line){
-    qDebug() << "Function " << line;
+    //qDebug() << "Function " << line;
 
     LTerm answer;
     QStringList splitLine = split(line);
 
     LTerm functionConstant = LTerm(new Logic_Term(splitLine[0], CONSTANT));
-    qDebug() << "Function head constant " << functionConstant->toString();
+    //qDebug() << "Function head constant " << functionConstant->toString();
     QList<LTerm> body;
     for(int i = 1; i<splitLine.size(); ++i){
         LTerm term = processTerm(splitLine[i]);
         body.append(term);
-        qDebug() << "Function body " << i << " of " << functionConstant->toString() << " is " << term->toString();
+        //qDebug() << "Function body " << i << " of " << functionConstant->toString() << " is " << term->toString();
     }
 
     answer = LTerm(new Logic_Term(functionConstant, body));
@@ -294,6 +264,10 @@ LTerm Parser::processFunction(QString line){
 
 LTerm Parser::parseTerm(QString term){
     return processTerm(term);
+}
+
+LRelation Parser::parseRelation(QString relation){
+    return processRelation(relation);
 }
 
 

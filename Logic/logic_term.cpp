@@ -2,69 +2,47 @@
 
 #include <QDebug>
 
+// Note : ths constructor can only be called for Constant and Variable
 Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t){
     name = s;
     type = t;
-    isNameCorrect = true;
 }
 
-Logic_Term::Logic_Term(LTerm h, QList<LTerm> b):
-    head(h),
-    body(b)
+Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
 {
     type = LOGIC_TERM_TYPE::FUNCTION;
+    head = Logic_Term::clone(h);    // Could be head = h because it must be a CONSTANT
+    body = Logic_Term::cloneList(b);
+
     buildName();
-    setup();
+    buildFreeVariables();
 
 }
 
-void Logic_Term::setup(){
-    freeVariables.clear();
 
-    switch(type){
+LTerm Logic_Term::clone(LTerm term){
+    switch(term->getType()){
     case(CONSTANT):
-        return;
+        return term;
     case(VARIABLE):
-        return;
-    default:
-        break;
-
-    }
-
-    for(LTerm term : body){
-        switch(term->getType()){
-        case(CONSTANT):
-            break;
-        case(VARIABLE):
-            freeVariables[term->toString()].append(term);
-            break;
-        case(FUNCTION):
-            for(LTerm term : term->getBody()){
-                addVariables(term);
-            }
+        return LTerm(new Logic_Term(term->getName(), LOGIC_TERM_TYPE::VARIABLE));
+    case(FUNCTION):{
+        if(term->isGround()){
+            return term;
         }
+        return LTerm(new Logic_Term(term->getHead(), term->getBody()));
+        break;
+    }
     }
 }
 
-void Logic_Term::addVariables(LTerm t){
-    switch(t->getType()){
-    case(VARIABLE):
-        freeVariables[t->toString()].append(t);
-        break;
-    case(FUNCTION):
-        for(QString s : t->getFreeVariables().keys()){
-            freeVariables[s] += t->getFreeVariables()[s];
-        }
-        break;
-    default:
-        break;
+QList<LTerm> Logic_Term::cloneList(QList<LTerm> list){
+    QList<LTerm> clonedBody;
+    for(LTerm term : list){
+        clonedBody << term->clone(term);
     }
+    return clonedBody;
 }
-
-void Logic_Term::addSingleVariable(LTerm t){
-    freeVariables[t->toString()].append(t);
-}
-
 
 
 bool Logic_Term::operator==(Logic_Term & t){
@@ -76,19 +54,35 @@ bool Logic_Term::operator!=(Logic_Term & t){
 }
 
 
+// Getters and shit
+LOGIC_TERM_TYPE Logic_Term::getType(){
+    return type;
+}
 
-LTerm Logic_Term::clone() const{
-    QList<LTerm> clonedBody;
-    switch(type){
-    case(FUNCTION):
-        for(LTerm term : body){
-            clonedBody.append(term->clone());
-        }
-        return LTerm(new Logic_Term(head->clone(), clonedBody));
-        break;
-    default:
-        return LTerm(new Logic_Term(name, type));
-    }
+LTerm Logic_Term::getHead(){
+    return head;
+}
+
+QList<LTerm> Logic_Term::getBody(){
+    return body;
+}
+
+QSet<QString> Logic_Term::getFreeVariables(){
+    return freeVariables;
+}
+
+Logic::LOGIC_KEYWORD Logic_Term::getKeyword(){
+    return keyword;
+}
+
+void Logic_Term::setKeyword(Logic::LOGIC_KEYWORD k){
+    keyword = k;
+}
+
+
+
+QString Logic_Term::toString(){
+    return name;
 }
 
 bool Logic_Term::isGround() const{
@@ -108,42 +102,35 @@ bool Logic_Term::isGround() const{
     return true;
 }
 
-
-
-LOGIC_TERM_TYPE Logic_Term::getType(){
-    return type;
+void Logic_Term::buildFreeVariables(){
+    freeVariables.clear();
+    for(LTerm term : body){
+        addFreeVariables(term);
+    }
 }
 
-LTerm Logic_Term::getHead(){
-    return head;
-}
-
-QList<LTerm> Logic_Term::getBody(){
-    return body;
-}
-
-
-QString Logic_Term::toString(){
-    switch(type){
-    case(CONSTANT):
+void Logic_Term::addFreeVariables(LTerm term){
+    switch(term->getType()){
     case(VARIABLE):
-        return name;
-    default:
+        freeVariables <<  term->toString();
+        break;
+    case(FUNCTION):
+        freeVariables += term->getFreeVariables();
+        break;
+    default:    // case(CONSTANT)
         break;
     }
-
-    if(!isNameCorrect){
-        buildName();
-    }
-    return name;
-
 }
+
+
+
+
+
 
 
 // Guaranteed that this is a function
+// Assumes the name of the terms in the head/body are correct
 void Logic_Term::buildName(){
-
-
     name = head->toString();
     if(body.isEmpty()){
         return;
@@ -153,14 +140,44 @@ void Logic_Term::buildName(){
         name = name + " " + body[i]->toString();
     }
     name = name + ")";
+}
 
-    isNameCorrect = true;
+// Assumes the name of the terms in the head/body are incorrect
+QString Logic_Term::rebuildName(){
+    //qDebug() << "rebuildName " << name;
+    switch(type){
+    case(VARIABLE):
+    case(CONSTANT):
+        return name;
+    default:
+        break;
+    }
+
+    //qDebug() << "function with head " << head->toString();
+    //qDebug() << "body size " << body.size();
+    name = head->rebuildName();
+    if(body.isEmpty()){
+        return name;
+    }
+    name = QString('(') + name + " " + body[0]->rebuildName();
+    for(int i=1; i<body.size(); ++i){
+        name = name + " " + body[i]->rebuildName();
+    }
+    name = name + ")";
+
+    //qDebug() << "rebuildName finished" << name;
+
+    return name;
 }
 
 
-
+// Replace all variables v with term t (which can contain several variables)
 void Logic_Term::substitute(LTerm v, LTerm t){
     Q_ASSERT(v->getType() == VARIABLE);
+
+    //qDebug() << "Beginning of Logic_Term::substitute(LTerm v, LTerm t) for term " << name;
+    //qDebug() << "printDebug() before of Logic_Term::substitute(LTerm v, LTerm t)";
+    //printDebug();
 
     QString variableName = v->toString();
     //qDebug() << "Logic_Term::substitute with term " << t->toString() << " and var " << variableName << " in term " << toString();
@@ -176,65 +193,77 @@ void Logic_Term::substitute(LTerm v, LTerm t){
         break;
     case(FUNCTION):
         if(freeVariables.contains(variableName)){
-            for(LTerm term : freeVariables[variableName]){
-                term->substitute(t);
-                addVariables(term);
+            //qDebug() << "This functional term indeed containts the variable " << variableName;
+            for(LTerm term : body){
+                term->substitute(v,t);
             }
+            buildName();
+            //buildFreeVariables(); // More efficient to do the operations below
             freeVariables.remove(variableName);
+            addFreeVariables(t);
 
-            isNameCorrect = false;
+            //qDebug() << "new name is " << toString();
         }
         break;
     }
+
+    //qDebug() << "printDebug() after of Logic_Term::substitute(LTerm v, LTerm t)";
+    //printDebug();
+
 
 }
 
 void Logic_Term::substitute(LTerm term){
     Q_ASSERT(type == VARIABLE);
-    LTerm  t = term->clone();
-
-    name = t->toString();
-    type = t->getType();
+    //qDebug() << "Sub " << name << " with " << term->getName();
+    name = term->getName();
+    type = term->getType();
     switch(type){
     case(FUNCTION):
-        head = t->getHead();
-        body = t->getBody();
-        freeVariables = t->getFreeVariables();
+        head = Logic_Term::clone(term->getHead());
+        body = Logic_Term::cloneList(term->getBody());
+        //buildName();          // Useless, the name is guaranteed to be correct
+        buildFreeVariables();
         break;
     default:
         break;
     }
 
-    isNameCorrect = false;
-}
-
-
-QMap<QString, QList<LTerm> > Logic_Term::getFreeVariables(){
-    return freeVariables;
+    //qDebug() << "Sub finished";
+    //printDebug();
 }
 
 
 
-void Logic_Term::printDebug(){
-    qDebug() << "\nPrint Debug of Term : " << toString();
+
+
+
+void Logic_Term::printDebug(int nbTab){
+    QString start = "";
+    for(int i=0; i<nbTab; ++i){
+        start += "\t";
+    }
+    qDebug() << start << "Print Debug of Term : " << toString();
     switch(type){
+    case(CONSTANT):
+        qDebug() << start << "Constant " << toString();
+        break;
+    case(VARIABLE):
+        qDebug() << start << "Variable " << toString();
+        break;
     case(FUNCTION):
-        qDebug() << "It's a function";
-        for(QString var : freeVariables.keys()){
-            qDebug() << "\tVariable " << var << " appears " << freeVariables[var].size() << " times";
-            for(LTerm t : freeVariables[var]){
-                qDebug() << "\t\t" << t->toString() << "\t" << t.data();
-            }
+        qDebug() << start << "Function with head " << head->toString();
+
+        for(LTerm term : body){
+            term->printDebug(nbTab+1);
+        }
+
+        for(QString var : freeVariables){
+            qDebug() << start << "Free Variable " << var << " appears ";
         }
     default:
         break;
     }
 }
 
-Logic::LOGIC_KEYWORD Logic_Term::getKeyword(){
-    return keyword;
-}
 
-void Logic_Term::setKeyword(Logic::LOGIC_KEYWORD k){
-    keyword = k;
-}

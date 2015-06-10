@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
+QT       += core gui widgets testlib
 
 TARGET = DynamicSemanticNet
 TEMPLATE = app
@@ -29,15 +29,19 @@ SOURCES += main.cpp\
     Logic/logic_rule.cpp \
     Logic/logic.cpp \
     Logic/logic_term.cpp \
-    Unification/unification_equation.cpp \
-    Unification/unification_problem.cpp \
     parser.cpp \
     StateMachine/statemachine.cpp \
     StateMachine/proverstatemachine.cpp \
     StateMachine/machinestate.cpp \
     StateMachine/role.cpp \
     StateMachine/move.cpp \
-    knowledgebase.cpp
+    knowledgebase.cpp \
+    Unification/unification_term.cpp \
+    Unification/unification_relation.cpp \
+    UnitTest/logic_test.cpp \
+    UnitTest/unification_test.cpp \
+    UnitTest/knowledgebase_test.cpp \
+    Prover/gdlprover.cpp
 
 HEADERS  += widget.h \
     fileloader.h \
@@ -55,14 +59,18 @@ HEADERS  += widget.h \
     Logic/logic_rule.h \
     Logic/logic.h \
     Logic/logic_term.h \
-    Unification/unification_equation.h \
-    Unification/unification_problem.h \
     parser.h \
     StateMachine/statemachine.h \
     StateMachine/proverstatemachine.h \
     StateMachine/machinestate.h \
     StateMachine/role.h \
     StateMachine/move.h \
-    knowledgebase.h
+    knowledgebase.h \
+    Unification/unification_term.h \
+    Unification/unification_relation.h \
+    UnitTest/logic_test.h \
+    UnitTest/unification_test.h \
+    UnitTest/knowledgebase_test.h \
+    Prover/gdlprover.h
 
 FORMS    += widget.ui

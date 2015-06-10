@@ -1,7 +1,7 @@
 #ifndef UNIFICATION_PROBLEM_H
 #define UNIFICATION_PROBLEM_H
 
-#include "unification_equation.h"
+#include "unification_term.h"
 
 #include <QList>
 
@@ -12,30 +12,28 @@
  * It does so by matching terms with each other (Unification_Equation)
  */
 
-class Unification_Problem;
-typedef QSharedPointer<Unification_Problem> UProblem;
+class Unification_Relation;
+typedef QSharedPointer<Unification_Relation> URelation;
 
-class Unification_Problem
+class Unification_Relation
 {
 public:
-    Unification_Problem();
-    Unification_Problem(LRelation relation1, LRelation relation2);
-    Unification_Problem(QList<UEquation> eqs);
+    Unification_Relation();
+    Unification_Relation(LRelation relation1, LRelation relation2);
+    Unification_Relation(QList<UTerm> eqs);
 
-    void addEquation(UEquation eq);
+    void addEquation(UTerm eq);
 
     void solve();
-
-    void debug();
     void printSolverResults();
     void clear();
 
-    UEquation applySubstitution(UEquation e);
+    UTerm applySubstitution(UTerm e);
     LTerm applySubstitution(LTerm t);
     LRelation applySubstitution(LRelation r);
     LRule applySubstitution(LRule r);
 
-    void applySubstitutionInPlace(UEquation e);
+    void applySubstitutionInPlace(UTerm e);
     void applySubstitutionInPlace(LTerm t);
     void applySubstitutionInPlace(LRelation r);
     void applySubstitutionInPlace(LRule r);
@@ -43,12 +41,16 @@ public:
     // Should only be called after solve() is called
     bool isUnificationValid();
 
+    QList<UTerm> getSubstitutions();
+    QString toString();
+    QString getSolverMessage();
+
 
 private:
-    QList<UEquation> equationsOrigin;   // The original equations, nothing more
-    QList<UEquation> equations;         // The current set of equations being analyzed
-    QList<UEquation> equationsTemp;     // While we empty "equations" we fill equationsTemp. When "equations is empty" we do equations = equationsTemp
-    QList<UEquation> equationsChecked;  // When we are done (because we have obtained a substitution Variable -> something) we put it here
+    QList<UTerm> equationsOrigin;   // The original equations, nothing more
+    QList<UTerm> equations;         // The current set of equations being analyzed
+    QList<UTerm> equationsTemp;     // While we empty "equations" we fill equationsTemp. When "equations is empty" we do equations = equationsTemp
+    QList<UTerm> substitutions;  // When we are done (because we have obtained a substitution Variable -> something) we put it here
 
     bool isValid;
     QString solverMessage;

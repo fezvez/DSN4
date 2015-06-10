@@ -34,15 +34,17 @@ public:
     virtual ~Logic();
 
 public:
+    QString getName();
     virtual QString toString();
     virtual bool isGround() const = 0;
-    void setIsNameCorrect(bool b);
 
 protected:
     virtual void buildName();
-    QString name;
-    bool isNameCorrect;
 
+protected:
+    QString name;
+
+    // Static things
 public:
     static QMap<QString, LOGIC_QUALIFIER> mapString2GDLQualifier;
     static QMap<LOGIC_QUALIFIER, QString> mapGDLQualifier2String;

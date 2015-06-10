@@ -23,42 +23,47 @@ public:
     Logic_Term(const QString & s, LOGIC_TERM_TYPE t);
     Logic_Term(LTerm head, QList<LTerm> body);
 
+    static LTerm clone(LTerm term);
+    static QList<LTerm> cloneList(QList<LTerm> list);
+
     bool operator==(Logic_Term & t);
     bool operator!=(Logic_Term & t);
-
-    QString toString();
-    LTerm clone() const;
-    bool isGround() const;
 
     LOGIC_TERM_TYPE getType();
     LTerm getHead();
     QList<LTerm> getBody();
-    QMap<QString, QList<LTerm> > getFreeVariables();
-
-
     Logic::LOGIC_KEYWORD getKeyword();
     void setKeyword(Logic::LOGIC_KEYWORD k);
+    QSet<QString> getFreeVariables();
+
+    QString toString();
+    bool isGround() const;
 
     void substitute(LTerm v, LTerm t);
 
 private:
-    void setup();
-    void addVariables(LTerm t);
-    void addSingleVariable(LTerm t);
+    void buildFreeVariables();
+    void addFreeVariables(LTerm term);
+
+public:
     void buildName();
+    QString rebuildName();
 
-
-    void substitute(LTerm term);
+    void substitute(LTerm term);            // Only if type == VARIABLE
 
 private:
     LOGIC_TERM_TYPE type;
     Logic::LOGIC_KEYWORD keyword;
+
+
+    // Only used for functions
     LTerm head;
     QList<LTerm> body;
-    QMap<QString, QList<LTerm> > freeVariables;
+    QSet<QString> freeVariables;
+
 
 public:
-    void printDebug();
+    void printDebug(int nbTab = 0);
 };
 
 #endif // LOGIC_TERM_H

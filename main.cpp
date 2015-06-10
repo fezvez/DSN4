@@ -4,6 +4,12 @@
 #include <algorithm>
 #include <string>
 #include <iostream>
+
+#include "UnitTest/logic_test.h"
+#include "UnitTest/unification_test.h"
+#include "UnitTest/knowledgebase_test.h"
+
+
 #include "tree.hh"
 using namespace std;
 
@@ -43,6 +49,17 @@ void bla(){
     }
 }
 
+void unitTest(int argc, char *argv[]){
+    Logic_Test logicTest;
+    QTest::qExec(&logicTest, argc, argv);
+
+    Unification_Test unificationTest;
+    QTest::qExec(&unificationTest, argc, argv);
+
+    KnowledgeBase_Test knowledgeBaseTest;
+    QTest::qExec(&knowledgeBaseTest, argc, argv);
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -51,6 +68,7 @@ int main(int argc, char *argv[])
     w.show();
 
     //bla();
+    unitTest(argc, argv);
 
     return a.exec();
 }

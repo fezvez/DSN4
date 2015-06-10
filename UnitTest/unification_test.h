@@ -1,12 +1,20 @@
 #ifndef UNIFICATION_TEST_H
 #define UNIFICATION_TEST_H
 
+#include <QtTest/QtTest>
+#include <QObject>
 
-class unification_test
+#include "../Unification/unification_relation.h"
+
+class Unification_Test : public QObject
 {
-public:
-    unification_test();
-    ~unification_test();
+    Q_OBJECT
+private slots:
+    void toUpper();
+
+    void unificationRelation_1();
+    void unificationRelation_2();
+
 };
 
 #endif // UNIFICATION_TEST_H

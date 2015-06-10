@@ -14,7 +14,7 @@
 #include <QDebug>
 #include <QTextCursor>
 
-#include "Unification/unification_problem.h"
+#include "Unification/unification_relation.h"
 
 //
 Widget::Widget(QWidget *parent) :
@@ -164,7 +164,7 @@ void Widget::initialize(){
 
     Logic::init();
     parser = PParser(new Parser(this));
-    parser->debugKB();
+    //parser->debugKB();
     //propnet = PPropNet(new PropNet(this));
 
     //connect(this, SIGNAL(kifProcessed(QStringList)), player.data(), SLOT(updateKif(QStringList)));

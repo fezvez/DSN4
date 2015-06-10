@@ -102,6 +102,11 @@ protected:
     LRule buildSkolemRule(LRule originalRule, LRule ruleFromKB);
     bool isRelationValid(LRelation r);
 
+    QList<LRelation> evaluate2(LRelation r);
+    QList<LRule> ruleSubstitution2(LRule rule);
+
+
+
 private:
     // The only really important thing for evaluation
     // Usually everything except base, init, input and does
@@ -122,15 +127,7 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-    /**
+  /**
   * All the knowledge base, indexed by the object constant at the very "start"
   */
 

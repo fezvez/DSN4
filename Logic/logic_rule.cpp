@@ -48,19 +48,17 @@ void Logic_Rule::buildName(){
         name = name + " " + body[i]->toString();
     }
     name = name + ")";
-
-    isNameCorrect = true;
 }
 
 
 QSet<QString> Logic_Rule::buildFreeVariables(){
     freeVariables.clear();
 
-    QSet<QString> fVHead = head->buildFreeVariables();
+    QSet<QString> fVHead = head->getFreeVariables();
     freeVariables += fVHead;
 
     for(LRelation relation: body){
-        QSet<QString> fV = relation->buildFreeVariables();
+        QSet<QString> fV = relation->getFreeVariables();
         freeVariables += fV;
     }
     return freeVariables;
@@ -75,26 +73,25 @@ void Logic_Rule::substitute(LTerm v, LTerm t){
             relation->substitute(v, t);
         }
 
+        buildName();
+
         // Update freeVariables
         freeVariables.remove(variableName);
-
-        switch(t->getType()){
-        case(VARIABLE):
-            freeVariables << t->toString();
-            break;
-        case(FUNCTION):
-            for(QString s : t->getFreeVariables().keys()){
-                freeVariables << s; // Insert s if it isn't there already
-            }
-            break;
-        default:
-            break;
-        }
-
-        isNameCorrect = false;
+        addFreeVariables(t);
     }
+}
 
-
+void Logic_Rule::addFreeVariables(LTerm term){
+    switch(term->getType()){
+    case(VARIABLE):
+        freeVariables << term->toString();
+        break;
+    case(FUNCTION):
+            freeVariables += term->getFreeVariables();
+        break;
+    default:
+        break;
+    }
 }
 
 LRelation Logic_Rule::getHead(){

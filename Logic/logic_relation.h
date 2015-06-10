@@ -20,17 +20,22 @@ public:
     LTerm getHead();
     QList<LTerm> getBody();
     Logic::LOGIC_QUALIFIER getQualifier();
-    void setQualifier(Logic::LOGIC_QUALIFIER q);
+    void setQualifier(Logic::LOGIC_QUALIFIER q); // Exclusively used to remove the init qualifier
     bool isNegation();
-
+    void setNegation(bool b);
     QSet<QString> getFreeVariables();
-    QSet<QString> buildFreeVariables();
+
+
+
     void substitute(LTerm v, LTerm t);
+
 
 
 
 private:
     void buildName();
+    QSet<QString> buildFreeVariables();
+    void addFreeVariables(LTerm term);
 
 
 
@@ -39,6 +44,7 @@ protected:
     QList<LTerm> body;
     Logic::LOGIC_QUALIFIER qualifier;
     bool negation;
+
     QSet<QString> freeVariables;
 };
 

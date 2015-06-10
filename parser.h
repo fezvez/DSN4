@@ -2,8 +2,6 @@
 #define PARSER_H
 
 #include "logic/logic.h"
-
-
 #include "logic/logic_relation.h"
 #include "logic/logic_rule.h"
 
@@ -30,7 +28,9 @@ public:
 public slots:
     void loadKif(const QStringList &sl);
     LTerm parseTerm(QString term);
-    void debugKB();
+    LRelation parseRelation(QString relation);
+    QList<LRule> getRules();
+    QList<LRelation> getRelations();
 
 protected:
     void cleanFile();
@@ -79,11 +79,6 @@ protected:
 protected:
     QList<LRule> ruleList;
     QList<LRelation> relationList;
-
-    QMap<QString, LTerm> constantMap;
-    QSet<LTerm> objectConstantSet;
-    QSet<LTerm> functionConstantSet;
-    QSet<LTerm> relationConstantSet;
 };
 
 
