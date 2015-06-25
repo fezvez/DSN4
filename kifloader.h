@@ -11,6 +11,7 @@ class KifLoader : public QThread
 public:
     KifLoader(QObject *parent, QString & f);
     void run() Q_DECL_OVERRIDE;
+    QStringList runSynchronously();
 
 signals:
     void lineProcessed(const QString & s);

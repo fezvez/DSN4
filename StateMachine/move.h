@@ -10,13 +10,13 @@ typedef QSharedPointer<Move> PMove;
 class Move
 {
 public:
-    Move(LRelation m);
+    Move(LTerm m);
 
-    LRelation getMove();
+    LTerm getTerm();
     QString toString();
 
 private:
-    LRelation does;
+    LTerm move;
 };
 
 #endif // MOVE_H

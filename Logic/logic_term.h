@@ -21,6 +21,7 @@ class Logic_Term : public Logic
 {
 public:
     Logic_Term(const QString & s, LOGIC_TERM_TYPE t);
+    Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWORD k);
     Logic_Term(LTerm head, QList<LTerm> body);
 
     static LTerm clone(LTerm term);
@@ -44,6 +45,7 @@ public:
 private:
     void buildFreeVariables();
     void addFreeVariables(LTerm term);
+    void buildKeyword();
 
 public:
     void buildName();

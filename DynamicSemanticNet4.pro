@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets testlib
+QT       += core gui widgets testlib network
 
 TARGET = DynamicSemanticNet
 TEMPLATE = app
@@ -41,7 +41,15 @@ SOURCES += main.cpp\
     UnitTest/logic_test.cpp \
     UnitTest/unification_test.cpp \
     UnitTest/knowledgebase_test.cpp \
-    Prover/gdlprover.cpp
+    Prover/gdlprover.cpp \
+    UnitTest/gdlprover_test.cpp \
+    flags.cpp \
+    UnitTest/proverstatemachine_test.cpp \
+    Player/firstplayer.cpp \
+    Player/player.cpp \
+    Player/networking.cpp \
+    UnitTest/player_test.cpp \
+    Player/montecarlogamer.cpp
 
 HEADERS  += widget.h \
     fileloader.h \
@@ -71,6 +79,14 @@ HEADERS  += widget.h \
     UnitTest/logic_test.h \
     UnitTest/unification_test.h \
     UnitTest/knowledgebase_test.h \
-    Prover/gdlprover.h
+    Prover/gdlprover.h \
+    flags.h \
+    UnitTest/gdlprover_test.h \
+    UnitTest/proverstatemachine_test.h \
+    Player/firstplayer.h \
+    Player/player.h \
+    Player/networking.h \
+    UnitTest/player_test.h \
+    Player/montecarlogamer.h
 
 FORMS    += widget.ui

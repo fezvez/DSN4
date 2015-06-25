@@ -15,6 +15,7 @@
 #include <QTextCursor>
 
 #include "Unification/unification_relation.h"
+#include "Prover/gdlprover.h"
 
 //
 Widget::Widget(QWidget *parent) :
@@ -163,12 +164,12 @@ void Widget::initialize(){
     find();
 
     Logic::init();
-    parser = PParser(new Parser(this));
     //parser->debugKB();
     //propnet = PPropNet(new PropNet(this));
 
     //connect(this, SIGNAL(kifProcessed(QStringList)), player.data(), SLOT(updateKif(QStringList)));
-    connect(this, SIGNAL(kifProcessed(QStringList)), parser.data(), SLOT(loadKif(QStringList)));
+    //connect(this, SIGNAL(kifProcessed(QStringList)), this, SLOT(loadKif(QStringList)));
+    connect(this, SIGNAL(kifProcessed(QStringList)), this, SLOT(debugFile(QStringList)));
     connect(parser.data(), SIGNAL(output(QString)), textEditMain, SLOT(append(QString)));
     connect(parser.data(), SIGNAL(outputDebug(QString)), textEditDebug, SLOT(append(QString)));
 
@@ -176,6 +177,18 @@ void Widget::initialize(){
 
     regEndsInKif = QRegExp("\\.kif$");
 }
+
+void Widget::debugFile(QStringList stringList){
+
+    PParser parser = PParser(new Parser(this));
+    parser->loadKif(stringList);
+
+    GDLProver prover;
+    prover.setup(parser->getRelations(), parser->getRules());
+
+}
+
+
 
 /**
  * FILE LOGIC

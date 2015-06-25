@@ -18,7 +18,7 @@ public:
     Role(LTerm r);
     Role(const Role& r);
 
-    const LTerm getRole() const;
+    const LTerm getTerm() const;
     QString toString() const;
 
 private:

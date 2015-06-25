@@ -13,6 +13,7 @@ public:
     StateMachine();
 
     virtual void initialize(QList<LRelation> relations, QList<LRule> rules) = 0;
+    virtual void initialize(QString filename) = 0;
 
 
     virtual int getGoal(const MachineState& state, Role role) = 0;
@@ -22,6 +23,10 @@ public:
     virtual QList<Move> getLegalMoves(const MachineState& state, Role role) = 0;
     virtual MachineState getNextState(const MachineState& state, QList<Move> moves) = 0;
 
+
+    virtual Role getRoleFromString(QString s) = 0;
+    virtual Move getMoveFromString(QString s) = 0;
+    virtual QList<Move> getMovesFromString(QString s) = 0;
 
     /**
         public List<List<Move>> getLegalJointMoves(MachineState state) throws MoveDefinitionException

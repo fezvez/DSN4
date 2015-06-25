@@ -7,6 +7,16 @@
 #include "knowledgebase.h"
 #include "StateMachine/proverstatemachine.h"
 
+#include "flags.h"
+
+QRegExp Parser::ruleRegExp = QRegExp("<=");
+QRegExp Parser::whitespaceRegExp = QRegExp("\\s+");
+QRegExp Parser::wordRegExp = QRegExp("^\\S+$");
+QRegExp Parser::leftPar = QRegExp("^\\($");
+QRegExp Parser::rightPar = QRegExp("^\\)$");
+QRegExp Parser::inputRegExp = QRegExp("(\\(|\\s)input(?![\\w|_|-])");
+QRegExp Parser::nextRegExp = QRegExp("^next_");
+
 Parser::Parser(QObject *parent):
     QObject(parent)
 {
@@ -14,12 +24,7 @@ Parser::Parser(QObject *parent):
 }
 
 void Parser::createRegExp(){
-    ruleRegExp = QRegExp("<=");
-    whitespaceRegExp = QRegExp("\\s+");
-    leftPar = QRegExp("^\\($");
-    rightPar = QRegExp("^\\)$");
-    inputRegExp = QRegExp("(\\(|\\s)input(?![\\w|_|-])");
-    nextRegExp = QRegExp("^next_");
+
 }
 
 QList<LRule> Parser::getRules(){
@@ -34,7 +39,9 @@ QList<LRelation> Parser::getRelations(){
 
 void Parser::loadKif(const QStringList & sl){
     // Load file
+#ifndef QT_NO_DEBUG
     qDebug() << "\n\nLOAD KIF LINES";
+#endif
     rawKif = sl;
 
     cleanFile();
@@ -46,26 +53,73 @@ void Parser::loadKif(const QStringList & sl){
  * @brief Parser::cleanFile
  */
 void Parser::cleanFile(){
+#ifndef QT_NO_DEBUG
     printRawKif();
-    cleanLines();
+#endif
+    splitLines();
+    mergeLines();
     createDoeses();
+#ifndef QT_NO_DEBUG
     printCleanKif();
+#endif
     emit output(QString("Kif loaded and cleaned"));
 }
 
 void Parser::printRawKif(){
-    qDebug() << "Printing raw kif";
+    qDebug() << "\n\nPrinting raw kif";
     for(int i=0; i<rawKif.size(); ++i){
         qDebug() << rawKif[i];
     }
 }
+
+
+void Parser::splitLines(){
+    QStringList tempRawKif;
+    for(int i=0; i<rawKif.size(); ++i){
+        int nbLeftParenthesis = rawKif[i].count('(');
+        int nbRightParenthesis = rawKif[i].count(')');
+
+        if(nbLeftParenthesis != nbRightParenthesis){
+            tempRawKif.append(rawKif[i]);
+            continue;
+        }
+
+
+
+        QString line = rawKif[i];
+
+        int nbOpenParenthesis = 0;
+        int indexStart = 0;
+        for(int j = 0; j<line.size(); ++j){
+            if(line[j] == '('){
+                if(nbOpenParenthesis == 0){
+                    indexStart = j;
+                }
+                nbOpenParenthesis++;
+                continue;
+            }
+            if(line[j] == ')'){
+                nbOpenParenthesis--;
+
+                if(nbOpenParenthesis == 0){
+                    tempRawKif.append(line.mid(indexStart, j-indexStart+1));
+                }
+            }
+
+        }
+    }
+
+    rawKif = tempRawKif;
+}
+
+
 
 /**
  * @brief Parser::cleanLines
  * Make each relation/rule a one-liner
  */
 
-void Parser::cleanLines(){
+void Parser::mergeLines(){
     QString currentLine;
     bool isLineContinuation = false;
     int nbParenthesis, nbLeftParenthesis, nbRightParenthesis;
@@ -73,6 +127,7 @@ void Parser::cleanLines(){
     for(int i=0; i<rawKif.size(); ++i){
         nbLeftParenthesis = rawKif[i].count('(');
         nbRightParenthesis = rawKif[i].count(')');
+
         if(isLineContinuation){
             currentLine.append(' ');
         }
@@ -95,7 +150,6 @@ void Parser::cleanLines(){
 }
 
 void Parser::createDoeses(){
-    qDebug() << "Create does";
     QStringList doesLines;
     for(QString line : lineKif){
         if(line.contains(inputRegExp)){
@@ -108,7 +162,7 @@ void Parser::createDoeses(){
 }
 
 void Parser::printCleanKif(){
-    qDebug() << "\nKif processed in Parser!";
+    qDebug() << "\n\nKif processed in Parser!";
     qDebug() << "Printing clean kif";
     for(int i=0; i<lineKif.size(); ++i){
         qDebug() << lineKif[i];
@@ -117,7 +171,9 @@ void Parser::printCleanKif(){
 
 void Parser::generateHerbrand(){
     for(int i=0; i<lineKif.size(); ++i){
-        qDebug() << "\n\nProcessing line " << lineKif[i];
+#ifndef QT_NO_DEBUG
+        qDebug() << "Processing line " << lineKif[i];
+#endif
         processKifLine(lineKif[i]);
     }
     emit output(QString("Herbrand generated"));
@@ -152,7 +208,7 @@ void Parser::processKifLine(QString line){
 
 
 LRule Parser::processRule(QString line){
-    //qDebug() << "Rule " << line;
+//    qDebug() << "Rule " << line;
 
     QStringList splitLine = split(line);
 
@@ -288,10 +344,8 @@ QStringList Parser::split(QString line){
 
 
     QStringList rawSplit = line.split(whitespaceRegExp);
-    //     for(int i = 0; i<rawSplit.size(); ++i){
-    //         qDebug() << rawSplit[i].length() << "\t" << rawSplit[i];
-    //     }
 
+    // Either it's of the form "( blabla Ntimesblabla blabla )" or it's just "blabla"
     Q_ASSERT((leftPar.indexIn(rawSplit.first()) == 0 &&
               rightPar.indexIn(rawSplit.last()) == 0) ||
              (rawSplit.size() == 1));
@@ -309,6 +363,7 @@ QStringList Parser::split(QString line){
         }
         else if(rightPar.indexIn(rawSplit[i]) == 0){
             nbParenthesis--;
+            Q_ASSERT(nbParenthesis>=0);
         }
 
         currentPart.append(rawSplit[i]);
@@ -318,6 +373,59 @@ QStringList Parser::split(QString line){
             answer.append(currentPart.trimmed());
             currentPart.clear();
         }
+    }
+    return answer;
+}
+
+
+
+// Examples
+// ((role white) (role black))
+// (noop (move white up))
+QStringList Parser::splitSeveral(QString l){
+    // Trim parenthesis on both sides
+    QString line = l.mid(1, l.size()-2);
+    line.replace('(', " ( ");
+    line.replace(')', " ) ");
+    line = line.trimmed();
+
+    QStringList answer;
+    QString currentPart;
+
+
+    QStringList rawSplit = line.split(whitespaceRegExp);
+
+    if(rawSplit.size() == 1){
+        answer = rawSplit;
+        return answer;
+    }
+
+    int nbParenthesis = 0;
+
+    for(int i = 0 ; i<rawSplit.size(); ++i){
+
+        currentPart.append(rawSplit[i]);
+
+
+        if(leftPar.indexIn(rawSplit[i]) == 0){
+            nbParenthesis++;
+        }
+        else if(rightPar.indexIn(rawSplit[i]) == 0){
+            nbParenthesis--;
+            Q_ASSERT(nbParenthesis>=0);
+
+            if(nbParenthesis == 0){
+                answer.append(currentPart);
+                currentPart.clear();
+                continue;
+            }
+        }
+        else if(nbParenthesis==0 && wordRegExp.indexIn(rawSplit[i]) == 0){
+            answer.append(currentPart);
+            currentPart.clear();
+            continue;
+        }
+        currentPart.append(' ');
     }
     return answer;
 }

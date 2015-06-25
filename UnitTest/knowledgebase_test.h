@@ -12,6 +12,7 @@ private slots:
     void toUpper();
 
     void KB_01();
+    void KB_02();
 };
 
 #endif // KNOWLEDGEBASE_TEST_H

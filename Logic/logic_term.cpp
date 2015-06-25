@@ -6,6 +6,14 @@
 Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t){
     name = s;
     type = t;
+    if(t == LOGIC_TERM_TYPE::CONSTANT)
+        buildKeyword();
+}
+
+Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWORD k){
+    name = s;
+    type = t;
+    keyword = k;
 }
 
 Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
@@ -16,16 +24,19 @@ Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
 
     buildName();
     buildFreeVariables();
-
+    keyword = LOGIC_KEYWORD::NO_KEYWORD;
 }
 
+void Logic_Term::buildKeyword(){
+    keyword = Logic::getGDLKeywordFromString(name);
+}
 
 LTerm Logic_Term::clone(LTerm term){
     switch(term->getType()){
     case(CONSTANT):
         return term;
     case(VARIABLE):
-        return LTerm(new Logic_Term(term->getName(), LOGIC_TERM_TYPE::VARIABLE));
+        return LTerm(new Logic_Term(term->getName(), LOGIC_TERM_TYPE::VARIABLE, LOGIC_KEYWORD::NO_KEYWORD));
     case(FUNCTION):{
         if(term->isGround()){
             return term;

@@ -44,6 +44,7 @@ private slots:
     void browse();
     void find();
     void openFileOfItem(int row, int column);
+    void debugFile(QStringList stringList);
 
 
 private:
@@ -86,6 +87,7 @@ private:
 private:
     void setUpLayout();
     void initialize();
+
 
     QStringList findFiles(const QStringList &files, const QString &text);
     void showFiles(const QStringList &files);

@@ -1,16 +1,17 @@
 #include "move.h"
 
-Move::Move(LRelation m)
+Move::Move(LTerm m)
 {
-    does = m;
+    move = m;
 }
 
-LRelation Move::getMove(){
-    return does;
+LTerm Move::getTerm(){
+    return move;
 }
 
 QString Move::toString(){
     QString answer;
     answer += "Move : ";
-    answer += does->toString();
+    answer += move->toString();
+    return answer;
 }

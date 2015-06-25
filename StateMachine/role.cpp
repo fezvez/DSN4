@@ -1,5 +1,7 @@
 #include "role.h"
 
+#include <QDebug>
+
 Role::Role(){
 
 }
@@ -10,10 +12,10 @@ Role::Role(LTerm r)
 }
 
 Role::Role(const Role& r){
-    role = r.getRole();
+    role = r.getTerm();
 }
 
-const LTerm Role::getRole() const{
+const LTerm Role::getTerm() const{
     return role;
 }
 

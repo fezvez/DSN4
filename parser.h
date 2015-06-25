@@ -33,9 +33,12 @@ public slots:
     QList<LRelation> getRelations();
 
 protected:
+    void splitLines();
+    void mergeLines();
     void cleanFile();
     void generateHerbrand();
 
+public:
 
 
 signals:
@@ -60,21 +63,25 @@ private:
     LTerm processFunction(QString line);
 
 
-private:
+public:
     // Helper function
-    QStringList split(QString line);
+    static QStringList split(QString line);
+    static QStringList splitSeveral(QString lines);
+
 
 
 protected:
     QStringList rawKif;
     QStringList lineKif;
 
-    QRegExp ruleRegExp;
-    QRegExp whitespaceRegExp;
-    QRegExp leftPar;
-    QRegExp rightPar;
-    QRegExp inputRegExp;
-    QRegExp nextRegExp;
+public:
+    static QRegExp ruleRegExp;
+    static QRegExp whitespaceRegExp;
+    static QRegExp wordRegExp;
+    static QRegExp leftPar;
+    static QRegExp rightPar;
+    static QRegExp inputRegExp;
+    static QRegExp nextRegExp;
 
 protected:
     QList<LRule> ruleList;
