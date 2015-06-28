@@ -4,8 +4,6 @@
 #include <QStringBuilder>
 #include <QtCore>
 
-#include "knowledgebase.h"
-#include "StateMachine/proverstatemachine.h"
 
 #include "flags.h"
 

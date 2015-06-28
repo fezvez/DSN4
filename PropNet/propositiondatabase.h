@@ -2,7 +2,8 @@
 #define PROPOSITIONDATABASE_H
 
 #include "proposition.h"
-#include "../GDL/gdl_constant.h"
+#include "../Logic/logic_term.h"
+#include "../Logic/logic_relation.h"
 
 #include <QMap>
 #include <QSet>
@@ -11,37 +12,38 @@
 class PropositionDatabase;
 typedef QSharedPointer<PropositionDatabase> PDatabase;
 
-class SubDatabase;
-typedef QSharedPointer<SubDatabase> PSDatabase;
+class RelationDatabase;
+typedef QSharedPointer<RelationDatabase> PRelationDatabase;
+
+// There is one subdatabase for each relation constant
+// For example, for all the legal propositions
+class RelationDatabase{
+public:
+    RelationDatabase(QString r);
+
+    QString getRelation();
+    void addProposition(PProposition prop);
+
+protected:
+    QMap<QString, PProposition> propositionsMap;
+    QList<PProposition> propositionsList;
+    QString relation;
+};
 
 class PropositionDatabase
 {
-
-
-    class SubDatabase{
-    public:
-        SubDatabase();
-
-        QString getCurrentString();
-        PProposition addProposition(QList<PConstant> prop);
-
-    protected:
-        QMap<PTerm, PProposition> propositionMap;
-        QMap<PTerm, PDatabase> databaseMap;
-
-        QString currentString;
-    };
-
 public:
     PropositionDatabase();
 
-    QString getCurrentString();
-    PProposition addProposition(QList<PConstant> prop);
-    void printAllPropositions();
+    void addProposition(PProposition prop);
 
 protected:
-    QMap<PConstant, PProposition> propositionMap;
-    QMap<PConstant, PSDatabase> databaseMap;
+    QMap<QString, PProposition> propositionsMap;
+    QMap<QString, PRelationDatabase> databaseMap;
+
+public:
+    void printAllPropositions();
+
 };
 
 #endif // PROPOSITIONDATABASE_H

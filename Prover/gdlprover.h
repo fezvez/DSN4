@@ -1,7 +1,7 @@
 #ifndef GDLPROVER_H
 #define GDLPROVER_H
 
-#include "../knowledgebase.h"
+#include "knowledgebase.h"
 
 
 class GDLProver : public KnowledgeBase

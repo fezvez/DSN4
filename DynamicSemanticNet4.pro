@@ -35,7 +35,6 @@ SOURCES += main.cpp\
     StateMachine/machinestate.cpp \
     StateMachine/role.cpp \
     StateMachine/move.cpp \
-    knowledgebase.cpp \
     Unification/unification_term.cpp \
     Unification/unification_relation.cpp \
     UnitTest/logic_test.cpp \
@@ -49,7 +48,11 @@ SOURCES += main.cpp\
     Player/player.cpp \
     Player/networking.cpp \
     UnitTest/player_test.cpp \
-    Player/montecarlogamer.cpp
+    Player/montecarlogamer.cpp \
+    Prover/propnetprover.cpp \
+    Prover/knowledgebase.cpp \
+    UnitTest/propnet_test.cpp \
+    UnitTest/unittest.cpp
 
 HEADERS  += widget.h \
     fileloader.h \
@@ -73,7 +76,6 @@ HEADERS  += widget.h \
     StateMachine/machinestate.h \
     StateMachine/role.h \
     StateMachine/move.h \
-    knowledgebase.h \
     Unification/unification_term.h \
     Unification/unification_relation.h \
     UnitTest/logic_test.h \
@@ -87,6 +89,10 @@ HEADERS  += widget.h \
     Player/player.h \
     Player/networking.h \
     UnitTest/player_test.h \
-    Player/montecarlogamer.h
+    Player/montecarlogamer.h \
+    Prover/propnetprover.h \
+    Prover/knowledgebase.h \
+    UnitTest/propnet_test.h \
+    UnitTest/unittest.h
 
 FORMS    += widget.ui

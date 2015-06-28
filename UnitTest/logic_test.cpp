@@ -25,7 +25,7 @@ void Logic_Test::termIsGround(){
     LTerm termFXY = LTerm(new Logic_Term(termF, body));
 
     body.clear();
-    body << termA << termY;
+    body << termA << termX;
     LTerm termFAX = LTerm(new Logic_Term(termF, body));
 
     body.clear();

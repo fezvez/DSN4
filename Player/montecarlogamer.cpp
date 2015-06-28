@@ -1,6 +1,6 @@
 #include "montecarlogamer.h"
 
-MonteCarloGamer::MonteCarloGamer(int p)
+MonteCarloGamer::MonteCarloGamer(int p) : Player(p)
 {
     stateMachine = new ProverStateMachine();
     playerName = "MCS_Player";

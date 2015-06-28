@@ -2,8 +2,11 @@
 
 #include <QDebug>
 
+ int Logic_Term::nbTerm = 0;
+
 // Note : ths constructor can only be called for Constant and Variable
 Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t){
+//    qDebug() << "Creation term " << nbTerm++ << "\t" << s;
     name = s;
     type = t;
     if(t == LOGIC_TERM_TYPE::CONSTANT)
@@ -11,6 +14,7 @@ Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t){
 }
 
 Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWORD k){
+//    qDebug() << "Creation term " << nbTerm++ << "\t" << s;
     name = s;
     type = t;
     keyword = k;
@@ -18,6 +22,8 @@ Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWOR
 
 Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
 {
+
+
     type = LOGIC_TERM_TYPE::FUNCTION;
     head = Logic_Term::clone(h);    // Could be head = h because it must be a CONSTANT
     body = Logic_Term::cloneList(b);
@@ -25,6 +31,8 @@ Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
     buildName();
     buildFreeVariables();
     keyword = LOGIC_KEYWORD::NO_KEYWORD;
+
+//    qDebug() << "Creation term " << nbTerm++ << "\t" << name;
 }
 
 void Logic_Term::buildKeyword(){

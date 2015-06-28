@@ -29,6 +29,7 @@ void KnowledgeBase_Test::KB_01(){
     KnowledgeBase KB;
     KB.setup(parser.getRelations(), parser.getRules());
 
+    qDebug() << "Setup done";
 
     LRelation relation1 = parser.parseRelation(QString("(f ?x)"));
     QCOMPARE(KB.evaluate(relation1).size(), 2);

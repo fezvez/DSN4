@@ -41,6 +41,8 @@ void Player_Test::randomPlayer(){
 
 //    std::chrono::milliseconds duration(2000);
 //    std::this_thread::sleep_for(duration);
+
+    delete player;
 }
 
 void Player_Test::doSomething(){

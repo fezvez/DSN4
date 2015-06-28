@@ -27,8 +27,6 @@ void ProverStateMachine::initialize(QString filename){
     buildGoalQueries();
     buildTerminalProposition();
     buildLegalQueries();
-
-    int a = 3;
 }
 
 

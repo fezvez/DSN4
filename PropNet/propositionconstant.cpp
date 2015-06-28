@@ -6,7 +6,7 @@ PropositionConstant::PropositionConstant(QString n):
 
 }
 
-PropositionConstant::PropositionConstant(PRelation relation):
+PropositionConstant::PropositionConstant(LRelation relation):
     Proposition(relation->toString())
 {
 

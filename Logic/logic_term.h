@@ -66,6 +66,8 @@ private:
 
 public:
     void printDebug(int nbTab = 0);
+
+    static int nbTerm;
 };
 
 #endif // LOGIC_TERM_H

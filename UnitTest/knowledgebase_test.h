@@ -4,7 +4,7 @@
 #include <QtTest/QtTest>
 #include <QObject>
 
-#include "../knowledgebase.h"
+#include "../Prover/knowledgebase.h"
 class KnowledgeBase_Test : public QObject
 {
     Q_OBJECT
