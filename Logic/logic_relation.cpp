@@ -55,6 +55,15 @@ bool Logic_Relation::isNegation(){
 
 void Logic_Relation::setNegation(bool b){
     negation = b;
+    buildName();
+}
+
+QString Logic_Relation::toStringWithNoQualifier(){
+    if(qualifier != Logic::LOGIC_QUALIFIER::NO_QUAL){
+    QString answer = name.mid(6, name.size()-7);
+    return answer;
+    }
+    return name;
 }
 
 QSet<QString> Logic_Relation::getFreeVariables(){
@@ -93,6 +102,41 @@ void Logic_Relation::buildName(){
     if(negation){
         name = QString("(not ") + name + ")";
     }
+}
+
+QString Logic_Relation::rebuildName(){
+    name = getHead()->rebuildName();
+    switch(body.size()){
+    case 0:
+        break;
+    default:
+        name = QString('(') + name + " " + body[0]->rebuildName();
+        for(int i=1; i<body.size(); ++i){
+            name = name + " " + body[i]->rebuildName();
+        }
+        name = name + ")";
+        break;
+    }
+
+    switch(qualifier){
+    case BASE:
+        name = QString("(base ") + name + ")";
+        break;
+    case TRUE:
+        name = QString("(true ") + name + ")";
+        break;
+    case INIT:
+        name = QString("(init ") + name + ")";
+        break;
+    default:
+        break;
+    }
+
+    if(negation){
+        name = QString("(not ") + name + ")";
+    }
+
+    return name;
 }
 
 

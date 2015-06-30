@@ -197,6 +197,7 @@ void Unification_Relation::printSolverResults(){
 void Unification_Relation::applySubstitutionInPlace(LTerm t){
     for(UTerm sub : substitutions){
         t->substitute(sub->getTerm1(), sub->getTerm2());
+//        t->buildName();
     }
 }
 
@@ -209,6 +210,7 @@ void Unification_Relation::applySubstitutionInPlace(LRelation r){
     for(LTerm term : r->getBody()){
         applySubstitutionInPlace(term);
     }
+//        r->buildName();
 }
 
 void Unification_Relation::applySubstitutionInPlace(LRule r){
@@ -216,6 +218,7 @@ void Unification_Relation::applySubstitutionInPlace(LRule r){
     for(LRelation relation : r->getBody()){
         applySubstitutionInPlace(relation);
     }
+//    r->buildName();
 
 }
 

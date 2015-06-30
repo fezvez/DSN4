@@ -10,6 +10,7 @@ class Propnet_Test: public QObject
     Q_OBJECT
 private slots:
     void stratum();
+    void stratum2();
 };
 
 #endif // PROPNET_TEST_H

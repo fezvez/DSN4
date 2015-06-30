@@ -1,17 +1,20 @@
 #include "propositionconstant.h"
 
-PropositionConstant::PropositionConstant(QString n):
-    Proposition(n)
+PropositionConstant::PropositionConstant(LRelation r, bool v):Proposition(r)
 {
+    value = v;
+}
+
+PropositionConstant::~PropositionConstant(){
 
 }
 
-PropositionConstant::PropositionConstant(LRelation relation):
-    Proposition(relation->toString())
-{
 
+
+LRelation PropositionConstant::getRelation(){
+    return relation;
 }
 
-bool PropositionConstant::isTrue() const{
-    return true;
+bool PropositionConstant::computeValue(){
+    return value;
 }

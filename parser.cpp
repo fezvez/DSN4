@@ -284,12 +284,12 @@ LTerm Parser::processTerm(QString line){
         if(splitLine[0][0] == QChar('?')){
             //qDebug() << "Variable " << splitLine[0];
             LTerm answer = LTerm(new Logic_Term(splitLine[0], VARIABLE));
-            return answer.staticCast<Logic_Term>();
+            return answer;
         }
         else{
             //qDebug() << "Constant " << splitLine[0];
             LTerm answer = LTerm(new Logic_Term(splitLine[0], CONSTANT));
-            return answer.staticCast<Logic_Term>();
+            return answer;
         }
     }
     else{

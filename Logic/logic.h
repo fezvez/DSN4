@@ -38,8 +38,10 @@ public:
     virtual QString toString();
     virtual bool isGround() const = 0;
 
+    virtual QString rebuildName() = 0;
+
 protected:
-    virtual void buildName();
+    virtual void buildName() = 0;
 
 protected:
     QString name;

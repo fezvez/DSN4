@@ -20,9 +20,6 @@ SOURCES += main.cpp\
     kifloader.cpp \
     dynamicsemanticnet.cpp \
     PropNet/proposition.cpp \
-    PropNet/propositionand.cpp \
-    PropNet/propositionor.cpp \
-    PropNet/propositionnot.cpp \
     PropNet/propositionconstant.cpp \
     PropNet/propositiondatabase.cpp \
     Logic/logic_relation.cpp \
@@ -52,7 +49,12 @@ SOURCES += main.cpp\
     Prover/propnetprover.cpp \
     Prover/knowledgebase.cpp \
     UnitTest/propnet_test.cpp \
-    UnitTest/unittest.cpp
+    UnitTest/unittest.cpp \
+    PropNet/component.cpp \
+    PropNet/transition.cpp \
+    PropNet/componentor.cpp \
+    PropNet/componentand.cpp \
+    PropNet/componentnot.cpp
 
 HEADERS  += widget.h \
     fileloader.h \
@@ -61,9 +63,6 @@ HEADERS  += widget.h \
     tree.hh \
     Trilogic.h \
     PropNet/proposition.h \
-    PropNet/propositionand.h \
-    PropNet/propositionor.h \
-    PropNet/propositionnot.h \
     PropNet/propositionconstant.h \
     PropNet/propositiondatabase.h \
     Logic/logic_relation.h \
@@ -93,6 +92,11 @@ HEADERS  += widget.h \
     Prover/propnetprover.h \
     Prover/knowledgebase.h \
     UnitTest/propnet_test.h \
-    UnitTest/unittest.h
+    UnitTest/unittest.h \
+    PropNet/component.h \
+    PropNet/transition.h \
+    PropNet/componentor.h \
+    PropNet/componentand.h \
+    PropNet/componentnot.h
 
 FORMS    += widget.ui

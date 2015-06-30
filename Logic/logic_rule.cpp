@@ -50,6 +50,25 @@ void Logic_Rule::buildName(){
     name = name + ")";
 }
 
+QString Logic_Rule::rebuildName(){
+
+    name = QString("(<= ") + head->rebuildName();
+    switch(body.size()){
+    case 0:
+        name = name + ")";
+        return name;
+    default:
+        break;
+    }
+    name = name + " " + body[0]->rebuildName();
+    for(int i=1; i<body.size(); ++i){
+        name = name + " " + body[i]->rebuildName();
+    }
+    name = name + ")";
+
+    return name;
+}
+
 
 QSet<QString> Logic_Rule::buildFreeVariables(){
     freeVariables.clear();

@@ -10,10 +10,16 @@ typedef QSharedPointer<PropositionConstant> PPropConst;
 class PropositionConstant : public Proposition
 {
 public:
-    PropositionConstant(QString n);
-    PropositionConstant(LRelation relation);
+    PropositionConstant(LRelation r, bool v = true);
+    virtual ~PropositionConstant();
+    LRelation getRelation();
 
-    bool isTrue() const;
+    // Virtual methods
+    bool computeValue();
+    QList<PProposition> getInputPropositions();
+
+protected:
+    LRelation relation;
 };
 
 #endif // PROPOSITIONCONSTANT_H

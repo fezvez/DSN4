@@ -22,6 +22,18 @@ QMap<QString, LTerm> KnowledgeBase::getConstantMap(){
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// CONSTRUCTOR, GETTERS, SETTERS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+QMap<LTerm, QList<LRule>> KnowledgeBase::getConstantToRuleMap(){
+    return constantToRuleMap;
+}
+
+QMap<LTerm, QList<LRelation>> KnowledgeBase::getConstantToRelationMap(){
+    return constantToRelationEvaluationMap;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// SETUP
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -521,7 +533,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
  * @param ruleFromKB
  * @return
  * We have the first relation of the body, and we want to substitute it with a rule in our KB
- * It's necessary to rename variables in the body of this rule to prevent name clashing
+ * It's necessary to rename variables in the body of this 2nd rule to prevent name clashing
  */
 LRule KnowledgeBase::buildSkolemRule(LRule originalRule, LRule ruleFromKB){
     LRule answer = ruleFromKB->clone();
@@ -664,7 +676,7 @@ void KnowledgeBase::generateStratum(){
     bool update = true;
     int nbStrongIteration = 0;
     
-    while(update && nbStrongIteration<1000){
+    while(update && nbStrongIteration<10000){
         update = false;
         nbStrongIteration++;
         for(LStratum stratum : stratumMap.values()){

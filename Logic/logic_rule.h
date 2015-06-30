@@ -22,10 +22,11 @@ public:
 
 
     void substitute(LTerm v, LTerm t);
-
+    void buildName();
+    QString rebuildName();
 
 private:
-    void buildName();
+
     QSet<QString> buildFreeVariables();
     void addFreeVariables(LTerm term);
 

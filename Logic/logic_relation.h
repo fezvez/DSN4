@@ -29,7 +29,8 @@ public:
 
     void substitute(LTerm v, LTerm t);
 
-
+    QString toStringWithNoQualifier();
+    QString rebuildName();
 
 
 private:

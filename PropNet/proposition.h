@@ -5,7 +5,8 @@
 #include <QString>
 #include <QList>
 
-#include "../Logic/logic_term.h"
+#include "component.h"
+#include "../Logic/logic_relation.h"
 
 /**
  * A proposition is a relation (relation constant + list of terms)
@@ -15,20 +16,25 @@
 class Proposition;
 typedef QSharedPointer<Proposition> PProposition;
 
-class Proposition
+class Proposition : public Component
 {
 public:
-    Proposition(QString n);
+    Proposition(LRelation r);
     virtual ~Proposition();
 
     QString getName() const;
-    QString getRelation() const;
-    virtual bool isTrue() const = 0;
+    LRelation getRelation() const;
+
+    bool computeValue();
+
+    bool hasInput();
+    PComponent getSingleInput();
+
+    QString debug();
 
 protected:
+    LRelation relation;
     QString name;
-    QString relation;
-
 };
 
 #endif // PROPOSITION_H

@@ -48,6 +48,9 @@ public:
     void setup(QList<LRelation> relations, QList<LRule> rules);
     QMap<QString, LTerm> getConstantMap();
 
+    QMap<LTerm, QList<LRule>> getConstantToRuleMap();
+    QMap<LTerm, QList<LRelation>> getConstantToRelationMap();
+
 protected:
     void storeConstants();
     void buildFullConstantMap();
@@ -122,6 +125,7 @@ protected:
 
     static int skolemNumber;
 
+    // Debug
 public:
     void printRuleEvaluation();
     void printRelationEvaluation();

@@ -22,24 +22,38 @@ public:
     RelationDatabase(QString r);
 
     QString getRelation();
-    void addProposition(PProposition prop);
+    void addProposition(PProposition prop);     // You need to be sure that the proposition is not already inside
+    QList<PProposition> getAllPropositions();       // propositionsMap.keys()
 
 protected:
     QMap<QString, PProposition> propositionsMap;
-    QList<PProposition> propositionsList;
-    QString relation;
+    QList<PProposition> propositionsList;       // propositionsMap.keys()
+    QString relation;                           // Just the relation constant
 };
 
 class PropositionDatabase
 {
 public:
     PropositionDatabase();
+    ~PropositionDatabase();
 
-    void addProposition(PProposition prop);
+    bool addProposition(PProposition prop);
+
+    void clear();
+
+    // mark
+    QList<PProposition> getPropositions(QString head);  // Can not insert
+    PRelationDatabase getRelationDatabase(QString head);
+
+    // mark cell 1 1
+    PProposition getProposition(LRelation relation);    // Can insert
+    PProposition getProposition(QString relation);      // Can not insert
+
+    QMap<QString, PProposition> getPropositionsMap();
 
 protected:
-    QMap<QString, PProposition> propositionsMap;
-    QMap<QString, PRelationDatabase> databaseMap;
+    QMap<QString, PProposition> propositionsMap;    // maps "line x" to its proposition
+    QMap<QString, PRelationDatabase> databaseMap;   // maps "line" to the DB containing "line x" and "line o"
 
 public:
     void printAllPropositions();

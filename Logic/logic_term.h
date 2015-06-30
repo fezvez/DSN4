@@ -46,9 +46,10 @@ private:
     void buildFreeVariables();
     void addFreeVariables(LTerm term);
     void buildKeyword();
+    void buildName();
 
 public:
-    void buildName();
+
     QString rebuildName();
 
     void substitute(LTerm term);            // Only if type == VARIABLE
