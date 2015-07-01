@@ -43,11 +43,10 @@ private:
     void loadState(const MachineState& state);
     void loadMoves(QList<Move> moves);
 
-private:
+protected:
 
     GDLProver prover;
-    MachineState initialState;
-    QVector<Role> roles;
+
 
     QMap<LTerm, LRelation> goalQueries;
     QMap<LTerm, LRelation> legalQueries;

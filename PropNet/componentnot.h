@@ -13,6 +13,8 @@ public:
     ~ComponentNot();
 
     bool computeValue();
+    QString debug();
+    QString getComponentDotName();
 };
 
 #endif // COMPONENTNOT_H

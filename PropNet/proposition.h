@@ -30,7 +30,9 @@ public:
     bool hasInput();
     PComponent getSingleInput();
 
+    QString printFullDebug();
     QString debug();
+    QString getComponentDotName();
 
 protected:
     LRelation relation;

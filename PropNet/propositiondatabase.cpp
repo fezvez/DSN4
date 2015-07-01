@@ -10,7 +10,7 @@ PropositionDatabase::PropositionDatabase()
 
 PropositionDatabase::~PropositionDatabase()
 {
-qDebug() << "~PropositionDatabase";
+
 }
 
 
@@ -20,33 +20,31 @@ void PropositionDatabase::clear(){
     databaseMap.clear();
 }
 
-bool PropositionDatabase::addProposition(PProposition prop){
-//    if(prop.dynamicCast<PropositionConst>)
+//bool PropositionDatabase::addProposition(PProposition prop){
+////    if(prop.dynamicCast<PropositionConst>)
 
-    // Is it already in the DB
-    QString fullName = prop->getName();
-    if(propositionsMap.contains(fullName)){
-        return false;
-    }
+//    // Is it already in the DB
+//    QString fullName = prop->getName();
+//    if(propositionsMap.contains(fullName)){
+//        return false;
+//    }
 
-    // Else, insert in the DB
-    LRelation relation = prop->getRelation();
-    QString relationName = relation->toString();
-    if(!databaseMap.contains(relationName)){
-        PRelationDatabase newDatabase = PRelationDatabase(new RelationDatabase(relationName));
-        databaseMap.insert(relationName, newDatabase);
-    }
+//    // Else, insert in the DB
+//    LRelation relation = prop->getRelation();
+//    QString relationName = relation->toString();
+//    if(!databaseMap.contains(relationName)){
+//        PRelationDatabase newDatabase = PRelationDatabase(new RelationDatabase(relationName));
+//        databaseMap.insert(relationName, newDatabase);
+//    }
 
-    PRelationDatabase db = databaseMap[relationName];
-    db->addProposition(prop);
-    propositionsMap.insert(fullName, prop);
-    return true;
-}
+//    PRelationDatabase db = databaseMap[relationName];
+//    db->addProposition(prop);
+//    propositionsMap.insert(fullName, prop);
+//    return true;
+//}
 
 PProposition PropositionDatabase::getProposition(LRelation relation){
     // Is it already in the DB
-
-
     QString fullName = relation->toStringWithNoQualifier();
     if(propositionsMap.contains(fullName)){
         return propositionsMap[fullName];
@@ -64,7 +62,7 @@ PProposition PropositionDatabase::getProposition(LRelation relation){
     db->addProposition(prop);
     propositionsMap.insert(fullName, prop);
 
-    qDebug() << "Getting proposition " << relation->toStringWithNoQualifier() << " results in insertion";
+//    qDebug() << "Getting proposition " << relation->toStringWithNoQualifier() << " results in insertion";
     return propositionsMap[fullName];
 }
 

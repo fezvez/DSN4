@@ -37,8 +37,7 @@ public:
     PropositionDatabase();
     ~PropositionDatabase();
 
-    bool addProposition(PProposition prop);
-
+//    bool addProposition(PProposition prop);
     void clear();
 
     // mark

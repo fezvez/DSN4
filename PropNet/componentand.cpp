@@ -21,3 +21,17 @@ bool ComponentAnd::computeValue(){
     return value;
 }
 
+QString ComponentAnd::debug(){
+    QString answer;
+    answer += "(AND";
+    for(PComponent component : inputs){
+        answer += " " + component->debug();
+    }
+    answer += ")";
+    return answer;
+}
+
+QString ComponentAnd::getComponentDotName(){
+    return QString("AND_");
+}
+

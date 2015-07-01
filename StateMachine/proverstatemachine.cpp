@@ -146,6 +146,8 @@ QList<Move> ProverStateMachine::getMovesFromString(QString s){
     return answer;
 }
 
+
+
 void ProverStateMachine::buildInitialState(){
     QMap<QString, LRelation> map = prover.getInitPropositions();
     QVector<LRelation> initialPropositions;

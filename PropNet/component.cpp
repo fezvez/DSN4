@@ -32,6 +32,6 @@ void Component::addInputs(QList<PComponent> l){
     inputs += l;
 }
 
-    void Component::setInputs(QList<PComponent> l){
-        inputs = l;
-    }
+void Component::setInputs(QList<PComponent> l){
+    inputs = l;
+}

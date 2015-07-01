@@ -42,17 +42,18 @@ void KnowledgeBase::setup(QList<LRelation> relations, QList<LRule> rules){
 #ifndef QT_NO_DEBUG
     qDebug() <<"\n\nKNOWLEDGE BASE SETUP";
 #endif
-    relationList.clear();
-    ruleList.clear();
-    for(LRelation relation : relations){
-        relationList.append(relation->clone());
-    }
-    for(LRule rule : rules){
-        ruleList.append(rule->clone());
-    }
+//    relationList.clear();
+//    ruleList.clear();
+//    for(LRelation relation : relations){
+//        relationList.append(relation->clone());
+//    }
+//    for(LRule rule : rules){
+//        ruleList.append(rule->clone());
+//    }
+    relationList = relations;
+    ruleList = rules;
     
-    
-    storeConstants();
+    storeConstants();   // Also cleans the rules and relations
     buildFullConstantMap();
     
     evaluationRules = ruleList;
@@ -256,6 +257,7 @@ void KnowledgeBase::buildArity(){
  * Debugging tool
  */
 void KnowledgeBase::checkArity(LRelation relation){
+//    qDebug() << "Cheack arity " << relation->toString();
     LTerm relationHead = relation->getHead();
     int ar = relation->getBody().size();
     Q_ASSERT(arity.contains(relationHead));
@@ -352,7 +354,7 @@ LTerm KnowledgeBase::manageObjectConstant(LTerm c){
 
 QList<LRelation> KnowledgeBase::evaluate(LRelation r){
 #ifndef QT_NO_DEBUG
-    qDebug() << "\nKnowledgeBase::evaluate(). Relation is : " << r->toString();
+    qDebug() << "KnowledgeBase::evaluate(). Relation is : " << r->toString();
 #endif
     LRelation relation = manageRelation(r);
     
@@ -409,9 +411,9 @@ QList<LRelation> KnowledgeBase::evaluate(LRelation r){
  *  - substitute it with a rule from constantToRuleEvaluationMap
  */
 QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
-#ifndef QT_NO_DEBUG
-    qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
-#endif
+//#ifndef QT_NO_DEBUG
+//    qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
+//#endif
     QList<LRule> answer;
     
     LRelation firstRelation = rule->getBody().first();

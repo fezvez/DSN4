@@ -23,3 +23,16 @@ bool ComponentOr::computeValue(){
     return value;
 }
 
+QString ComponentOr::debug(){
+    QString answer;
+    answer += "(OR";
+    for(PComponent component : inputs){
+        answer += " " + component->debug();
+    }
+    answer += ")";
+    return answer;
+}
+
+QString ComponentOr::getComponentDotName(){
+    return QString("OR_");
+}

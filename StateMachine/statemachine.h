@@ -28,6 +28,10 @@ public:
     virtual Move getMoveFromString(QString s) = 0;
     virtual QList<Move> getMovesFromString(QString s) = 0;
 
+protected:
+    MachineState initialState;
+    QVector<Role> roles;
+
     /**
         public List<List<Move>> getLegalJointMoves(MachineState state) throws MoveDefinitionException
         {

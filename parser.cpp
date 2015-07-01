@@ -38,7 +38,7 @@ QList<LRelation> Parser::getRelations(){
 void Parser::loadKif(const QStringList & sl){
     // Load file
 #ifndef QT_NO_DEBUG
-    qDebug() << "\n\nLOAD KIF LINES";
+    qDebug() << "\n\nPARSER LOAD KIF LINES";
 #endif
     rawKif = sl;
 
@@ -51,9 +51,9 @@ void Parser::loadKif(const QStringList & sl){
  * @brief Parser::cleanFile
  */
 void Parser::cleanFile(){
-#ifndef QT_NO_DEBUG
-    printRawKif();
-#endif
+//#ifndef QT_NO_DEBUG
+//    printRawKif();
+//#endif
     splitLines();
     mergeLines();
     createDoeses();
@@ -160,18 +160,20 @@ void Parser::createDoeses(){
 }
 
 void Parser::printCleanKif(){
-    qDebug() << "\n\nKif processed in Parser!";
-    qDebug() << "Printing clean kif";
+    qDebug() << "\n\nPrinting clean kif";
     for(int i=0; i<lineKif.size(); ++i){
         qDebug() << lineKif[i];
     }
 }
 
 void Parser::generateHerbrand(){
+    #ifndef QT_NO_DEBUG
+    qDebug() << "\n\nGenerate Herbrand";
+    #endif
     for(int i=0; i<lineKif.size(); ++i){
-#ifndef QT_NO_DEBUG
-        qDebug() << "Processing line " << lineKif[i];
-#endif
+
+//        qDebug() << "Processing line " << lineKif[i];
+
         processKifLine(lineKif[i]);
     }
     emit output(QString("Herbrand generated"));
@@ -238,6 +240,7 @@ LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool i
     Logic::LOGIC_QUALIFIER qualifier = Logic::getGDLQualifierFromString(splitLine[0]);
     //qDebug() << "Qualifier is : " << Logic::getStringFromGDLQualifier(qualifier);
 
+    // Base / Init / True
     if(qualifier != Logic::LOGIC_QUALIFIER::NO_QUAL){
         Q_ASSERT(splitLine.size() == 2);
         LRelation relation = processRelation(splitLine[1], qualifier, isNegative, isNext);
@@ -257,6 +260,24 @@ LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool i
     }
 
     // We are none of : next not base init true
+
+    // Special treatment for base init true with only one argument like (base 1)
+    if(q != Logic::LOGIC_QUALIFIER::NO_QUAL && splitLine.size() == 1){
+        LTerm head = LTerm(new Logic_Term("", CONSTANT));
+        QList<LTerm> body;
+        body.append(processTerm(splitLine[0]));
+        answer = LRelation(new Logic_Relation(head, body, q, isNegative));
+        return answer;
+    }
+
+    // Special treatment for next with only one argument like (next 1)
+    if(isNext &&  splitLine.size() == 1){
+        LTerm head = LTerm(new Logic_Term("next_", CONSTANT));
+        QList<LTerm> body;
+        body.append(processTerm(splitLine[0]));
+        answer = LRelation(new Logic_Relation(head, body, q, isNegative));
+        return answer;
+    }
 
     // Special treatment for next
     QString relationConstant = splitLine[0];

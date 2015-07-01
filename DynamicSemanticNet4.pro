@@ -51,10 +51,10 @@ SOURCES += main.cpp\
     UnitTest/propnet_test.cpp \
     UnitTest/unittest.cpp \
     PropNet/component.cpp \
-    PropNet/transition.cpp \
     PropNet/componentor.cpp \
     PropNet/componentand.cpp \
-    PropNet/componentnot.cpp
+    PropNet/componentnot.cpp \
+    StateMachine/propnetstatemachine.cpp
 
 HEADERS  += widget.h \
     fileloader.h \
@@ -94,9 +94,9 @@ HEADERS  += widget.h \
     UnitTest/propnet_test.h \
     UnitTest/unittest.h \
     PropNet/component.h \
-    PropNet/transition.h \
     PropNet/componentor.h \
     PropNet/componentand.h \
-    PropNet/componentnot.h
+    PropNet/componentnot.h \
+    StateMachine/propnetstatemachine.h
 
 FORMS    += widget.ui

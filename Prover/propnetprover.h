@@ -16,18 +16,42 @@ public:
 
     void generatePropnet();
     void cleanPropnet();
-    void debug();
+    bool cleanPropnetIteration();
 
     bool addProposition(LRelation relation);
 
     QList<LRule> getGrounding(LRule rule);
     bool addRuleToDatabase(LRule);
 
-    void toFile(QString filename);
+    void buildComponents();
+    QList<PComponent> getSubComponents(PComponent component);
 
 protected:
     PDatabase propositionDatabase;
     QSet<QString> alreadyInDatabase;
+    QList<PComponent> components;
+
+    // Query solver
+public:
+    PProposition getPropositionFromString(QString s);
+    void loadPropnetBasePropositions(QVector<LRelation> basePropositions);
+protected:
+
+
+
+    // To file
+public:
+    void toFile(QString filename);
+
+
+protected:
+    int getIndexDot(PComponent c);
+    QMap<PComponent, int> indexDotMap;
+    int indexDot;
+
+    // Misc
+public:
+        void debug();
 };
 
 #endif // PROPNETPROVER_H

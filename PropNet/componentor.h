@@ -14,6 +14,8 @@ public:
     ~ComponentOr();
 
     bool computeValue();
+    QString debug();
+    QString getComponentDotName();
 };
 
 #endif // COMPONENTOR_H

@@ -21,6 +21,8 @@ public:
     void setInputs(QList<PComponent> l);
 
     virtual bool computeValue() = 0;
+    virtual QString debug() = 0;
+    virtual QString getComponentDotName() = 0;
 
 protected:
     bool value;

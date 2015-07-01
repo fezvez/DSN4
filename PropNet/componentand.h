@@ -13,6 +13,8 @@ public:
     ~ComponentAnd();
 
     bool computeValue();
+    QString debug();
+    QString getComponentDotName();
 };
 
 #endif // COMPONENTAND_H

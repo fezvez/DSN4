@@ -39,24 +39,26 @@ PComponent Proposition::getSingleInput(){
     return inputs[0];
 }
 
-QString Proposition::debug(){
+QString Proposition::printFullDebug(){
     QString answer;
     answer += "Debug proposition " + name;
     if(!hasInput()){
         answer += " with no input";
         return answer;
     }
+    answer += "\n" + name + " :- ";
 
-    PComponent orComponent = inputs[0];
+    for(PComponent component : inputs){
 
-    for(PComponent andComponent : orComponent->getInputs()){
-        answer += "\n" + name + " :- ";
-        for(PComponent prop : andComponent->getInputs()){
-            PProposition p = prop.dynamicCast<Proposition>();
-            if(p){
-                answer += p->getName() + " & ";
-            }
-        }
+        answer += component->debug();
     }
     return answer;
+}
+
+QString Proposition::debug(){
+    return name;
+}
+
+QString Proposition::getComponentDotName(){
+    return QString("PROPOSITION_");
 }

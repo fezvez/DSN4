@@ -60,7 +60,7 @@ void ProverStateMachine_Test::connectionTestGame(){
     ProverStateMachine psm;
 
     // Tests if the PSM supports loading and unloading
-    for(int i = 0; i<10; ++i){
+    for(int i = 0; i<3; ++i){
 
         {
             QString filename = "connectionTestGame.kif";

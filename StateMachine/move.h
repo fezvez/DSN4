@@ -5,6 +5,9 @@
 
 #include "../Logic/logic_relation.h"
 
+// This is player agnostic
+// It's just a term
+
 class Move;
 typedef QSharedPointer<Move> PMove;
 class Move
