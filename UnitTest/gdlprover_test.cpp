@@ -19,7 +19,7 @@ void GDLProver_Test::Prover_01(){
 
     qDebug() << "Current directory " << QDir::current();
     GDLProver prover;
-    prover.loadKifFile("../../../tictactoe.kif");
+    prover.loadKifFile("../../../../tictactoe.kif");
 
     QCOMPARE(prover.getInitPropositions().size(), 10);
     QCOMPARE(prover.getRoles().size(), 2);

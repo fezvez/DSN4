@@ -62,11 +62,14 @@ void Logic_Relation::setNegation(bool b){
 }
 
 QString Logic_Relation::toStringWithNoQualifier(){
-    if(qualifier != Logic::LOGIC_QUALIFIER::NO_QUAL){
-    QString answer = name.mid(6, name.size()-7);
-    return answer;
+    QString answer = name;
+    if(negation){
+        answer = answer.mid(5, answer.size()-6);
     }
-    return name;
+    if(qualifier != Logic::LOGIC_QUALIFIER::NO_QUAL){
+        answer = answer.mid(6, answer.size()-7);
+    }
+    return answer;
 }
 
 QSet<QString> Logic_Relation::getFreeVariables(){

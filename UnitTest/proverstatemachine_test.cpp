@@ -118,7 +118,7 @@ void ProverStateMachine_Test::connectionTestGame(){
 
 void ProverStateMachine_Test::tictactoe(){
     ProverStateMachine psm;
-    psm.initialize("../../../tictactoe.kif");
+    psm.initialize("../../../../tictactoe.kif");
 
     MachineState initialState = psm.getInitialState();
     QCOMPARE(initialState.getContents().size(), 10);

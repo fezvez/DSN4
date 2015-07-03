@@ -50,6 +50,8 @@ public:
 
     QMap<QString, PProposition> getPropositionsMap();
 
+    bool contains(QString proposition);
+
 protected:
     QMap<QString, PProposition> propositionsMap;    // maps "line x" to its proposition
     QMap<QString, PRelationDatabase> databaseMap;   // maps "line" to the DB containing "line x" and "line o"

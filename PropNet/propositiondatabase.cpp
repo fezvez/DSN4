@@ -83,6 +83,10 @@ QMap<QString, PProposition> PropositionDatabase::getPropositionsMap(){
     return propositionsMap;
 }
 
+bool PropositionDatabase::contains(QString proposition){
+    return propositionsMap.contains(proposition);
+}
+
 
 PRelationDatabase PropositionDatabase::getRelationDatabase(QString head){
     if(!databaseMap.contains(head)){

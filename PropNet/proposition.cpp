@@ -7,6 +7,7 @@ Proposition::Proposition(LRelation r):
     relation(r)
 {
     Q_ASSERT(relation->isGround());
+    Q_ASSERT(!relation->isNegation());
     name = relation->toStringWithNoQualifier();
     value = true;
 }

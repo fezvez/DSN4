@@ -149,13 +149,12 @@ void PropnetStateMachine_Test::connectionTestGameMC(){
 
 void PropnetStateMachine_Test::tictactoe(){
     PropnetStateMachine psm;
-    psm.initialize("../../../tictactoe.kif");
+    psm.initialize("../../../../tictactoe.kif");
 
     bool diagonalX = psm.evaluate("(diagonal x)");
     QCOMPARE(diagonalX, false);
 
     MachineState initialState = psm.getInitialState();
-
 
 
     QVector<Role> roles = psm.getRoles();
@@ -188,6 +187,51 @@ void PropnetStateMachine_Test::tictactoe(){
     bool isCorrect = false;
     for(LRelation relation : nextState.getContents()){
         if(relation->toString() == "(base (cell 1 1 x))"){
+            isCorrect = true;
+        }
+    }
+    QVERIFY(isCorrect);
+}
+
+void PropnetStateMachine_Test::connectfour(){
+    PropnetStateMachine psm;
+    psm.initialize("../../../../connectfour.kif");
+
+    MachineState initialState = psm.getInitialState();
+    QCOMPARE(initialState.getContents().size(), 1);
+
+    QVector<Role> roles = psm.getRoles();
+    for(Role role : roles){
+        int goalValue = psm.getGoal(initialState, role);
+        QCOMPARE(goalValue, 0);
+    }
+
+    QCOMPARE(psm.isTerminal(initialState), false);
+
+    for(Role role : roles){
+        QList<Move> legalMoves = psm.getLegalMoves(initialState, role);
+        if(role.getTerm()->toString() == QString("red")){
+            QCOMPARE(legalMoves.size(), 8);
+        }
+        else{
+            QCOMPARE(legalMoves.size(), 1);
+        }
+    }
+
+    Parser parser;
+    LTerm moveTerm1 = parser.parseTerm("(drop 6)");
+    LTerm moveTerm2 = parser.parseTerm("(noop)");
+
+    QList<Move> moves;
+    moves.append(Move(moveTerm1));
+    moves.append(Move(moveTerm2));
+
+    MachineState nextState = psm.getNextState(initialState, moves);
+    QCOMPARE(nextState.getContents().size(), 2);
+
+    bool isCorrect = false;
+    for(LRelation relation : nextState.getContents()){
+        if(relation->toString() == "(base (cell 6 1 red))"){
             isCorrect = true;
         }
     }

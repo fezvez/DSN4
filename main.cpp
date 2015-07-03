@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     UnitTest unitTest(argc, argv);
 //    FirstPlayer player;
-//    MonteCarloGamer player;
+    MonteCarloGamer player;
 
     return a.exec();
 }

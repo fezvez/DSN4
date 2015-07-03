@@ -48,7 +48,7 @@ bool PropnetStateMachine::isTerminal(const MachineState& state){
 
 int PropnetStateMachine::getGoal(const MachineState& state, Role role){
 #ifndef QT_NO_DEBUG
-    qDebug() << "\n\ngetGoal() " << state.toString() << " for Role " << role.toString();
+    qDebug() << "getGoal() with state : " << state.toString() << " for " << role.toString();
 #endif
 
     int answer;
@@ -58,12 +58,13 @@ int PropnetStateMachine::getGoal(const MachineState& state, Role role){
     QList<PProposition> goalPropositions = prover.getDatabase()->getPropositions("goal");
 
     for(PProposition goalProposition : goalPropositions){
-        //        qDebug() << "Evaluating goal proposition " << goalProposition->getName();
+//                qDebug() << "Evaluating goal proposition " << goalProposition->getName();
         if(goalProposition->getRelation()->getBody()[0] == role.getTerm()){
             prover.propnetEvaluate(goalProposition);
             if(goalProposition->getValue()){
 #ifndef QT_NO_DEBUG
                 qDebug() << "Goal value " << goalProposition->getRelation()->getBody()[1]->toString().toInt();
+                qDebug() << "\n";
 #endif
                 return goalProposition->getRelation()->getBody()[1]->toString().toInt();
             }

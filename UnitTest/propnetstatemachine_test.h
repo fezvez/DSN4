@@ -12,6 +12,7 @@ private slots:
     void connectionTestGame2();
     void connectionTestGameMC();
     void tictactoe();
+    void connectfour();
 
     };
 

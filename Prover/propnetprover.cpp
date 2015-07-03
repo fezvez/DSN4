@@ -33,6 +33,7 @@ void PropnetProver::setup(QList<LRelation> relations, QList<LRule> rules){
     KnowledgeBase::generateStratum();
 
     generatePropnet();
+    initializeSavedValuesMap();
     cleanPropnet();
     buildBaseDoesPropositions();
 }
@@ -80,7 +81,7 @@ void PropnetProver::generatePropnet(){
 
     propositionDatabase->clear();
     alreadyInDatabase.clear();
-//    components.clear();
+    //    components.clear();
 
 
     QList<QList<LTerm> > stratifiedConstants = getStratifiedConstants();
@@ -105,14 +106,6 @@ void PropnetProver::generatePropnet(){
                         //                        qDebug() << "Skipping init relation " << relation->toString();
                         continue;
                     }
-//                    if(relationConstant->toString() == "role"){
-//                        qDebug() << "GRUMPF role";
-//                        qDebug() << "Relation has role " << relation->getBody()[0]->toString() << " with address " << relation->getBody()[0].data();
-//                    }
-//                    if(relationConstant->toString() == "control"){
-//                        qDebug() << "GRUMPF control";
-//                        qDebug() << "Relation has role " << relation->getBody()[0]->toString() << " with address " << relation->getBody()[0].data();
-//                    }
                     propositionDatabase->getProposition(relation);
                 }
             }
@@ -165,11 +158,11 @@ void PropnetProver::generatePropnet(){
                         QList<LRule> groundedRules = getGrounding(rule);
                         //                        qDebug() << "Nb groundings : " << groundedRules.size();
                         for(LRule rule : groundedRules){
-//                            if(rule->getHead()->getHead()->toString() == "legal"){
-//                                qDebug() << "GNAAAR";
-//                                qDebug() << "\t\tGrounded rule " << rule->toString();
-//                                qDebug() << rule->getHead()->getBody()[0]->toString() << " address " << rule->getHead()->getBody()[0].data();
-//                            }
+                            //                            if(rule->getHead()->getHead()->toString() == "legal"){
+                            //                                qDebug() << "GNAAAR";
+                            //                                qDebug() << "\t\tGrounded rule " << rule->toString();
+                            //                                qDebug() << rule->getHead()->getBody()[0]->toString() << " address " << rule->getHead()->getBody()[0].data();
+                            //                            }
                             //                            qDebug() << "\t\tGrounded rule " << rule->toString();
                             bool updated = addRuleToDatabase(rule);
                             //                            qDebug() << "Updated "<< updated;
@@ -196,6 +189,28 @@ QList<LRule> PropnetProver::getGrounding(LRule rule){
     QList<LRule> answer;
 
     if(rule->isGround()){
+//        if(rule->getHead()->getHead()->toString() == "cellOpen"){
+//            qDebug() << " next_cellXYZ rule " << rule->toString();
+//        }
+        for(LRelation relation : rule->getBody()){
+            // Special case for distinct
+            if(relation->getHead()->toString() == "distinct"){
+                QList<LTerm> body = relation->getBody();
+                if(body[0]->toString() == body[1]->toString()){
+                    return answer;
+                }
+                continue;
+            }
+
+
+            QString shortName = relation->toStringWithNoQualifier();
+//            if(rule->getHead()->getHead()->toString() == "cellOpen"){
+//                qDebug() << " shortName " << shortName;
+//            }
+            if(!propositionDatabase->contains(shortName)){
+                return answer;
+            }
+        }
         answer.append(rule);
         return answer;
     }
@@ -278,10 +293,10 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
         }
         if(relation->getHead()->toString() == "distinct"){
             //            qDebug() << "It's distinct";
-            QList<LTerm> body = relation->getBody();
-            if(body[0]->toString() == body[1]->toString()){
-                return false;
-            }
+//            QList<LTerm> body = relation->getBody();
+//            if(body[0]->toString() == body[1]->toString()){
+//                return false;
+//            }
             continue;
         }
 
@@ -320,12 +335,17 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
 }
 
 
-
+void PropnetProver::initializeSavedValuesMap(){
+    hasCorrectSavedValue.clear();
+    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+        hasCorrectSavedValue[proposition] = false;
+    }
+}
 
 
 /***
- * CLEAN PROPNET
- */
+                                 * CLEAN PROPNET
+                                 */
 
 void PropnetProver::cleanPropnet(){
 #ifndef QT_NO_DEBUG
@@ -355,7 +375,7 @@ void PropnetProver::cleanPropnet(){
     buildComponents();
 
 #ifndef QT_NO_DEBUG
-        qDebug() << "CLEAN PROPNET ENDED";
+    qDebug() << "CLEAN PROPNET ENDED";
 
     for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
         if(!proposition->hasInput()){
@@ -444,8 +464,8 @@ PDatabase PropnetProver::getDatabase(){
 }
 
 /***
- * TO FILE
-*/
+                                 * TO FILE
+                                */
 void PropnetProver::toFile(QString filename){
     indexDot = 0;
     indexDotMap.clear();
@@ -507,13 +527,29 @@ int PropnetProver::getIndexDot(PComponent c){
 }
 
 /***
- * Give answers
- */
+                                 * Give answers
+                                 */
 PProposition PropnetProver::getPropositionFromString(QString s){
     return propositionDatabase->getProposition(s);
 }
 
 void PropnetProver::loadPropnetBasePropositions(QVector<LRelation> baseProp){
+    if(basePropositionsAlreadyLoaded.size() == baseProp.size()){
+        bool alreadyInMemory = true;
+        for(LRelation relation : baseProp){
+            if(!basePropositionsAlreadyLoaded.contains(relation->toStringWithNoQualifier())){
+                alreadyInMemory = false;
+                break;
+            }
+        }
+        if(alreadyInMemory){
+            return;
+        }
+    }
+
+
+
+
     clearBasePropositions();
     for(LRelation relation : baseProp){
         propositionDatabase->getProposition(relation->toStringWithNoQualifier())->setValue(true);
@@ -583,7 +619,7 @@ bool PropnetProver::propnetEvaluate(PProposition proposition){
 
 //    qDebug() << "propnetEvaluate : this proposition has inputs. Time to evaluate them";
     for(PProposition inputProposition : proposition->getInputPropositions()){
-//        qDebug() << "\tpropnetEvaluate : input proposition : " << inputProposition->getName();
+//                qDebug() << "\tpropnetEvaluate : input proposition : " << inputProposition->getName();
     }
     for(PProposition inputProposition : proposition->getInputPropositions()){
         propnetEvaluate(inputProposition);
@@ -601,8 +637,8 @@ bool PropnetProver::propnetEvaluate(PProposition proposition){
 
 
 /***
- * Misc
- */
+                                 * Misc
+                                 */
 
 void PropnetProver::debug(){
 
