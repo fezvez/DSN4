@@ -10,8 +10,10 @@ class ProverStateMachine_Test : public QObject
 private slots:
     void toUpper();
 
-    void tictactoe();
+
     void connectionTestGame();
+    void tictactoe();
+    void connectfour();
 };
 
 #endif // PROVERSTATEMACHINE_TEST_H

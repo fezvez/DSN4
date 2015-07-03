@@ -16,7 +16,7 @@ public:
     MachineState();
     MachineState(QVector<LRelation> c);
 
-    QString toString();
+    QString toString() const;
     const QVector<LRelation> getContents() const;
 
 private:

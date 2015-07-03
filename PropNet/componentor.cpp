@@ -14,12 +14,14 @@ ComponentOr::~ComponentOr()
 
 bool ComponentOr::computeValue(){
     for(PComponent component : inputs){
-        if(!component->getValue()){
-            value = false;
+        if(component->computeValue()){
+            value = true;
+//            qDebug() << "ComponentOr returns " << value;
             return value;
         }
     }
-    value = true;
+    value = false;
+//    qDebug() << "ComponentOr returns " << value;
     return value;
 }
 

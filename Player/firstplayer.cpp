@@ -1,10 +1,10 @@
 #include "firstplayer.h"
 
-
+#include "../StateMachine/propnetstatemachine.h"
 
 FirstPlayer::FirstPlayer(int p) : Player(p)
 {
-    stateMachine = new ProverStateMachine();
+    stateMachine = new PropnetStateMachine();
     playerName = "MyCppRandomPlayer";
     networking->playerName = this->playerName;
 }

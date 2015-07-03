@@ -14,8 +14,8 @@ void ProverStateMachine::initialize(QList<LRelation> relations, QList<LRule> rul
 
     buildInitialState();
     buildRoles();
-    buildGoalQueries();
     buildTerminalProposition();
+    buildGoalQueries();
     buildLegalQueries();
 }
 
@@ -59,13 +59,6 @@ bool ProverStateMachine::isTerminal(const MachineState& state){
     return true;
 }
 
-QVector<Role> ProverStateMachine::getRoles(){
-    return roles;
-}
-
-MachineState ProverStateMachine::getInitialState(){
-    return initialState;
-}
 
 QList<Move> ProverStateMachine::getLegalMoves(const MachineState& state, Role role){
     QList<Move> answer;
@@ -82,31 +75,7 @@ QList<Move> ProverStateMachine::getLegalMoves(const MachineState& state, Role ro
     return answer;
 }
 
-QList<Move> ProverStateMachine::getRandomLegalJointMove(const MachineState& state, Role role, Move move){
-    QList<Move> answer;
 
-    QString roleString = role.getTerm()->toString();
-    for(Role r : roles){
-        if(r.getTerm()->toString() == roleString){
-            answer.append(move);
-            continue;
-        }
-
-        QList<Move> moves = getLegalMoves(state, r);
-        answer.append(moves[qrand()%(moves.size())]);
-    }
-    return answer;
-}
-
-QList<Move> ProverStateMachine::getRandomLegalJointMove(const MachineState& state){
-    QList<Move> answer;
-
-    for(Role r : roles){
-        QList<Move> moves = getLegalMoves(state, r);
-        answer.append(moves[qrand()%(moves.size())]);
-    }
-    return answer;
-}
 
 MachineState ProverStateMachine::getNextState(const MachineState& state, QList<Move> moves){
     loadState(state);
@@ -121,7 +90,7 @@ MachineState ProverStateMachine::getNextState(const MachineState& state, QList<M
         for(LRelation nextProposition : nextPropositions){
             QList<LTerm> body = nextProposition->getBody();
             LTerm head = mapNextToBase[nextProposition->getHead()];
-            nextState.append(prover.manageRelation(LRelation(new Logic_Relation(head, body))));
+            nextState.append(prover.manageRelation(LRelation(new Logic_Relation(head, body, Logic::LOGIC_QUALIFIER::BASE))));
         }
     }
 
@@ -159,6 +128,23 @@ void ProverStateMachine::buildInitialState(){
 
 #ifndef QT_NO_DEBUG
     qDebug() << "ProverStateMachine Initial state " << initialState.toString();
+#endif
+}
+
+void ProverStateMachine::buildTerminalProposition(){
+    QMap<QString, LTerm> constantMap = prover.getConstantMap();
+
+    if(!constantMap.contains("terminal")){
+        qDebug() << "No terminal";
+        return;
+    }
+    LTerm terminalTerm = constantMap.value("terminal");
+
+    LRelation terminalRelation = LRelation(new Logic_Relation(terminalTerm, QList<LTerm>()));
+    terminal = prover.manageRelation(terminalRelation);
+
+#ifndef QT_NO_DEBUG
+    qDebug() << "ProverStateMachine terminal proposition " << terminal->toString();
 #endif
 }
 
@@ -254,22 +240,7 @@ void ProverStateMachine::buildLegalQueries(){
     }
 }
 
-void ProverStateMachine::buildTerminalProposition(){
-    QMap<QString, LTerm> constantMap = prover.getConstantMap();
 
-    if(!constantMap.contains("terminal")){
-        qDebug() << "No terminal";
-        return;
-    }
-    LTerm terminalTerm = constantMap.value("terminal");
-
-    LRelation terminalRelation = LRelation(new Logic_Relation(terminalTerm, QList<LTerm>()));
-    terminal = prover.manageRelation(terminalRelation);
-
-#ifndef QT_NO_DEBUG
-    qDebug() << "ProverStateMachine terminal proposition " << terminal->toString();
-#endif
-}
 
 void ProverStateMachine::loadState(const MachineState& state){
     prover.loadTempRelations(state.getContents());
@@ -293,5 +264,5 @@ void ProverStateMachine::loadMoves(QList<Move> moves){
 }
 
 void ProverStateMachine::debug(){
-   qDebug() <<  "legalQueries is of size " << legalQueries.size();
+    qDebug() <<  "legalQueries is of size " << legalQueries.size();
 }

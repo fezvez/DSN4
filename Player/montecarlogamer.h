@@ -3,6 +3,7 @@
 
 #include "player.h"
 #include "../StateMachine/proverstatemachine.h"
+#include "../StateMachine/propnetstatemachine.h"
 
 class MonteCarloGamer : public Player
 {

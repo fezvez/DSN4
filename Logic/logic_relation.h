@@ -12,7 +12,7 @@ class Logic_Relation : public Logic
 public:
     Logic_Relation(LTerm h, QList<LTerm> b, Logic::LOGIC_QUALIFIER q = NO_QUAL, bool n = false);
 
-    LRelation clone();
+    static LRelation clone(LRelation relation);
 
     bool isGround() const;
 

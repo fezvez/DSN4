@@ -18,13 +18,8 @@ public:
 
     int getGoal(const MachineState& state, Role role);
     bool isTerminal(const MachineState& state);
-    QVector<Role> getRoles();
-    MachineState getInitialState();
     QList<Move> getLegalMoves(const MachineState& state, Role role);
     MachineState getNextState(const MachineState& state, QList<Move> moves);
-
-    QList<Move> getRandomLegalJointMove(const MachineState& state, Role role, Move move);
-    QList<Move> getRandomLegalJointMove(const MachineState& state);
 
 
     Role getRoleFromString(QString s);

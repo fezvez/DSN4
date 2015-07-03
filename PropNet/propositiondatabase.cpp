@@ -94,9 +94,9 @@ PRelationDatabase PropositionDatabase::getRelationDatabase(QString head){
 }
 
 void PropositionDatabase::printAllPropositions(){
-    qDebug() << "\n\nprintAllPropositions()";
+    qDebug() << "Print All Propositions in the propnet";
     for(QString string : propositionsMap.keys()){
-        qDebug() << "Proposition " << string;
+        qDebug() << "\tProposition " << string;
     }
 }
 

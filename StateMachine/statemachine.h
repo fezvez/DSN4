@@ -10,19 +10,21 @@
 class StateMachine
 {
 public:
-    StateMachine();
+//    StateMachine();
 
     virtual void initialize(QList<LRelation> relations, QList<LRule> rules) = 0;
     virtual void initialize(QString filename) = 0;
 
-
-    virtual int getGoal(const MachineState& state, Role role) = 0;
     virtual bool isTerminal(const MachineState& state) = 0;
-    virtual QVector<Role> getRoles() = 0;
-    virtual MachineState getInitialState() = 0;
+    virtual int getGoal(const MachineState& state, Role role) = 0;
     virtual QList<Move> getLegalMoves(const MachineState& state, Role role) = 0;
     virtual MachineState getNextState(const MachineState& state, QList<Move> moves) = 0;
 
+    virtual QVector<Role> getRoles();
+    virtual MachineState getInitialState();
+
+    QList<Move> getRandomLegalJointMove(const MachineState& state, Role role, Move move);
+    QList<Move> getRandomLegalJointMove(const MachineState& state);
 
     virtual Role getRoleFromString(QString s) = 0;
     virtual Move getMoveFromString(QString s) = 0;

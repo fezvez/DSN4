@@ -11,7 +11,7 @@ MachineState::MachineState(QVector<LRelation> c):
 
 }
 
-QString MachineState::toString(){
+QString MachineState::toString() const{
     QString answer;
     answer += "MachineState : ";
     for(LRelation relation : contents){

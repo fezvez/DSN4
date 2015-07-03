@@ -11,7 +11,7 @@ ComponentNot::~ComponentNot()
 }
 
 bool ComponentNot::computeValue(){
-    value = !(inputs[0]->getValue());
+    value = !(inputs[0]->computeValue());
     return value;
 }
 

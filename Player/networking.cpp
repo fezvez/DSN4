@@ -101,6 +101,8 @@ void Networking::receiveMessage(int indexOfTheSocket){
 }
 
 void Networking::processMessage(QString message, int index){
+    qint64 startTime = QDateTime::currentMSecsSinceEpoch();
+
     QStringList splitMessage = Parser::split(message);
 
     if(splitMessage.isEmpty()){
@@ -160,7 +162,7 @@ void Networking::processMessage(QString message, int index){
 
         player->initializeStateMachine(filename, playerRole);
         QString startclock = splitMessage[4];
-        qint64 timeout = QDateTime::currentMSecsSinceEpoch() + startclock.toInt()*1000;
+        qint64 timeout = startTime + startclock.toInt()*1000;
 
         QString playclockString = splitMessage[5];
         playclock = playclockString.toInt();
@@ -185,7 +187,7 @@ void Networking::processMessage(QString message, int index){
         }
 
         currentIndex = index;
-        qint64 timeout = QDateTime::currentMSecsSinceEpoch() + playclock*1000;
+        qint64 timeout = startTime + playclock*1000;
         emit emitPlay(splitMessage[2], timeout);
     }
 

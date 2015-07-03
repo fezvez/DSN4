@@ -22,8 +22,6 @@ Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWOR
 
 Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
 {
-
-
     type = LOGIC_TERM_TYPE::FUNCTION;
     head = Logic_Term::clone(h);    // Could be head = h because it must be a CONSTANT
     body = Logic_Term::cloneList(b);
@@ -49,6 +47,7 @@ LTerm Logic_Term::clone(LTerm term){
         if(term->isGround()){
             return term;
         }
+        // Rest assured, the head and body are cloned
         return LTerm(new Logic_Term(term->getHead(), term->getBody()));
         break;
     }
@@ -58,7 +57,7 @@ LTerm Logic_Term::clone(LTerm term){
 QList<LTerm> Logic_Term::cloneList(QList<LTerm> list){
     QList<LTerm> clonedBody;
     for(LTerm term : list){
-        clonedBody << term->clone(term);
+        clonedBody << Logic_Term::clone(term);
     }
     return clonedBody;
 }

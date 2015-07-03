@@ -15,25 +15,40 @@ public:
     virtual void initialize(QList<LRelation> relations, QList<LRule> rules);
     virtual void initialize(QString filename);
 
-
-    virtual int getGoal(const MachineState& state, Role role);
     virtual bool isTerminal(const MachineState& state);
-    virtual QVector<Role> getRoles();
-    virtual MachineState getInitialState();
+    virtual int getGoal(const MachineState& state, Role role);
     virtual QList<Move> getLegalMoves(const MachineState& state, Role role);
     virtual MachineState getNextState(const MachineState& state, QList<Move> moves);
-
 
     virtual Role getRoleFromString(QString s);
     virtual Move getMoveFromString(QString s);
     virtual QList<Move> getMovesFromString(QString s);
 
+    bool evaluate(QString s);
+
 protected:
     void loadState(const MachineState& state);
     void loadMoves(QList<Move> moves);
 
+    void buildInitialState();
+    void buildRoles();
+    void buildRoleIndex();
+    void buildTerminalProposition();
+    void buildNextRelationToBaseRelationMap();
+
+//    void buildGoalQueries();
+//    void buildLegalQueries();
+
+protected:
+    QMap<LTerm, int> roleIndex;
+    PProposition terminal;
+
+
+
 protected:
     PropnetProver prover;
+
+    QMap<PProposition, PProposition> mapNextRelationToBaseRelation;
 };
 
 #endif // PROPNETSTATEMACHINE_H

@@ -26,6 +26,8 @@ public:
     void buildComponents();
     QList<PComponent> getSubComponents(PComponent component);
 
+    PDatabase getDatabase();
+
 protected:
     PDatabase propositionDatabase;
     QSet<QString> alreadyInDatabase;
@@ -33,9 +35,23 @@ protected:
 
     // Query solver
 public:
+    bool propnetEvaluate(QString s);
+    bool propnetEvaluate(PProposition proposition);
     PProposition getPropositionFromString(QString s);
-    void loadPropnetBasePropositions(QVector<LRelation> basePropositions);
+    void loadPropnetBasePropositions(QVector<LRelation> baseProp);
+    void loadPropnetDoesPropositions(QVector<LRelation> doesProp);
+
 protected:
+    void buildBaseDoesPropositions();
+    void buildNextRelationToBaseRelationMap();
+
+    void clearBasePropositions();
+    void clearInputPropositions();
+
+
+protected:
+    QMap<QString, PProposition> basePropositions;
+    QMap<QString, PProposition> doesPropositions;
 
 
 
@@ -51,7 +67,7 @@ protected:
 
     // Misc
 public:
-        void debug();
+    void debug();
 };
 
 #endif // PROPNETPROVER_H

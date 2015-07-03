@@ -1,12 +1,13 @@
 #include "unittest.h"
 
-#include "UnitTest/logic_test.h"
-#include "UnitTest/unification_test.h"
-#include "UnitTest/knowledgebase_test.h"
-#include "UnitTest/gdlprover_test.h"
-#include "UnitTest/proverstatemachine_test.h"
-#include "UnitTest/player_test.h"
-#include "UnitTest/propnet_test.h"
+#include "logic_test.h"
+#include "unification_test.h"
+#include "knowledgebase_test.h"
+#include "gdlprover_test.h"
+#include "proverstatemachine_test.h"
+#include "player_test.h"
+#include "propnet_test.h"
+#include "propnetstatemachine_test.h"
 
 #include <QDebug>
 
@@ -27,8 +28,11 @@ UnitTest::UnitTest(int argc, char* argv[])
     ProverStateMachine_Test proverTest;
     QTest::qExec(&proverTest, argc, argv);
 
-    Propnet_Test propnetTest;
-    QTest::qExec(&propnetTest, argc, argv);
+//    Propnet_Test propnetTest;
+//    QTest::qExec(&propnetTest, argc, argv);
+
+//    PropnetStateMachine_Test propnetStateMachineTest;
+//    QTest::qExec(&propnetStateMachineTest, argc, argv);
 }
 
 UnitTest::~UnitTest()

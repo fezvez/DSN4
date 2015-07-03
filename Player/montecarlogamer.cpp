@@ -1,8 +1,10 @@
 #include "montecarlogamer.h"
 
+#include "../flags.h"
+
 MonteCarloGamer::MonteCarloGamer(int p) : Player(p)
 {
-    stateMachine = new ProverStateMachine();
+    stateMachine = new PropnetStateMachine();
     playerName = "MCS_Player";
     networking->playerName = this->playerName;
 }
@@ -15,7 +17,8 @@ MonteCarloGamer::~MonteCarloGamer()
 void MonteCarloGamer::metagame(qint64 timeout){
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
 
-    qDebug() << "I have " << (timeout - startTime) << " ms";
+    qDebug() << "/n/nMETAGAME : I have " << (timeout - startTime) << " ms";
+    qDebug() << "\n";
 
    finishMetagame();
 }
@@ -23,13 +26,14 @@ void MonteCarloGamer::metagame(qint64 timeout){
 
 Move MonteCarloGamer::selectMove(qint64 timeout){
 
-
-    qDebug() << "\n\nselectMove current state " << currentState.toString();
+    qint64 startTime = QDateTime::currentMSecsSinceEpoch();
+    qDebug() << "\n\nSELECT MOVE : I have " << (timeout - startTime) << " ms";
+    qDebug() << "selectMove current state " << currentState.toString();
 
     nbDepthCharge = 0;
     nbStatesExplored = 0;
 
-    ProverStateMachine* psm = dynamic_cast<ProverStateMachine*>(stateMachine);
+    PropnetStateMachine* psm = dynamic_cast<PropnetStateMachine*>(stateMachine);
 
 
     QList<Move> possibleMoves = stateMachine->getLegalMoves(currentState, role);
@@ -42,13 +46,11 @@ Move MonteCarloGamer::selectMove(qint64 timeout){
         visits.append(0);
     }
 
-    qint64 startTime = QDateTime::currentMSecsSinceEpoch();
-    qDebug() << "I have " << (timeout - startTime) << " ms";
+
 
     while(true){
         for(int i = 0; i<possibleMoves.size(); ++i){
             QList<Move> legalJointMove = psm->getRandomLegalJointMove(currentState, role, possibleMoves[i]);
-//            qDebug() << "Joing move : " << legalJointMove[0].toString() << "\t" <<  legalJointMove[1].toString();
             int value = performDepthCharge(psm->getNextState(currentState, legalJointMove));
             scores[i] += value;
             visits[i] += 1;
@@ -67,9 +69,9 @@ Move MonteCarloGamer::selectMove(qint64 timeout){
     }
 
     float timeSpent = ((float)(QDateTime::currentMSecsSinceEpoch() - startTime))/1000.0f;
-    qDebug() << "Time spent : " << timeSpent;
-    qDebug() << "Nb depth charge : " << nbDepthCharge;
-    qDebug() << "Nb states explored : " << nbStatesExplored;
+    qDebug() << "Time spent in seconds :         \t" << timeSpent;
+    qDebug() << "Nb depth charge per second :    \t" << (float)nbDepthCharge/timeSpent;
+    qDebug() << "Nb states explored per second : \t" << (float)nbStatesExplored/timeSpent;
 
 
     Move move = possibleMoves[0];
@@ -86,6 +88,7 @@ Move MonteCarloGamer::selectMove(qint64 timeout){
 
     moveSelected(move);
 
+
     return move;
 }
 
@@ -94,12 +97,20 @@ void MonteCarloGamer::initializeStateMachine(QString filename, QString r){
 
     role = stateMachine->getRoleFromString(r);
     currentState = stateMachine->getInitialState();
+
+#ifndef QT_NO_DEBUG
+    qDebug() << "Role is set to be : " << role.getTerm()->toString();
+    qDebug() << "Initial state : " << currentState.toString();
+#endif
 }
 
 int MonteCarloGamer::performDepthCharge(MachineState state){
+#ifndef QT_NO_DEBUG
+    qDebug() << "Perform depth charge";
+#endif
     MachineState currentState = state;
 
-    ProverStateMachine* psm = dynamic_cast<ProverStateMachine*>(stateMachine);
+    PropnetStateMachine* psm = dynamic_cast<PropnetStateMachine*>(stateMachine);
 
     while(!psm->isTerminal(currentState)){
         QList<Move> moves = psm->getRandomLegalJointMove(currentState);

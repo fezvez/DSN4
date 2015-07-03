@@ -1,13 +1,14 @@
 #include "proposition.h"
 
 #include <QStringList>
+#include <QDebug>
 
 Proposition::Proposition(LRelation r):
     relation(r)
 {
     Q_ASSERT(relation->isGround());
     name = relation->toStringWithNoQualifier();
-    value = false;
+    value = true;
 }
 
 Proposition::~Proposition(){
@@ -23,11 +24,6 @@ LRelation Proposition::getRelation() const{
 }
 
 bool Proposition::computeValue(){
-    if(inputs.isEmpty()){
-        return value;
-    }
-
-    value = inputs[0]->getValue();
     return value;
 }
 
@@ -43,13 +39,12 @@ QString Proposition::printFullDebug(){
     QString answer;
     answer += "Debug proposition " + name;
     if(!hasInput()){
-        answer += " with no input";
+        answer += "\twith no input";
         return answer;
     }
-    answer += "\n" + name + " :- ";
+    answer += "\t:- ";
 
     for(PComponent component : inputs){
-
         answer += component->debug();
     }
     return answer;
@@ -61,4 +56,24 @@ QString Proposition::debug(){
 
 QString Proposition::getComponentDotName(){
     return QString("PROPOSITION_");
+}
+
+QMap<QString, PProposition> Proposition::getInputPropositions(){
+    return inputPropositions;
+}
+
+void Proposition::buildInputPropositions(){
+    inputPropositions.clear();
+    QList<PComponent> midComponents;
+    midComponents += inputs;
+    while(!midComponents.isEmpty()){
+        PComponent lastComponent = midComponents.last();
+        midComponents.removeLast();
+        PProposition leafProposition = lastComponent.dynamicCast<Proposition>();
+        if(leafProposition){
+            inputPropositions[leafProposition->getName()] = leafProposition;
+            continue;
+        }
+        midComponents += lastComponent->getInputs();
+    }
 }

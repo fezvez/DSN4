@@ -33,16 +33,8 @@ void PropnetProver::setup(QList<LRelation> relations, QList<LRule> rules){
     KnowledgeBase::generateStratum();
 
     generatePropnet();
-
-//    qDebug() << "\n\nPropnet BEFORE CLEAN";
-//    debug();
-
     cleanPropnet();
-
-//    qDebug() << "\n\nPropnet AFTER CLEAN";
-//    debug();
-
-    buildComponents();
+    buildBaseDoesPropositions();
 }
 
 void PropnetProver::loadKifFile(QString filename){
@@ -82,46 +74,63 @@ void PropnetProver::loadKifFile(QString filename){
 
 void PropnetProver::generatePropnet(){
 #ifndef QT_NO_DEBUG
-    qDebug() << "\n\nGENERATE PROPNET";
+    qDebug() << "GENERATE PROPNET";
 #endif
 
 
     propositionDatabase->clear();
+    alreadyInDatabase.clear();
+//    components.clear();
+
 
     QList<QList<LTerm> > stratifiedConstants = getStratifiedConstants();
+
+    // I wonder whether I could have simply iterated over KnowledgeBase::relationConstantSet
 
     // Add all the relations
     for(auto list : stratifiedConstants){
         for(LTerm relationConstant : list){
-//            qDebug() << "Relation constant " << relationConstant->toString();
+            //            qDebug() << "Relation constant " << relationConstant->toString();
             if(relationConstant->toString() == "input"){
                 continue;
             }
 
 
             if(constantToRelationMap.contains(relationConstant)){
-//                qDebug() << "Relation constant " << relationConstant->toString() << " is indeed insde";
+                //                qDebug() << "Relation constant " << relationConstant->toString() << " is indeed insde";
                 QList<LRelation> sublist = constantToRelationMap[relationConstant];
-//                qDebug() << "Relation constant " << relationConstant->toString() << " nb " << sublist.size();
+                //                qDebug() << "Relation constant " << relationConstant->toString() << " nb " << sublist.size();
                 for(LRelation relation : sublist){
                     if(relation->getQualifier() == Logic::LOGIC_QUALIFIER::INIT){
-//                        qDebug() << "Skipping init relation " << relation->toString();
+                        //                        qDebug() << "Skipping init relation " << relation->toString();
                         continue;
                     }
+//                    if(relationConstant->toString() == "role"){
+//                        qDebug() << "GRUMPF role";
+//                        qDebug() << "Relation has role " << relation->getBody()[0]->toString() << " with address " << relation->getBody()[0].data();
+//                    }
+//                    if(relationConstant->toString() == "control"){
+//                        qDebug() << "GRUMPF control";
+//                        qDebug() << "Relation has role " << relation->getBody()[0]->toString() << " with address " << relation->getBody()[0].data();
+//                    }
                     propositionDatabase->getProposition(relation);
                 }
             }
             else{
-//                qDebug() << "There are no relations of head " << relationConstant->toString();
+                // There are no relations, only rules, with the relation constant as "head"
                 LTerm term = constantMap[relationConstant->toString()];
-                Q_ASSERT(!constantToRelationMap.contains(term));
+                if(!constantToRuleMap.contains(term)){
+                    if(term->toString() == "distinct"){
+                        continue;
+                    }
+                    qDebug() << "Bug with relation constant that is in no rule and no relation : " << term->toString();
+                    Q_ASSERT(false);
+                }
             }
         }
     }
 
-#ifndef QT_NO_DEBUG
-    propositionDatabase->printAllPropositions();
-#endif
+
 
     // Add all the rules
 
@@ -129,7 +138,7 @@ void PropnetProver::generatePropnet(){
     int strataLevel = 0;
     for(auto list : stratifiedConstants){
 
-//        qDebug() << "\n\nNEW STRATA of size " << list.size() << " at level " << strataLevel;
+        //        qDebug() << "\n\nNEW STRATA of size " << list.size() << " at level " << strataLevel;
         strataLevel++;
 
         // Compute all the groundings
@@ -148,17 +157,22 @@ void PropnetProver::generatePropnet(){
                     continue;
                 }
 
-//                qDebug() << "Relation constant " << relationConstant->toString();
+                //                qDebug() << "Relation constant " << relationConstant->toString();
                 // For each relation constant, compute all the rules
                 if(constantToRuleMap.contains(relationConstant)){
                     for(LRule rule : constantToRuleMap[relationConstant]){
-//                        qDebug() << "GROUNDING FUNDAMENTAL rule " << rule->toString();
+                        //                        qDebug() << "GROUNDING FUNDAMENTAL rule " << rule->toString();
                         QList<LRule> groundedRules = getGrounding(rule);
-//                        qDebug() << "Nb groundings : " << groundedRules.size();
+                        //                        qDebug() << "Nb groundings : " << groundedRules.size();
                         for(LRule rule : groundedRules){
-//                            qDebug() << "\t\tGrounded rule " << rule->toString();
+//                            if(rule->getHead()->getHead()->toString() == "legal"){
+//                                qDebug() << "GNAAAR";
+//                                qDebug() << "\t\tGrounded rule " << rule->toString();
+//                                qDebug() << rule->getHead()->getBody()[0]->toString() << " address " << rule->getHead()->getBody()[0].data();
+//                            }
+                            //                            qDebug() << "\t\tGrounded rule " << rule->toString();
                             bool updated = addRuleToDatabase(rule);
-//                            qDebug() << "Updated "<< updated;
+                            //                            qDebug() << "Updated "<< updated;
                             update = update || updated;
                         }
                     }
@@ -169,6 +183,11 @@ void PropnetProver::generatePropnet(){
             }
         }
     }
+
+#ifndef QT_NO_DEBUG
+    propositionDatabase->printAllPropositions();
+    qDebug() << "\n";
+#endif
 }
 
 
@@ -190,25 +209,30 @@ QList<LRule> PropnetProver::getGrounding(LRule rule){
             break;
         }
     }
+    Q_ASSERT(firstUngroundedRelation);
 
-//    qDebug() << "First ungrounded relation " << firstUngroundedRelation->toString();
+    //    qDebug() << "First ungrounded relation " << firstUngroundedRelation->toString();
 
     LTerm relationConstant = firstUngroundedRelation->getHead();
 
     PRelationDatabase relationDatabase = propositionDatabase->getRelationDatabase(relationConstant->toString());
     QList<PProposition> possibleSubstitutes = relationDatabase->getAllPropositions();
 
-//    qDebug() << firstUngroundedRelation->toString() << " can be subbed by " << possibleSubstitutes.size();
+    //    qDebug() << firstUngroundedRelation->toString() << " can be subbed by " << possibleSubstitutes.size();
     for(PProposition propSubstitute : possibleSubstitutes){
-//        qDebug() << "Possible sub " << propSubstitute->getName();
+        //        qDebug() << "Possible sub " << propSubstitute->getName();
         LRelation possibleSubstitute = propSubstitute->getRelation();
 
         Unification_Relation unification = Unification_Relation(firstUngroundedRelation, possibleSubstitute);
         //        qDebug() << "Unification " << unification.toString();
         if(unification.isUnificationValid()){
             LRule newRule = unification.applySubstitution(rule);
-            newRule->rebuildName();
-            QList<LRule> answersFromNewRule = getGrounding(newRule);
+            LRule newRule2 = manageRule(newRule);
+            QString nameBefore = newRule2->toString();
+            newRule2->rebuildName();
+            // TODO eliminate this rebuildname() if it proves useless
+            Q_ASSERT(nameBefore == newRule2->toString());
+            QList<LRule> answersFromNewRule = getGrounding(newRule2);
             answer += answersFromNewRule;
         }
     }
@@ -239,12 +263,12 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
     // Create the component
     PCAnd fundamentalComponent = PCAnd(new ComponentAnd());
     for(LRelation relation : rule->getBody()){
-//        qDebug() << "Adding to the AND component " << relation->toStringWithNoQualifier();
+        //        qDebug() << "Adding to the AND component " << relation->toStringWithNoQualifier();
 
         if(relation->isNegation()){
-//            qDebug() << "It's negation";
+            //            qDebug() << "It's negation";
             PCNot cnot = PCNot(new ComponentNot());
-            LRelation nonNegationRelation = relation->clone();
+            LRelation nonNegationRelation = Logic_Relation::clone(relation);
             nonNegationRelation->setNegation(false);
             PProposition tempProp = propositionDatabase->getProposition(nonNegationRelation);
             cnot->addInput(tempProp);
@@ -253,7 +277,7 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
             continue;
         }
         if(relation->getHead()->toString() == "distinct"){
-//            qDebug() << "It's distinct";
+            //            qDebug() << "It's distinct";
             QList<LTerm> body = relation->getBody();
             if(body[0]->toString() == body[1]->toString()){
                 return false;
@@ -271,7 +295,7 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
 
 
     if(!headProposition->hasInput()){
-//        qDebug() << "Head had no OR input";
+        //        qDebug() << "Head had no OR input";
         PCOr orComponent = PCOr(new ComponentOr());
         orComponent->addInput(fundamentalComponent);
         headProposition->addInput(orComponent.staticCast<Component>());
@@ -279,7 +303,7 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
         PCOr orComponent = headProposition->getSingleInput().dynamicCast<ComponentOr>();
         Q_ASSERT(orComponent);
         if(orComponent){
-//            qDebug() << "Head has OR input";
+            //            qDebug() << "Head has OR input";
             orComponent->addInput(fundamentalComponent);
         }
         else{
@@ -304,7 +328,11 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
  */
 
 void PropnetProver::cleanPropnet(){
+#ifndef QT_NO_DEBUG
+    qDebug() << "CLEAN PROPNET";
+#endif
 
+    // Remove the input of does and base
     for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
         QList<PComponent> clearInput;
         QString relationHead = proposition->getRelation()->getHead()->toString();
@@ -318,21 +346,37 @@ void PropnetProver::cleanPropnet(){
         }
     }
 
+    // Remove the ComponentAnd and ComponentOr who have a single input
     bool iterateAgain;
     do{
         iterateAgain = cleanPropnetIteration();
     }while(iterateAgain);
 
-//    buildComponents();
+    buildComponents();
+
+#ifndef QT_NO_DEBUG
+        qDebug() << "CLEAN PROPNET ENDED";
+
+    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+        if(!proposition->hasInput()){
+            qDebug() << "Proposition " << proposition->getName() << " has no input";
+            continue;
+        }
+        qDebug() << proposition->printFullDebug();
+        qDebug() << "Proposition " << proposition->getName() << " has input proposition : ";
+        for(PProposition inputProp : proposition->getInputPropositions()){
+            qDebug() << "\t" << inputProp->getName();
+        }
+    }
+    qDebug() << "\n";
+#endif
 }
 
 bool PropnetProver::cleanPropnetIteration(){
     bool update = false;
 
     buildComponents();
-#ifndef QT_NO_DEBUG
-    qDebug() << "\n\nCLEAN PROPNET";
-#endif
+
     for(PComponent component : components){
         if(component->getInputs().isEmpty()){
             continue;
@@ -363,55 +407,18 @@ bool PropnetProver::cleanPropnetIteration(){
     return update;
 
 
-    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
-        QString relationHead = proposition->getRelation()->getHead()->toString();
-        QList<PComponent> clearInput;
-        if(relationHead == "does"){
-            proposition->setInputs(clearInput);
-            continue;
-        }
-        if(proposition->getRelation()->getQualifier() == Logic::BASE){
-            proposition->setInputs(clearInput);
-            continue;
-        }
-        if(!proposition->hasInput()){
-            continue;
-        }
-
-        PComponent singleInput = proposition->getSingleInput();
-        if(singleInput->getInputs().size()==1){
-            QList<PComponent> newInput;
-            newInput.append(singleInput->getInputs()[0]->getInputs()[0]);
-            proposition->setInputs(newInput);
-
-//            qDebug() << proposition->getName() << " has now for input " << proposition->getSingleInput().dynamicCast<Proposition>()->getName();
-        }
-        else{
-            QList<PComponent> newInputForOr;
-            for(PComponent andComponent : singleInput->getInputs()){
-                if(andComponent->getInputs().size() == 1){
-                    newInputForOr.append(andComponent->getInputs()[0]);
-                }
-                else{
-                    newInputForOr.append(andComponent);
-                }
-            }
-            singleInput->setInputs(newInputForOr);
-        }
-    }
 }
 
 void PropnetProver::buildComponents(){
     components.clear();
     for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+        proposition->buildInputPropositions();
         components.append(proposition);
         components += getSubComponents(proposition);
     }
 #ifndef QT_NO_DEBUG
-    qDebug() << "\n\nBuild components";
-        qDebug() << "Nb components " << components.size();
+    qDebug() << "The propnet has nb components : " << components.size();
 #endif
-
 }
 
 QList<PComponent> PropnetProver::getSubComponents(PComponent component){
@@ -424,27 +431,30 @@ QList<PComponent> PropnetProver::getSubComponents(PComponent component){
         answer += c;
         answer += getSubComponents(c);
     }
-//    PProposition prop = component.dynamicCast<Proposition>();
-//    if(prop){
-//        qDebug() << "Proposition " << prop->getName() << " has nb inputs " << answer.size();
-//    }
+    //    PProposition prop = component.dynamicCast<Proposition>();
+    //    if(prop){
+    //        qDebug() << "Proposition " << prop->getName() << " has nb inputs " << answer.size();
+    //    }
     return answer;
 }
 
 
+PDatabase PropnetProver::getDatabase(){
+    return propositionDatabase;
+}
 
 /***
  * TO FILE
 */
 void PropnetProver::toFile(QString filename){
     indexDot = 0;
+    indexDotMap.clear();
 
     QFile file(filename);
     if (file.open(QFile::WriteOnly | QFile::Truncate)) {
         qDebug() << "Saving file " << filename;
         QTextStream out(&file);
         out << "digraph propnet {\n";
-
         for(PComponent component : components){
             PProposition proposition = component.dynamicCast<Proposition>();
             if(proposition){
@@ -503,16 +513,110 @@ PProposition PropnetProver::getPropositionFromString(QString s){
     return propositionDatabase->getProposition(s);
 }
 
-void PropnetProver::loadPropnetBasePropositions(QVector<LRelation> basePropositions){
-
+void PropnetProver::loadPropnetBasePropositions(QVector<LRelation> baseProp){
+    clearBasePropositions();
+    for(LRelation relation : baseProp){
+        propositionDatabase->getProposition(relation->toStringWithNoQualifier())->setValue(true);
+    }
 }
+
+void PropnetProver::loadPropnetDoesPropositions(QVector<LRelation> doesProp){
+    clearInputPropositions();
+    for(LRelation relation : doesProp){
+        propositionDatabase->getProposition(relation->toString())->setValue(true);
+    }
+}
+
+void PropnetProver::buildBaseDoesPropositions(){
+    basePropositions.clear();
+    doesPropositions.clear();
+
+    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+        LRelation relation = proposition->getRelation();
+        if(relation->getQualifier() == Logic::LOGIC_QUALIFIER::BASE){
+            basePropositions.insert(relation->toStringWithNoQualifier(), proposition);
+            continue;
+        }
+        if(relation->getHead()->toString() == QString("does")){
+            doesPropositions.insert(relation->toString(),proposition);
+        }
+    }
+
+#ifndef QT_NO_DEBUG
+    qDebug() << "Base Propositions nb : " << basePropositions.size();
+
+    for(PProposition baseProp : basePropositions.values()){
+        qDebug() << "\tBase proposition " << baseProp->getName();
+    }
+    qDebug() << "Does Propositions nb : " << doesPropositions.size();
+    for(PProposition inputProp : doesPropositions.values()){
+        qDebug() << "\tDoes proposition " << inputProp->getName();
+    }
+    qDebug() << "\n";
+#endif
+}
+
+
+
+void PropnetProver::clearBasePropositions(){
+    for(PProposition proposition : basePropositions.values()){
+        proposition->setValue(false);
+    }
+}
+
+void PropnetProver::clearInputPropositions(){
+    for(PProposition proposition : doesPropositions.values()){
+        proposition->setValue(false);
+    }
+}
+
+bool PropnetProver::propnetEvaluate(QString s){
+    return propnetEvaluate(propositionDatabase->getProposition(s));
+}
+
+bool PropnetProver::propnetEvaluate(PProposition proposition){
+//    qDebug() << "propnetEvaluate of proposition : " << proposition->getName();
+    if(!proposition->hasInput()){
+//        qDebug() << "propnetEvaluate : this proposition has no input. It's value is " << proposition->getValue();
+        return proposition->getValue();
+    }
+
+//    qDebug() << "propnetEvaluate : this proposition has inputs. Time to evaluate them";
+    for(PProposition inputProposition : proposition->getInputPropositions()){
+//        qDebug() << "\tpropnetEvaluate : input proposition : " << inputProposition->getName();
+    }
+    for(PProposition inputProposition : proposition->getInputPropositions()){
+        propnetEvaluate(inputProposition);
+    }
+
+
+    PComponent singleInput = proposition->getSingleInput();
+    bool newValue = singleInput->computeValue();
+    proposition->setValue(newValue);
+
+//    qDebug() << "propnetEvaluate finished. " << proposition->getName() << " is " << newValue;
+
+    return newValue;
+}
+
 
 /***
  * Misc
  */
 
 void PropnetProver::debug(){
+
+    qDebug() << "DEBUG";
     for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
         qDebug() << proposition->printFullDebug();
+        qDebug() << "\tProposition inputs : ";
+        for(PProposition inputProp : proposition->getInputPropositions()){
+            qDebug() << "\t\t" << inputProp->getName();
+        }
     }
+    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+
+    }
+
+    qDebug() << "\n";
 }

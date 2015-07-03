@@ -13,9 +13,9 @@ Logic_Rule::Logic_Rule(LRelation h, QList<LRelation> b):
 LRule Logic_Rule::clone(){
     QList<LRelation> clonedBody;
     for(LRelation relation : body){
-        clonedBody.append(relation->clone());
+        clonedBody.append(Logic_Relation::clone(relation));
     }
-    return LRule(new Logic_Rule(head->clone(), clonedBody));
+    return LRule(new Logic_Rule(Logic_Relation::clone(head), clonedBody));
 }
 
 // TODO

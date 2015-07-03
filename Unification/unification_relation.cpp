@@ -57,7 +57,6 @@ void Unification_Relation::solve(){
 
     int cycleNb = 0;
     while(true){
-
         while(!equations.isEmpty()){
 
             UTerm equation = equations.back();
@@ -236,7 +235,7 @@ UTerm Unification_Relation::applySubstitution(UTerm e){
 }
 
 LRelation Unification_Relation::applySubstitution(LRelation r){
-    LRelation answer = r->clone();
+    LRelation answer = Logic_Relation::clone(r);
     applySubstitutionInPlace(answer);
     return answer;
 }

@@ -354,7 +354,7 @@ LTerm KnowledgeBase::manageObjectConstant(LTerm c){
 
 QList<LRelation> KnowledgeBase::evaluate(LRelation r){
 #ifndef QT_NO_DEBUG
-    qDebug() << "KnowledgeBase::evaluate(). Relation is : " << r->toString();
+//    qDebug() << "KnowledgeBase::evaluate(). Relation is : " << r->toString();
 #endif
     LRelation relation = manageRelation(r);
     
@@ -370,7 +370,7 @@ QList<LRelation> KnowledgeBase::evaluate(LRelation r){
     
     
     while (!possibleAnswers.isEmpty()) {
-        //        qDebug() << "\nKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
+//                qDebug() << "\tKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
         LRule possibleRule = possibleAnswers.last();
         possibleAnswers.removeLast();
         
@@ -421,10 +421,12 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
     
     //
     if(firstRelation->isNegation()){
-        LRelation nonNegativeRelation = firstRelation->clone();
+        LRelation nonNegativeRelation = Logic_Relation::clone(firstRelation);
         nonNegativeRelation->setNegation(false);
+//        qDebug() << "Negation, trying to solve a subproblem " << nonNegativeRelation->toString();
         QList<LRelation> subproblemAnswer = evaluate(nonNegativeRelation);
         if(subproblemAnswer.size() == 0){
+//            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is false";
             QList<LRelation> endOfBody = rule->getBody();
             endOfBody.removeFirst();
             
@@ -432,7 +434,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
             answer.append(partialAnswer);
         }
         else{
-            
+//            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is true, we stop here";
         }
         return answer;
     }
@@ -638,6 +640,8 @@ void KnowledgeBase::loadAdditionalTempRelations(const QVector<LRelation> content
 // It is not needed for the computation
 // It is just to check that the GDL rules are well formed
 void KnowledgeBase::generateStratum(){
+    stratumMap.clear();
+    stratifiedConstants.clear();
 
     // Put everything in memory
     for(LTerm constant : relationConstantSet){
@@ -706,25 +710,34 @@ void KnowledgeBase::generateStratum(){
     for(LStratum s : listOfStratum){
         int currentStrata = s->getStrata();
         if(strata != currentStrata){
+//            qDebug() << "Pushed a new strata level";
+//            qDebug() << "Strata = " << strata;
+//            qDebug() << "currentStrata = " << currentStrata;
             stratifiedConstants.push_back(QList<LTerm>());
             strata = currentStrata;
+
+
         }
         stratifiedConstants.last().append(s->getNode());
     }
     
 #ifndef QT_NO_DEBUG
-    qDebug() << "\n\nGENERATE STRATUM";
+    qDebug() << "GENERATE STRATUM";
     qDebug() << "Nb strong iterations : " << nbStrongIteration;
     qDebug() << "Nb iterations : " << nbIteration;
     int index = 0;
     for(QList<LTerm> v : stratifiedConstants){
-        qDebug() << "Stratum " << index << "\tis comprised of : ";
+        qDebug() << "Stratum " << index << "is comprised of : ";
         for(LTerm c : v){
-            qDebug() << c->toString();
+            qDebug() << "\t" << c->toString();
         }
-        qDebug() << "\n";
         index++;
     }
+
+    for(LStratum stratum : listOfStratum){
+        qDebug() << "Stratum " << stratum->toString();
+    }
+    qDebug() << "\n";
 #endif
 }
 
@@ -761,13 +774,13 @@ void KnowledgeBase::printFreeVariables(){
 void KnowledgeBase::printConstantsWithArity(){
     qDebug() << "\n\nLIST OF CONSTANTS";
     for(LTerm constant : objectConstantSet){
-        qDebug() << "Object constant : " << constant->toString();
+        qDebug() << "Object constant : " << constant->toString() << "\twith address : " << constant.data();
     }
     for(LTerm constant : relationConstantSet){
-        qDebug() << "Relation constant : " << constant->toString() << "\twith arity " << arity[constant];
+        qDebug() << "Relation constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
     }
     for(LTerm constant : functionConstantSet){
-        qDebug() << "Function constant : " << constant->toString() << "\twith arity " << arity[constant];
+        qDebug() << "Function constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
     }
 }
 

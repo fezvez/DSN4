@@ -12,8 +12,11 @@ Logic_Relation::Logic_Relation(LTerm h, QList<LTerm> b, Logic::LOGIC_QUALIFIER q
     buildFreeVariables();
 }
 
-LRelation Logic_Relation::clone(){
-    return LRelation(new Logic_Relation(Logic_Term::clone(head), Logic_Term::cloneList(body), qualifier, negation));
+LRelation Logic_Relation::clone(LRelation relation){
+    if(relation->isGround()){
+        return relation;
+    }
+    return LRelation(new Logic_Relation(Logic_Term::clone(relation->getHead()), Logic_Term::cloneList(relation->getBody()), relation->getQualifier(), relation->isNegation()));
 }
 
 

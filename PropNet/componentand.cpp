@@ -1,5 +1,7 @@
 #include "componentand.h"
 
+#include <QDebug>
+
 ComponentAnd::ComponentAnd()
 {
 
@@ -12,12 +14,14 @@ ComponentAnd::~ComponentAnd()
 
 bool ComponentAnd::computeValue(){
     for(PComponent component : inputs){
-        if(!component->getValue()){
+        if(!component->computeValue()){
             value = false;
+//            qDebug() << "ComponentAnd returns " << value;
             return value;
         }
     }
     value = true;
+//    qDebug() << "ComponentAnd returns " << value;
     return value;
 }
 

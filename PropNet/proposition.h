@@ -34,9 +34,14 @@ public:
     QString debug();
     QString getComponentDotName();
 
+    QMap<QString, PProposition> getInputPropositions();
+    void buildInputPropositions();
+
 protected:
     LRelation relation;
     QString name;
+
+    QMap<QString, PProposition> inputPropositions;
 };
 
 #endif // PROPOSITION_H

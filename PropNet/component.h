@@ -16,6 +16,7 @@ public:
     void setValue(bool b);
     QList<PComponent> getInputs();
 
+
     void addInput(PComponent i);
     void addInputs(QList<PComponent> l);
     void setInputs(QList<PComponent> l);
