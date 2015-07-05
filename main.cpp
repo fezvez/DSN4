@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     //    Widget w;
     //    w.show();
 
-    //    UnitTest unitTest(argc, argv);
+//        UnitTest unitTest(argc, argv);
     //    FirstPlayer player;
     MonteCarloGamer player;
 

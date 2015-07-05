@@ -118,7 +118,9 @@ MachineState PropnetStateMachine::getNextState(const MachineState& state, QList<
     loadMoves(moves);
 
     QVector<LRelation> baseRelations;
-    for(PProposition nextProposition : mapNextRelationToBaseRelation.keys()){
+    auto end = mapNextRelationToBaseRelation.cend();
+    for(auto it = mapNextRelationToBaseRelation.cbegin(); it != end; ++it){
+        PProposition nextProposition = it.key();
         //        qDebug() << "getNextState of next prop " << nextProposition->getName();
         bool nextValue = prover.propnetEvaluate(nextProposition);
         if(nextValue){
@@ -143,33 +145,7 @@ MachineState PropnetStateMachine::getNextState(const MachineState& state, QList<
 }
 
 void PropnetStateMachine::buildNextRelationToBaseRelationMap(){
-
-    mapNextRelationToBaseRelation.clear();
-    QMap<LTerm, LTerm> mapNextToBase = prover.getMapNextToBase();
-
-
-    for(LTerm nextTerm :mapNextToBase.keys()){
-        QList<PProposition> nestPropositions = prover.getDatabase()->getPropositions(nextTerm->toString());
-        for(PProposition nextProposition : nestPropositions){
-            //            qDebug() << "Next proposition " << nextProposition->getName();
-            QString nextPropositionString = nextProposition->getName();
-            QString basePropositionString = nextPropositionString.remove("next_");
-            //            qDebug() << "BP " << basePropositionString;
-            PProposition baseProposition = prover.getPropositionFromString(basePropositionString);
-
-
-            mapNextRelationToBaseRelation[nextProposition] = baseProposition;
-        }
-    }
-
-#ifndef QT_NO_DEBUG
-    qDebug() << "LINK NEXT TO BASE : ";
-    for(PProposition nextProposition : mapNextRelationToBaseRelation.keys()){
-        PProposition baseProposition = mapNextRelationToBaseRelation[nextProposition];
-        qDebug() << "Linking " << nextProposition->getName() << " to " << baseProposition->getName();
-    }
-    qDebug() << "\n";
-#endif
+    mapNextRelationToBaseRelation = prover.getMapNextPropositionToBaseProposition();
 }
 
 /***
@@ -280,5 +256,5 @@ void PropnetStateMachine::loadMoves(QList<Move> moves){
 }
 
 QVector<int> PropnetStateMachine::depthCharge(MachineState state){
-    return prover.depthCharge(state.getContents(), mapNextRelationToBaseRelation);
+    return prover.depthChargeOptimized(state.getContents());
 }

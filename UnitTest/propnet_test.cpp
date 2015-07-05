@@ -20,6 +20,14 @@ void Propnet_Test::propnet1()
     prover.loadKifFile(filename);
     prover.toFile("connectionTestGame.dot");
 
+    QCOMPARE(prover.propnetEvaluate("terminal"), prover.propnetEvaluateOptimized("terminal"));
+
+//    QVector<LRelation> init;
+//    for(LRelation relation : prover.getInitPropositions().values()){
+//        init.append(relation);
+//    }
+//    prover.depthChargeOptimized(init);
+
 }
 
 void Propnet_Test::propnet2()
@@ -42,14 +50,38 @@ void Propnet_Test::propnet2()
 
     prover.toFile("connectionTestGame2.dot");
 
+    QCOMPARE(prover.propnetEvaluate("terminal"), prover.propnetEvaluateOptimized("terminal"));
+    QCOMPARE(prover.propnetEvaluate("(goal white 0)"), prover.propnetEvaluateOptimized("(goal white 0)"));
+    QCOMPARE(prover.propnetEvaluate("(legal white move1)"), prover.propnetEvaluateOptimized("(legal white move1)"));
+    QCOMPARE(prover.propnetEvaluate("(legal white move2)"), prover.propnetEvaluateOptimized("(legal white move2)"));
 
+    QVector<LRelation> init;
+    for(LRelation relation : prover.getInitPropositions().values()){
+        init.append(relation);
+    }
+//    prover.depthChargeOptimized(init);
+}
 
+void Propnet_Test::propnetThreePuzzle(){
+    PropnetProver prover;
+    prover.loadKifFile("../../../../threepuzzle.kif");
+    prover.toFile("threepuzzle.dot");
+    QVector<LRelation> init;
+    for(LRelation relation : prover.getInitPropositions().values()){
+        init.append(relation);
+    }
+    prover.depthChargeOptimized(init);
 }
 
 void Propnet_Test::propnetTicTacToe(){
     PropnetProver prover;
-    prover.loadKifFile("../../../../tictactoe.kif");
-    prover.toFile("tictactoe.dot");
+//    prover.loadKifFile("../../../../tictactoe.kif");
+//    prover.toFile("tictactoe.dot");
+}
+
+void Propnet_Test::propnetConnectFour(){
+    PropnetProver prover;
+//    prover.loadKifFile("../../../../connectfour.kif");
 }
 
 

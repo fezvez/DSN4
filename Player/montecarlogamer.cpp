@@ -17,7 +17,7 @@ MonteCarloGamer::~MonteCarloGamer()
 void MonteCarloGamer::metagame(qint64 timeout){
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
 
-    qDebug() << "/n/nMETAGAME : I have " << (timeout - startTime) << " ms";
+    qDebug() << "\n\nMETAGAME : I have " << (timeout - startTime) << " ms";
     qDebug() << "\n";
 
     QVector<Role> roles = stateMachine->getRoles();
@@ -62,7 +62,8 @@ Move MonteCarloGamer::selectMove(qint64 timeout){
         for(int i = 0; i<possibleMoves.size(); ++i){
             QList<Move> legalJointMove = psm->getRandomLegalJointMove(currentState, role, possibleMoves[i]);
 //            qDebug() << "legalRandomJointMove " << legalJointMove[0].toString();
-            int value = performDepthCharge(psm->getNextState(currentState, legalJointMove));
+            MachineState nextState = psm->getNextState(currentState, legalJointMove);
+            int value = performDepthCharge(nextState);
             scores[i] += value;
             visits[i] += 1;
             nbStatesExplored++;

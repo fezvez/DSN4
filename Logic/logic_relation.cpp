@@ -62,14 +62,7 @@ void Logic_Relation::setNegation(bool b){
 }
 
 QString Logic_Relation::toStringWithNoQualifier(){
-    QString answer = name;
-    if(negation){
-        answer = answer.mid(5, answer.size()-6);
-    }
-    if(qualifier != Logic::LOGIC_QUALIFIER::NO_QUAL){
-        answer = answer.mid(6, answer.size()-7);
-    }
-    return answer;
+    return nameWithNoQualifier;
 }
 
 QSet<QString> Logic_Relation::getFreeVariables(){
@@ -108,6 +101,8 @@ void Logic_Relation::buildName(){
     if(negation){
         name = QString("(not ") + name + ")";
     }
+
+    buildNameWithNoQualifier();
 }
 
 QString Logic_Relation::rebuildName(){
@@ -142,9 +137,19 @@ QString Logic_Relation::rebuildName(){
         name = QString("(not ") + name + ")";
     }
 
+    buildNameWithNoQualifier();
     return name;
 }
 
+void Logic_Relation::buildNameWithNoQualifier(){
+    nameWithNoQualifier = name;
+    if(negation){
+        nameWithNoQualifier = nameWithNoQualifier.mid(5, nameWithNoQualifier.size()-6);
+    }
+    if(qualifier != Logic::LOGIC_QUALIFIER::NO_QUAL){
+        nameWithNoQualifier = nameWithNoQualifier.mid(6, nameWithNoQualifier.size()-7);
+    }
+}
 
 
 QSet<QString> Logic_Relation::buildFreeVariables(){

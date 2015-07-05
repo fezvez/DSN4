@@ -35,6 +35,7 @@ public:
 
 private:
     void buildName();
+    void buildNameWithNoQualifier();
     QSet<QString> buildFreeVariables();
     void addFreeVariables(LTerm term);
 
@@ -45,6 +46,7 @@ protected:
     QList<LTerm> body;
     Logic::LOGIC_QUALIFIER qualifier;
     bool negation;
+    QString nameWithNoQualifier;
 
     QSet<QString> freeVariables;
 };

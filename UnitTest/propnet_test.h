@@ -11,7 +11,9 @@ class Propnet_Test: public QObject
 private slots:
     void propnet1();
     void propnet2();
+    void propnetThreePuzzle();
     void propnetTicTacToe();
+    void propnetConnectFour();
 
 };
 

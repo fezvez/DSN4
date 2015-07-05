@@ -3,7 +3,15 @@
 
 #include "gdlprover.h"
 
-#include "../PropNet/propositiondatabase.h"
+#include "PropNet/propositiondatabase.h"
+#include "PropNet/componentand.h"
+#include "PropNet/componentor.h"
+#include "PropNet/componentnot.h"
+#include "flags.h"
+
+
+#include <vector>
+#include "PropNet/propositionoptimized.h"
 
 class PropnetProver : public GDLProver
 {
@@ -76,8 +84,8 @@ public:
 
 
 
-//    QVector<int> depthChargeDebug(QVector<LRelation> baseProp, QMap<PProposition, PProposition> mapNextToBase);
-//    int depthCharge(Role role);
+    //    QVector<int> depthChargeDebug(QVector<LRelation> baseProp, QMap<PProposition, PProposition> mapNextToBase);
+    //    int depthCharge(Role role);
 
 
 protected:
@@ -86,15 +94,52 @@ protected:
 
 
 public:
-    QVector<int> depthCharge(QVector<LRelation> baseProp, QMap<PProposition, PProposition> mapNextToBase);
+    QVector<int> depthCharge(QVector<LRelation> baseProp);
     void buildDepthChargeMembers();
-
+    QMap<PProposition, PProposition> getMapNextPropositionToBaseProposition();
+    void buildMapNextPropositionToBaseProposition();
 
 protected:
     QVector<int> depthChargeGoalVector;
     QMap<QString, int> roleIndex;
     QMap<QString, QVector<PProposition>> depthChargeLegalMoves;
+    QMap<PProposition, PProposition> mapNextPropositionToBaseProposition;
 
+
+    // Optimized version
+public:
+    void buildOptimizedPropnet();
+    void buildOptimizedMembers();
+    void buildPropositionsOptimized();
+    void fillComponentAndOptimized(PCAnd p, std::vector<uint32_t> & prop, std::vector<uint32_t> & negProp);
+
+    QVector<int> depthChargeOptimized(QVector<LRelation> baseProp);
+
+
+    void loadPropnetBasePropositionsOptimized(QVector<LRelation> & baseProps);
+    void clearBasePropositionsOptimized();
+    void clearAllSavedValuesOptimized();
+    void randomizeLegalMoveOptimized();
+
+    bool propnetEvaluateOptimized(QString s);
+
+protected:
+    std::vector<PropositionOptimized> propnetOptimized;
+    QVector<PProposition> propnetOptimizedIndexReversed;
+    QVector<int> depthChargeGoalVectorOptimized;
+    QMap<PProposition, uint32_t> propositionIndexOptimized;
+    QVector<int> roleIndexOptimized;
+    QVector<int> basePropositionsOptimized;
+    QVector<int> nextPropositionsOptimized;
+    int terminalPropositionIndexOptimized;
+
+
+    QVector<QVector<int> > legalMovesOptimized;
+    QVector<QVector<int> > doesMovesOptimized;
+    QVector<int> currentDoesMovesOptimized;
+    QVector<QVector<int> >randomRoleOrderOptimized;
+    QVector<QVector<int> > goalOptimized;           // For role R, gives you a list of propositions
+    QVector<QVector<int> > goalValueOptimized;      // For role R, gives you the associated reward (of each proposition)
 
     // Misc
 public:
