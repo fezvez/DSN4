@@ -43,7 +43,8 @@ protected:
     QMap<LTerm, int> roleIndex;
     PProposition terminal;
 
-
+public:
+    QVector<int> depthCharge(MachineState state);
 
 protected:
     PropnetProver prover;

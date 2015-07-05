@@ -21,11 +21,14 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    Widget w;
-    w.show();
 
-    UnitTest unitTest(argc, argv);
-//    FirstPlayer player;
+    Logic::init();
+
+    //    Widget w;
+    //    w.show();
+
+    //    UnitTest unitTest(argc, argv);
+    //    FirstPlayer player;
     MonteCarloGamer player;
 
     return a.exec();

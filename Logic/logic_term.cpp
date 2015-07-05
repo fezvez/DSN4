@@ -9,8 +9,11 @@ Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t){
 //    qDebug() << "Creation term " << nbTerm++ << "\t" << s;
     name = s;
     type = t;
-    if(t == LOGIC_TERM_TYPE::CONSTANT)
+    if(t == LOGIC_TERM_TYPE::CONSTANT){
         buildKeyword();
+    }
+
+//        qDebug() << "Logic_Term created " << nbTerm++;
 }
 
 Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWORD k){
@@ -18,6 +21,8 @@ Logic_Term::Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWOR
     name = s;
     type = t;
     keyword = k;
+
+//    qDebug() << "Logic_Term created " << nbTerm++;
 }
 
 Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
@@ -30,7 +35,13 @@ Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
     buildFreeVariables();
     keyword = LOGIC_KEYWORD::NO_KEYWORD;
 
-//    qDebug() << "Creation term " << nbTerm++ << "\t" << name;
+//    qDebug() << "Logic_Term created " << nbTerm++;
+}
+
+// Should never happen
+// Logic_Term should always be wrapped in a QSharedPointer (typedef LTerm)
+Logic_Term::Logic_Term(const Logic_Term & l){
+    Q_ASSERT(false);
 }
 
 void Logic_Term::buildKeyword(){

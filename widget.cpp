@@ -28,16 +28,6 @@ Widget::Widget(QWidget *parent) :
     initialize();
 
     setWindowTitle("Dynamic Semantic Net");
-
-
-//    UProblem problem(new Unification_Problem());
-//    problem->debug();
-
-//    if(true){
-//        PParser parser = PParser(new Parser());
-//        parser->debugKB();
-//    }
-
 }
 
 Widget::~Widget()
@@ -163,7 +153,7 @@ void Widget::initialize(){
     connect(directoryComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(find()));
     find();
 
-    Logic::init();
+
     //parser->debugKB();
     //propnet = PPropNet(new PropNet(this));
 

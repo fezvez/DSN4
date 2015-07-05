@@ -17,8 +17,12 @@ public:
     Move selectMove(qint64 timeout);
 
     int performDepthCharge(MachineState state);
+    int performDepthCharge2(MachineState state);
+
     int nbDepthCharge;
     int nbStatesExplored;
+
+    int myRoleIndex;
 };
 
 #endif // MONTECARLOGAMER_H

@@ -90,7 +90,7 @@ QList<Move> PropnetStateMachine::getLegalMoves(const MachineState& state, Role r
 
     for(PProposition legalProposition : legalPropositions){
         //        qDebug() << "  Legal proposition : " << legalProposition->getName();
-        LTerm roleTerm = legalProposition->getRelation()->getBody()[0];
+//        LTerm roleTerm = legalProposition->getRelation()->getBody()[0];
         //        qDebug() << "  Role " <<  roleTerm->toString() << " has address " << roleTerm.data();
 
         if(legalProposition->getRelation()->getBody()[0] == role.getTerm()){
@@ -277,4 +277,8 @@ void PropnetStateMachine::loadMoves(QList<Move> moves){
     }
 
     prover.loadPropnetDoesPropositions(doeses);
+}
+
+QVector<int> PropnetStateMachine::depthCharge(MachineState state){
+    return prover.depthCharge(state.getContents(), mapNextRelationToBaseRelation);
 }

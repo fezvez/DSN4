@@ -70,7 +70,7 @@ PProposition PropositionDatabase::getProposition(QString relation){
     return propositionsMap[relation];
 }
 
-QList<PProposition> PropositionDatabase::getPropositions(QString relationName){
+QList<PProposition> & PropositionDatabase::getPropositions(QString relationName){
     if(!databaseMap.contains(relationName)){
         PRelationDatabase newDatabase = PRelationDatabase(new RelationDatabase(relationName));
         databaseMap.insert(relationName, newDatabase);
@@ -79,7 +79,7 @@ QList<PProposition> PropositionDatabase::getPropositions(QString relationName){
     return databaseMap[relationName]->getAllPropositions();
 }
 
-QMap<QString, PProposition> PropositionDatabase::getPropositionsMap(){
+QMap<QString, PProposition> & PropositionDatabase::getPropositionsMap(){
     return propositionsMap;
 }
 
@@ -121,7 +121,7 @@ void RelationDatabase::addProposition(PProposition prop){
     propositionsMap.insert(prop->getName(), prop);
 }
 
-QList<PProposition> RelationDatabase::getAllPropositions(){
+QList<PProposition> & RelationDatabase::getAllPropositions(){
     return propositionsList;
 }
 

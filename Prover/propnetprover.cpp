@@ -32,10 +32,12 @@ void PropnetProver::setup(QList<LRelation> relations, QList<LRule> rules){
 #endif
     KnowledgeBase::generateStratum();
 
+    //        qDebug() << "Propnet setup";
     generatePropnet();
     initializeSavedValuesMap();
     cleanPropnet();
     buildBaseDoesPropositions();
+    buildDepthChargeMembers();
 }
 
 void PropnetProver::loadKifFile(QString filename){
@@ -189,9 +191,9 @@ QList<LRule> PropnetProver::getGrounding(LRule rule){
     QList<LRule> answer;
 
     if(rule->isGround()){
-//        if(rule->getHead()->getHead()->toString() == "cellOpen"){
-//            qDebug() << " next_cellXYZ rule " << rule->toString();
-//        }
+        //        if(rule->getHead()->getHead()->toString() == "cellOpen"){
+        //            qDebug() << " next_cellXYZ rule " << rule->toString();
+        //        }
         for(LRelation relation : rule->getBody()){
             // Special case for distinct
             if(relation->getHead()->toString() == "distinct"){
@@ -204,9 +206,9 @@ QList<LRule> PropnetProver::getGrounding(LRule rule){
 
 
             QString shortName = relation->toStringWithNoQualifier();
-//            if(rule->getHead()->getHead()->toString() == "cellOpen"){
-//                qDebug() << " shortName " << shortName;
-//            }
+            //            if(rule->getHead()->getHead()->toString() == "cellOpen"){
+            //                qDebug() << " shortName " << shortName;
+            //            }
             if(!propositionDatabase->contains(shortName)){
                 return answer;
             }
@@ -293,10 +295,10 @@ bool PropnetProver::addRuleToDatabase(LRule rule){
         }
         if(relation->getHead()->toString() == "distinct"){
             //            qDebug() << "It's distinct";
-//            QList<LTerm> body = relation->getBody();
-//            if(body[0]->toString() == body[1]->toString()){
-//                return false;
-//            }
+            //            QList<LTerm> body = relation->getBody();
+            //            if(body[0]->toString() == body[1]->toString()){
+            //                return false;
+            //            }
             continue;
         }
 
@@ -353,7 +355,10 @@ void PropnetProver::cleanPropnet(){
 #endif
 
     // Remove the input of does and base
-    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+    auto propositionMap = propositionDatabase->getPropositionsMap();
+    auto end = propositionMap.end();
+    for(auto it = propositionMap.begin(); it != end; ++it){
+        PProposition proposition = it.value();
         QList<PComponent> clearInput;
         QString relationHead = proposition->getRelation()->getHead()->toString();
         if(relationHead == "does"){
@@ -377,7 +382,8 @@ void PropnetProver::cleanPropnet(){
 #ifndef QT_NO_DEBUG
     qDebug() << "CLEAN PROPNET ENDED";
 
-    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+    for(auto it = propositionMap.begin(); it != end; ++it){
+        PProposition proposition = it.value();
         if(!proposition->hasInput()){
             qDebug() << "Proposition " << proposition->getName() << " has no input";
             continue;
@@ -431,7 +437,10 @@ bool PropnetProver::cleanPropnetIteration(){
 
 void PropnetProver::buildComponents(){
     components.clear();
-    for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
+    auto propositionMap = propositionDatabase->getPropositionsMap();
+    auto end = propositionMap.end();
+    for(auto it = propositionMap.begin(); it != end; ++it){
+        PProposition proposition = it.value();
         proposition->buildInputPropositions();
         components.append(proposition);
         components += getSubComponents(proposition);
@@ -534,6 +543,7 @@ PProposition PropnetProver::getPropositionFromString(QString s){
 }
 
 void PropnetProver::loadPropnetBasePropositions(QVector<LRelation> baseProp){
+    // Did we already load these base propositions?
     if(basePropositionsAlreadyLoaded.size() == baseProp.size()){
         bool alreadyInMemory = true;
         for(LRelation relation : baseProp){
@@ -543,21 +553,32 @@ void PropnetProver::loadPropnetBasePropositions(QVector<LRelation> baseProp){
             }
         }
         if(alreadyInMemory){
+            // Cool, we can save computation time!
             return;
         }
     }
-
-
 
 
     clearBasePropositions();
     for(LRelation relation : baseProp){
         propositionDatabase->getProposition(relation->toStringWithNoQualifier())->setValue(true);
     }
+
+    clearAllSavedValues();
+    auto end = basePropositions.cend();
+    for(auto it = basePropositions.cbegin(); it != end; ++it){
+        PProposition baseProp = it.value();
+        hasCorrectSavedValue[baseProp] = true;
+    }
+
+    basePropositionsAlreadyLoaded.clear();
+    for(LRelation relation : baseProp){
+        basePropositionsAlreadyLoaded.insert(relation->toStringWithNoQualifier());
+    }
 }
 
 void PropnetProver::loadPropnetDoesPropositions(QVector<LRelation> doesProp){
-    clearInputPropositions();
+    clearDoesPropositions();
     for(LRelation relation : doesProp){
         propositionDatabase->getProposition(relation->toString())->setValue(true);
     }
@@ -566,6 +587,7 @@ void PropnetProver::loadPropnetDoesPropositions(QVector<LRelation> doesProp){
 void PropnetProver::buildBaseDoesPropositions(){
     basePropositions.clear();
     doesPropositions.clear();
+    viewPropositions.clear();
 
     for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){
         LRelation relation = proposition->getRelation();
@@ -575,7 +597,9 @@ void PropnetProver::buildBaseDoesPropositions(){
         }
         if(relation->getHead()->toString() == QString("does")){
             doesPropositions.insert(relation->toString(),proposition);
+            continue;
         }
+        viewPropositions.insert(relation->toString(),proposition);
     }
 
 #ifndef QT_NO_DEBUG
@@ -585,24 +609,51 @@ void PropnetProver::buildBaseDoesPropositions(){
         qDebug() << "\tBase proposition " << baseProp->getName();
     }
     qDebug() << "Does Propositions nb : " << doesPropositions.size();
-    for(PProposition inputProp : doesPropositions.values()){
-        qDebug() << "\tDoes proposition " << inputProp->getName();
+    for(PProposition doesProp : doesPropositions.values()){
+        qDebug() << "\tDoes proposition " << doesProp->getName();
+    }
+    qDebug() << "\n";
+
+    qDebug() << "View Propositions nb : " << viewPropositions.size();
+    for(PProposition viewProp : viewPropositions.values()){
+        qDebug() << "\tDoes proposition " << viewProp->getName();
     }
     qDebug() << "\n";
 #endif
 }
 
-
-
-void PropnetProver::clearBasePropositions(){
-    for(PProposition proposition : basePropositions.values()){
-        proposition->setValue(false);
+void PropnetProver::clearAllSavedValues(){
+    auto end = hasCorrectSavedValue.cend();
+    for (auto it = hasCorrectSavedValue.cbegin(); it != end; ++it){
+        hasCorrectSavedValue[it.key()] = false;
     }
 }
 
-void PropnetProver::clearInputPropositions(){
-    for(PProposition proposition : doesPropositions.values()){
-        proposition->setValue(false);
+void PropnetProver::clearViewPropositionSavedValues(){
+    auto end = viewPropositions.cend();
+    for (auto it = viewPropositions.cbegin(); it != end; ++it){
+        hasCorrectSavedValue[it.value()] = false;
+    }
+}
+
+void PropnetProver::clearBasePropositions(){
+    auto end = basePropositions.cend();
+    for (auto it = basePropositions.cbegin(); it != end; ++it){
+        it.value()->setValue(false);
+    }
+}
+
+void PropnetProver::clearDoesPropositions(){
+    auto end = doesPropositions.cend();
+    for (auto it = doesPropositions.cbegin(); it != end; ++it){
+        it.value()->setValue(false);
+    }
+}
+
+void PropnetProver::clearViewPropositions(){
+    auto end = viewPropositions.cend();
+    for (auto it = viewPropositions.cbegin(); it != end; ++it){
+        it.value()->setValue(false);
     }
 }
 
@@ -611,16 +662,24 @@ bool PropnetProver::propnetEvaluate(QString s){
 }
 
 bool PropnetProver::propnetEvaluate(PProposition proposition){
-//    qDebug() << "propnetEvaluate of proposition : " << proposition->getName();
-    if(!proposition->hasInput()){
-//        qDebug() << "propnetEvaluate : this proposition has no input. It's value is " << proposition->getValue();
+    //        qDebug() << "propnetEvaluate of proposition : " << proposition->getName();
+    if(hasCorrectSavedValue.value(proposition)){
         return proposition->getValue();
     }
 
-//    qDebug() << "propnetEvaluate : this proposition has inputs. Time to evaluate them";
-    for(PProposition inputProposition : proposition->getInputPropositions()){
-//                qDebug() << "\tpropnetEvaluate : input proposition : " << inputProposition->getName();
+    if(!proposition->hasInput()){
+        //                qDebug() << "propnetEvaluate : this proposition has no input. It's value is " << proposition->getValue();
+        hasCorrectSavedValue[proposition] = true;
+        return proposition->getValue();
     }
+
+
+
+    //        qDebug() << "propnetEvaluate : this proposition has inputs. Time to evaluate them";
+    //        for(PProposition inputProposition : proposition->getInputPropositions()){
+    //                    qDebug() << "\tpropnetEvaluate : input proposition : " << inputProposition->getName();
+    //        }
+
     for(PProposition inputProposition : proposition->getInputPropositions()){
         propnetEvaluate(inputProposition);
     }
@@ -630,11 +689,161 @@ bool PropnetProver::propnetEvaluate(PProposition proposition){
     bool newValue = singleInput->computeValue();
     proposition->setValue(newValue);
 
-//    qDebug() << "propnetEvaluate finished. " << proposition->getName() << " is " << newValue;
+    hasCorrectSavedValue[proposition] = true;
+
+    //        qDebug() << "propnetEvaluate finished. " << proposition->getName() << " is " << newValue;
 
     return newValue;
 }
 
+void PropnetProver::buildDepthChargeMembers(){
+    depthChargeGoalVector.clear();
+    for(int i = 0; i<roles.size(); ++i){
+        depthChargeGoalVector.append(-1);
+    }
+
+    roleIndex.clear();
+    depthChargeLegalMoves.clear();
+    int index = 0;
+    for(LTerm roleTerm : roles){
+        QString roleString = roleTerm->toString();
+        roleIndex.insert(roleString, index);
+        depthChargeLegalMoves.insert(roleString, QVector<PProposition>());
+        index++;
+    }
+
+}
+
+
+
+QVector<int> PropnetProver::depthCharge(QVector<LRelation> baseProp, QMap<PProposition, PProposition> mapNextToBase){
+    //    qDebug() << "PropnetProver::depthCharge";
+    loadPropnetBasePropositions(baseProp);
+    int nbStateExpanded = 0;
+
+    for(int i = 0; i<roles.size(); ++i){
+        depthChargeGoalVector[i] = -1;
+    }
+
+    //    qDebug() << "Nb roles " << goals.size();
+    //    return goals;
+
+
+    clearAllSavedValues();
+
+
+    while(true){
+        //        qDebug() << "State ";
+        //        for(PProposition baseProp : basePropositions){
+        //            if(baseProp->getValue()){
+        //                qDebug() << "Proposition " << baseProp->getName();
+        //            }
+        //        }
+
+
+        // Is terminal
+        //        qDebug() << "Step 1";
+        bool isTerminal = propnetEvaluate(propositionDatabase->getProposition("terminal"));
+
+        // If it's the case, get goal, and return the value(s)
+        //        qDebug() << "Step 2";
+        if(isTerminal){
+            break;
+        }
+
+        // Else, get a set of legal moves
+        //        qDebug() << "Step 3";
+
+        // Clear all legal moves from previous iterations
+        auto legalMovesEnd = depthChargeLegalMoves.end();
+        for (auto it = depthChargeLegalMoves.begin(); it != legalMovesEnd; ++it){
+            it.value().clear();
+        }
+
+
+        QList<PProposition> legalPropositions = propositionDatabase->getPropositions("legal");
+        for(PProposition legalProposition : legalPropositions){
+            bool isLegal = propnetEvaluate(legalProposition);
+            if(isLegal){
+                depthChargeLegalMoves[legalProposition->getRelation()->getBody()[0]->toString()].append(legalProposition);
+            }
+        }
+
+        //        qDebug() << "Nb legal moves for player 0 : " << legalMoves.values()[0].size();
+
+        // Get next state
+        //        qDebug() << "Step 4";
+        clearDoesPropositions();
+        auto legalMovesCEnd = depthChargeLegalMoves.cend();
+        for (auto it = depthChargeLegalMoves.cbegin(); it != legalMovesCEnd; ++it){
+            QVector<PProposition> legalMovesForSpecificPlayer = it.value();
+            PProposition randomLegal =   legalMovesForSpecificPlayer[qrand()%(legalMovesForSpecificPlayer.size())];
+            QString doesString = randomLegal->getName().replace("legal", "does");
+            PProposition doesProposition = propositionDatabase->getProposition(doesString);
+
+
+            //            if(propositionDatabase->getProposition(QString("( 2)"))->getValue()){
+            //                doesProposition = propositionDatabase->getProposition("(does robot b)");
+            //            }
+            //            if(propositionDatabase->getProposition(QString("( 3)"))->getValue()){
+            //                doesProposition = propositionDatabase->getProposition("(does robot c)");
+            //            }
+            //            if(propositionDatabase->getProposition(QString("( 4)"))->getValue()){
+            //                doesProposition = propositionDatabase->getProposition("(does robot a)");
+            //            }
+            //            if(propositionDatabase->getProposition(QString("( 5)"))->getValue()){
+            //                doesProposition = propositionDatabase->getProposition("(does robot b)");
+            //            }
+            //            if(propositionDatabase->getProposition(QString("( 6)"))->getValue()){
+            //                doesProposition = propositionDatabase->getProposition("(does robot a)");
+            //            }
+
+            doesProposition->setValue(true);
+            //            qDebug() << "Does Proposition " << doesProposition->getName();
+        }
+
+
+        auto mapNextToBaseCEnd = mapNextToBase.cend();
+        for(auto it = mapNextToBase.cbegin(); it != mapNextToBaseCEnd; ++it){
+            PProposition nextProp = it.key();
+            propnetEvaluate(nextProp);
+        }
+
+        // Load the correct base propositions in memory
+        //        qDebug() << "Step 5";
+        clearBasePropositions();
+        for(auto it = mapNextToBase.cbegin(); it != mapNextToBaseCEnd; ++it){
+            PProposition nextProp = it.key();
+            if(nextProp->getValue()){
+                mapNextToBase.value(nextProp)->setValue(true);
+            }
+        }
+
+        nbStateExpanded++;
+        // Clear the saved values
+        clearAllSavedValues();
+    }
+
+
+
+    for(PProposition goalProp : propositionDatabase->getPropositions("goal")){
+        //        qDebug() << "Goal prop " << goalProp->getName();
+        bool isCorrectGoalValue = propnetEvaluate(goalProp);
+        if(isCorrectGoalValue){
+            QString roleString = goalProp->getRelation()->getBody()[0]->toString();
+            int goalValue = goalProp->getRelation()->getBody()[1]->toString().toInt();
+            depthChargeGoalVector[roleIndex[roleString]] = goalValue;
+            //            if(goalValue > 0){
+            //                qDebug() << "BLA goal > 0";
+            //            }
+        }
+    }
+    //    qDebug() << "Goal value " << goals[0] << "\n\n";
+
+    depthChargeGoalVector.append(nbStateExpanded);
+
+    return depthChargeGoalVector;
+}
 
 /***
                                  * Misc

@@ -23,6 +23,7 @@ public:
     Logic_Term(const QString & s, LOGIC_TERM_TYPE t);
     Logic_Term(const QString & s, LOGIC_TERM_TYPE t, Logic::LOGIC_KEYWORD k);
     Logic_Term(LTerm head, QList<LTerm> body);
+    Logic_Term(const Logic_Term & l);
 
     static LTerm clone(LTerm term);
     static QList<LTerm> cloneList(QList<LTerm> list);

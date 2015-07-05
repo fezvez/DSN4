@@ -18,13 +18,16 @@ public:
     void cleanPropnet();
     bool cleanPropnetIteration();
 
+    void buildComponents();
+    QList<PComponent> getSubComponents(PComponent component);
+
+
+
     bool addProposition(LRelation relation);
 
     QList<LRule> getGrounding(LRule rule);
     bool addRuleToDatabase(LRule);
 
-    void buildComponents();
-    QList<PComponent> getSubComponents(PComponent component);
 
     PDatabase getDatabase();
 
@@ -43,16 +46,16 @@ public:
 
 protected:
     void buildBaseDoesPropositions();
-    void buildNextRelationToBaseRelationMap();
 
     void clearBasePropositions();
-    void clearInputPropositions();
+    void clearDoesPropositions();
+    void clearViewPropositions();
 
 
 protected:
     QMap<QString, PProposition> basePropositions;
     QMap<QString, PProposition> doesPropositions;
-
+    QMap<QString, PProposition> viewPropositions;
 
 
     // To file
@@ -64,6 +67,34 @@ protected:
     int getIndexDot(PComponent c);
     QMap<PComponent, int> indexDotMap;
     int indexDot;
+
+    // Optimizations
+public:
+    void initializeSavedValuesMap();
+    void clearAllSavedValues();
+    void clearViewPropositionSavedValues();
+
+
+
+//    QVector<int> depthChargeDebug(QVector<LRelation> baseProp, QMap<PProposition, PProposition> mapNextToBase);
+//    int depthCharge(Role role);
+
+
+protected:
+    QSet<QString> basePropositionsAlreadyLoaded;
+    QMap<PProposition, bool> hasCorrectSavedValue;
+
+
+public:
+    QVector<int> depthCharge(QVector<LRelation> baseProp, QMap<PProposition, PProposition> mapNextToBase);
+    void buildDepthChargeMembers();
+
+
+protected:
+    QVector<int> depthChargeGoalVector;
+    QMap<QString, int> roleIndex;
+    QMap<QString, QVector<PProposition>> depthChargeLegalMoves;
+
 
     // Misc
 public:

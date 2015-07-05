@@ -23,7 +23,7 @@ public:
 
     QString getRelation();
     void addProposition(PProposition prop);     // You need to be sure that the proposition is not already inside
-    QList<PProposition> getAllPropositions();       // propositionsMap.keys()
+    QList<PProposition> & getAllPropositions();       // propositionsMap.keys()
 
 protected:
     QMap<QString, PProposition> propositionsMap;
@@ -41,14 +41,14 @@ public:
     void clear();
 
     // mark
-    QList<PProposition> getPropositions(QString head);  // Can not insert
+    QList<PProposition> & getPropositions(QString head);  // Can not insert
     PRelationDatabase getRelationDatabase(QString head);
 
     // mark cell 1 1
     PProposition getProposition(LRelation relation);    // Can insert
     PProposition getProposition(QString relation);      // Can not insert
 
-    QMap<QString, PProposition> getPropositionsMap();
+    QMap<QString, PProposition> & getPropositionsMap();
 
     bool contains(QString proposition);
 
