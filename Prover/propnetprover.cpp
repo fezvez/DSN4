@@ -35,10 +35,13 @@ void PropnetProver::setup(QList<LRelation> relations, QList<LRule> rules){
 
     //        qDebug() << "Propnet setup";
     generatePropnet();
-    initializeSavedValuesMap();
-    cleanPropnet();
+
     buildBaseDoesPropositions();
     buildMapNextPropositionToBaseProposition();
+
+    initializeSavedValuesMap();
+    cleanPropnet();
+
 
     buildDepthChargeMembers();
     buildOptimizedPropnet();
@@ -621,7 +624,7 @@ void PropnetProver::buildBaseDoesPropositions(){
 
     qDebug() << "View Propositions nb : " << viewPropositions.size();
     for(PProposition viewProp : viewPropositions.values()){
-        qDebug() << "\tDoes proposition " << viewProp->getName();
+        qDebug() << "\tView proposition " << viewProp->getName();
     }
     qDebug() << "\n";
 #endif
@@ -702,6 +705,7 @@ bool PropnetProver::propnetEvaluate(PProposition proposition){
 }
 
 void PropnetProver::buildDepthChargeMembers(){
+    qDebug() << "buildDepthChargeMembers";
     depthChargeGoalVector.clear();
     for(int i = 0; i<roles.size(); ++i){
         depthChargeGoalVector.append(-1);
@@ -732,8 +736,13 @@ void PropnetProver::buildMapNextPropositionToBaseProposition(){
             QString nextPropositionString = nextProposition->getName();
             QString basePropositionString = nextPropositionString.remove("next_");
             //            qDebug() << "BP " << basePropositionString;
+            if(!propositionDatabase->contains(basePropositionString)){
+                propositionDatabase->removeProposition(nextProposition->getRelation());
+                viewPropositions.remove(nextPropositionString);
+                qDebug() << "Deleting next proposition " << nextPropositionString;
+                continue;
+            }
             PProposition baseProposition = propositionDatabase->getProposition(basePropositionString);
-
             mapNextPropositionToBaseProposition[nextProposition] = baseProposition;
         }
     }
@@ -741,9 +750,12 @@ void PropnetProver::buildMapNextPropositionToBaseProposition(){
 #ifndef QT_NO_DEBUG
     qDebug() << "LINK NEXT TO BASE : ";
     for(PProposition nextProposition : mapNextPropositionToBaseProposition.keys()){
+        qDebug() << "Linking " << nextProposition->getName();
         PProposition baseProposition = mapNextPropositionToBaseProposition[nextProposition];
-        qDebug() << "Linking " << nextProposition->getName() << " to " << baseProposition->getName();
+        qDebug() << "to " << baseProposition->getName();
+//        qDebug() << "Linking " << nextProposition->getName() << " to " << baseProposition->getName();
     }
+        qDebug() << "LINK NEXT TO BASE END";
     qDebug() << "\n";
 #endif
 }
@@ -882,7 +894,7 @@ QVector<int> PropnetProver::depthCharge(QVector<LRelation> baseProp){
  *
  */
 void PropnetProver::buildOptimizedPropnet(){
-
+    qDebug() << "buildOptimizedPropnet";
 
     buildOptimizedMembers();
     buildPropositionsOptimized();

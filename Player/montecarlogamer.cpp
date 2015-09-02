@@ -5,8 +5,7 @@
 MonteCarloGamer::MonteCarloGamer(int p) : Player(p)
 {
     stateMachine = new PropnetStateMachine();
-    playerName = "MCS_Player";
-    networking->playerName = this->playerName;
+    setName("CppMcsPlayer");
 }
 
 MonteCarloGamer::~MonteCarloGamer()
@@ -47,6 +46,7 @@ Move MonteCarloGamer::selectMove(qint64 timeout){
 
     QList<Move> possibleMoves = stateMachine->getLegalMoves(currentState, role);
     Q_ASSERT(possibleMoves.size() > 0);
+
 
     QList<int> scores;
     QList<int> visits;

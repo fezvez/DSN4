@@ -14,6 +14,7 @@ class Move
 {
 public:
     Move(LTerm m);
+    bool operator==(Move & m);
 
     LTerm getTerm();
     QString toString();

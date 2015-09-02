@@ -11,7 +11,7 @@
 #include "../StateMachine/statemachine.h"
 #include "../StateMachine/proverstatemachine.h"
 
-#include "networking.h"
+#include "playernetwork.h"
 
 
 
@@ -22,7 +22,7 @@ public:
     Player(int p = 9147);
     ~Player();
 
-
+    void setName(QString s);
 
 public slots:
     virtual void metagame(qint64 timeout) = 0;
@@ -33,23 +33,24 @@ public slots:
 public:
     Role getRole();
     MachineState getCurrentState();
+    QString getName();
 
     virtual void initializeStateMachine(QString filename, QString role) = 0;
     StateMachine* getStateMachine();
-
+    int getPort();
 
 protected:
     void finishMetagame();
     void moveSelected(Move m);
 
 signals:
-    void emitMessage(QString s);
+    void emitOutput(QString s);
 
 protected:
     Role role;
     MachineState currentState;
 
-    Networking* networking;    
+    PlayerNetwork* playerNetwork;
     StateMachine* stateMachine;
 
     // Sancho or example

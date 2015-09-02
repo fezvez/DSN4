@@ -15,7 +15,6 @@ QMAKE_MAC_SDK = macosx10.9
 QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -std=gnu0x -stdlib=libc+
 
 SOURCES += main.cpp\
-        widget.cpp \
     fileloader.cpp \
     kifloader.cpp \
     dynamicsemanticnet.cpp \
@@ -43,7 +42,6 @@ SOURCES += main.cpp\
     UnitTest/proverstatemachine_test.cpp \
     Player/firstplayer.cpp \
     Player/player.cpp \
-    Player/networking.cpp \
     UnitTest/player_test.cpp \
     Player/montecarlogamer.cpp \
     Prover/propnetprover.cpp \
@@ -56,9 +54,18 @@ SOURCES += main.cpp\
     PropNet/componentnot.cpp \
     StateMachine/propnetstatemachine.cpp \
     UnitTest/propnetstatemachine_test.cpp \
-    PropNet/propositionoptimized.cpp
+    PropNet/propositionoptimized.cpp \
+    Server/server.cpp \
+    Server/servernetwork.cpp \
+    mainwidget.cpp \
+    serverwidget.cpp \
+    playerwidget.cpp \
+    Server/serverii.cpp \
+    kifwidget.cpp \
+    Player/playernetwork.cpp
 
-HEADERS  += widget.h \
+
+HEADERS  += \
     fileloader.h \
     kifloader.h \
     dynamicsemanticnet.h \
@@ -88,7 +95,6 @@ HEADERS  += widget.h \
     UnitTest/proverstatemachine_test.h \
     Player/firstplayer.h \
     Player/player.h \
-    Player/networking.h \
     UnitTest/player_test.h \
     Player/montecarlogamer.h \
     Prover/propnetprover.h \
@@ -101,6 +107,14 @@ HEADERS  += widget.h \
     PropNet/componentnot.h \
     StateMachine/propnetstatemachine.h \
     UnitTest/propnetstatemachine_test.h \
-    PropNet/propositionoptimized.h
+    PropNet/propositionoptimized.h \
+    Server/server.h \
+    Server/servernetwork.h \
+    mainwidget.h \
+    serverwidget.h \
+    playerwidget.h \
+    Server/serverii.h \
+    kifwidget.h \
+    Player/playernetwork.h
 
 FORMS    += widget.ui

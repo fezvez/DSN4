@@ -26,8 +26,6 @@ void KifLoader::run(){
         int nbCharDisplayed = 0;
 
         stringList.clear();
-
-
         while (!in.atEnd()) {
             line = in.readLine();
 
@@ -46,9 +44,12 @@ void KifLoader::run(){
 
         // Wrap up
         emit kifProcessed(stringList);
-        qDebug() << nbCharDisplayed << '\t' << maxCharDisplayed;
+        emit emitOutput(QString("Displaying nb of characters : ").append(QString::number(nbCharDisplayed)));
         if(nbCharDisplayed>=maxCharDisplayed){
-            qDebug() << "Truncated file";
+            emit emitOutput(QString("The file is too large, the display is truncated"));
+        }
+        else{
+            emit emitOutput(QString("The complete file is displayed"));
         }
     }
 }
@@ -56,8 +57,6 @@ void KifLoader::run(){
 QStringList KifLoader::runSynchronously(){
     QFile file(filename);
     stringList.clear();
-
-
 
     if (file.open(QIODevice::ReadOnly)) {
         QString line;
@@ -97,8 +96,6 @@ void KifLoader::processLine(QString line){
     if(isWhitespace)
         return;
 
-
-
     // Remove comments
     int indexOfComment = line.indexOf(';');
     switch(indexOfComment){
@@ -114,7 +111,7 @@ void KifLoader::processLine(QString line){
     // Trim whitespaces
     line = line.trimmed();
 
-
+    // Add the line to stringList
     stringList.append(line);
 }
 

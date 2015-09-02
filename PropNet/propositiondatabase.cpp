@@ -87,6 +87,16 @@ bool PropositionDatabase::contains(QString proposition){
     return propositionsMap.contains(proposition);
 }
 
+void PropositionDatabase::removeProposition(LRelation relation){
+    QString relationHead = relation->getHead()->toString();
+    QString fullRelationName = relation->toStringWithNoQualifier();
+    propositionsMap.remove(fullRelationName);
+
+    PRelationDatabase subDB = databaseMap[relationHead];
+    subDB->removeProposition(fullRelationName);
+
+}
+
 
 PRelationDatabase PropositionDatabase::getRelationDatabase(QString head){
     if(!databaseMap.contains(head)){
@@ -123,6 +133,12 @@ void RelationDatabase::addProposition(PProposition prop){
 
 QList<PProposition> & RelationDatabase::getAllPropositions(){
     return propositionsList;
+}
+
+void RelationDatabase::removeProposition(QString str){
+    PProposition prop = propositionsMap[str];
+    propositionsList.removeOne(prop);
+    propositionsMap.remove(str);
 }
 
 

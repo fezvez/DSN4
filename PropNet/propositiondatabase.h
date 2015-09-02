@@ -24,6 +24,7 @@ public:
     QString getRelation();
     void addProposition(PProposition prop);     // You need to be sure that the proposition is not already inside
     QList<PProposition> & getAllPropositions();       // propositionsMap.keys()
+    void removeProposition(QString str);
 
 protected:
     QMap<QString, PProposition> propositionsMap;
@@ -51,6 +52,7 @@ public:
     QMap<QString, PProposition> & getPropositionsMap();
 
     bool contains(QString proposition);
+    void removeProposition(LRelation relation);
 
 protected:
     QMap<QString, PProposition> propositionsMap;    // maps "line x" to its proposition

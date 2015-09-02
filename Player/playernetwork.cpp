@@ -1,4 +1,4 @@
-#include "networking.h"
+#include "playernetwork.h"
 
 
 #include <QDebug>
@@ -11,7 +11,7 @@
 #include "player.h"
 
 
-Networking::Networking(int port, Player* p):
+PlayerNetwork::PlayerNetwork(int port, Player* p):
     player(p)
 {
     // Regular expressions
@@ -31,23 +31,24 @@ Networking::Networking(int port, Player* p):
         tempPort++;
     }
 
-    qDebug() << "Server listening on address " << myServer->serverAddress() << " and port " << myServer->serverPort();
+    //    qDebug() << "Player listening on address " << myServer->serverAddress() << " and port " << myServer->serverPort();
     connect(myServer, SIGNAL(newConnection()), this, SLOT(newConnection()));
 
     // GGP
     isPlaying = false;
 }
 
-Networking::~Networking()
+PlayerNetwork::~PlayerNetwork()
 {
 
 }
 
-int Networking::getPort(){
+int PlayerNetwork::getPort(){
     return myServer->serverPort();
 }
 
-void Networking::newConnection(){
+void PlayerNetwork::newConnection(){
+    emit emitOutput("PlayerNetwork::newConnection() : New connection with the game manager");
     blockSize = 0;
     QTcpSocket* tcpSocket = myServer->nextPendingConnection();
 
@@ -60,7 +61,7 @@ void Networking::newConnection(){
     connect(signalMapper, SIGNAL(mapped(int)), this, SLOT(receiveMessage(int)));
 }
 
-void Networking::receiveMessage(int indexOfTheSocket){
+void PlayerNetwork::receiveMessage(int indexOfTheSocket){
     QTcpSocket* tcpSocket = tcpSockets[indexOfTheSocket];
     QTextStream in(tcpSocket);
 
@@ -81,7 +82,7 @@ void Networking::receiveMessage(int indexOfTheSocket){
     bool nextLine = false;
     do {
         line = in.readLine();
-//        qDebug() << "Line " << i << line;
+//        emit emitOutput(QString("Line %1 : %2").arg(i).arg(line));
         i++;
         if(line.isEmpty()){
             nextLine = true;
@@ -96,11 +97,12 @@ void Networking::receiveMessage(int indexOfTheSocket){
 
     } while (!line.isNull());
 
-    qDebug() << "MESSAGE FROM NETWORK : " << message;
+    emit emitOutput(QString("Message from game manager : %1").arg(message));
+//    qDebug() << "Networking::receiveMessage() : MESSAGE FROM NETWORK : " << message;
     processMessage(message, indexOfTheSocket);
 }
 
-void Networking::processMessage(QString message, int index){
+void PlayerNetwork::processMessage(QString message, int index){
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
 
     QStringList splitMessage = Parser::split(message);
@@ -114,7 +116,7 @@ void Networking::processMessage(QString message, int index){
 
     // INFO
     if(infoRegExp.exactMatch(messageType)){
-//        qDebug() << "It's an Info message";
+        qDebug() << "It's an Info message";
         QString answer = QString("( ( name ");
         answer += playerName;
         answer += " ) ( status ";
@@ -216,8 +218,9 @@ void Networking::processMessage(QString message, int index){
 
 
 
-void Networking::sendMessage(QString message, int indexOfTheSocket){
-    qDebug() << "SENDING MESSAGE : " << message;
+void PlayerNetwork::sendMessage(QString message, int indexOfTheSocket){
+    emit emitOutput(QString("Sending message : %1").arg(message));
+//    qDebug() << "Networking::sendMessage() : SENDING MESSAGE : " << message;
 
     QTcpSocket* tcpSocket = tcpSockets[indexOfTheSocket];
 
@@ -238,7 +241,7 @@ void Networking::sendMessage(QString message, int indexOfTheSocket){
     tcpSocket->disconnectFromHost();
 }
 
-void Networking::sendMessage(QString message){
+void PlayerNetwork::sendMessage(QString message){
     sendMessage(message, currentIndex);
 }
 

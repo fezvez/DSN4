@@ -24,20 +24,19 @@ namespace Ui {
 class Widget;
 }
 
-class Widget : public QWidget
+class KifWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit Widget(QWidget *parent = 0);
-    ~Widget();
+    explicit KifWidget(QWidget *parent = 0);
+    ~KifWidget();
 
 signals:
     void kifProcessed(const QStringList &sl);
 
 public slots:
     void output(const QString &string);
-    void ping();
 
 
 private slots:
@@ -53,15 +52,13 @@ private:
     QTabWidget *tabWidget;
 
     QTextEdit *textEditMain;
-    QTextEdit *textEditStaticData;
-    QTextEdit *textEditDebug;
+    QTextEdit *textEditStaticFile;
 
 
-    QLineEdit *lineEditFindfile;
+    QLineEdit *lineEditFindFile;
     QPushButton *loadButton;
 
     // Left menu
-    QComboBox *fileComboBox;
     QComboBox *directoryComboBox;
     QLabel *fileLabel;
     QLabel *directoryLabel;

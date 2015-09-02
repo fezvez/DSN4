@@ -16,6 +16,7 @@ public:
 signals:
     void lineProcessed(const QString & s);
     void kifProcessed(QStringList sl);
+    void emitOutput(QString s);
 
 public slots:
 

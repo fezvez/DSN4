@@ -24,8 +24,6 @@ protected:
     void buildBaseInputEvaluationStructures();
 
 
-
-
 public:
     //void loadTempRelations(const QVector<LRelation> contents);
 

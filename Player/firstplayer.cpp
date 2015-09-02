@@ -5,8 +5,7 @@
 FirstPlayer::FirstPlayer(int p) : Player(p)
 {
     stateMachine = new PropnetStateMachine();
-    playerName = "MyCppRandomPlayer";
-    networking->playerName = this->playerName;
+    setName("MyCppRandomPlayer");
 }
 
 FirstPlayer::~FirstPlayer()
@@ -25,7 +24,8 @@ Move FirstPlayer::selectMove(qint64 timeout){
     qDebug() << "selectMove current state " << currentState.toString();
 
     QList<Move> moves = stateMachine->getLegalMoves(getCurrentState(), getRole());
-    Move move = moves[0];
+
+    Move move = moves[qrand() % moves.size()];
     moveSelected(move);
     return move;
 }

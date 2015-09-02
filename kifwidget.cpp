@@ -1,4 +1,4 @@
-#include "widget.h"
+#include "kifwidget.h"
 #include "ui_widget.h"
 #include "fileloader.h"
 #include "kifloader.h"
@@ -18,19 +18,17 @@
 #include "Prover/gdlprover.h"
 
 //
-Widget::Widget(QWidget *parent) :
+KifWidget::KifWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Widget)
 {
     afac = 0;
-    ui->setupUi(this);
+//    ui->setupUi(this);
     setUpLayout();
     initialize();
-
-    setWindowTitle("Dynamic Semantic Net");
 }
 
-Widget::~Widget()
+KifWidget::~KifWidget()
 {
     delete ui;
 }
@@ -39,17 +37,19 @@ Widget::~Widget()
 /**
  * LAYOUT
  */
-void Widget::setUpLayout(){
+void KifWidget::setUpLayout(){
     // Widgets
 
     // Top menu
-    labelTopMenu = new QLabel("Bli", this);
+    labelTopMenu = new QLabel("Select a .kif file and there should be some static analysis on it", this);
 
     // Left menu
     browseButton = createButton(tr("&Browse..."), SLOT(browse()));
     findButton = createButton(tr("&Find"), SLOT(find()));
 
-    fileComboBox = createComboBox(tr("*"));
+    lineEditFindFile = new QLineEdit(this);
+    lineEditFindFile->setText("*");
+
     directoryComboBox = createComboBox("");
     //directoryComboBox = createComboBox(QDir::currentPath());
 
@@ -68,7 +68,7 @@ void Widget::setUpLayout(){
     // Layout
     QGridLayout *leftMenuLayout = new QGridLayout(this);
     leftMenuLayout->addWidget(fileLabel, 0, 0);
-    leftMenuLayout->addWidget(fileComboBox, 0, 1, 1, 2);
+    leftMenuLayout->addWidget(lineEditFindFile, 0, 1, 1, 2);
     leftMenuLayout->addWidget(directoryLabel, 1, 0);
     leftMenuLayout->addWidget(directoryComboBox, 1, 1);
     leftMenuLayout->addWidget(browseButton, 1, 2);
@@ -92,23 +92,23 @@ void Widget::setUpLayout(){
     this->setLayout(layout);
 }
 
-QPushButton* Widget::createButton(const QString &text, const char *member)
+QPushButton* KifWidget::createButton(const QString &text, const char *member)
 {
     QPushButton *button = new QPushButton(text);
     connect(button, SIGNAL(clicked()), this, member);
     return button;
 }
 
-QComboBox* Widget::createComboBox(const QString &text)
+QComboBox* KifWidget::createComboBox(const QString &text)
 {
-    QComboBox *comboBox = new QComboBox;
+    QComboBox *comboBox = new QComboBox();
     comboBox->setEditable(true);
     comboBox->addItem(text);
     comboBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     return comboBox;
 }
 
-void Widget::createFilesTable()
+void KifWidget::createFilesTable()
 {
     filesTable = new QTableWidget(0, 2);
     filesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -125,22 +125,18 @@ void Widget::createFilesTable()
             this, SLOT(openFileOfItem(int,int)));
 }
 
-void Widget::createMainDisplay(){
+void KifWidget::createMainDisplay(){
     textEditMain = new QTextEdit(this);
     textEditMain->setFont(QFont("Courier"));
     textEditMain->setLineWrapMode(QTextEdit::NoWrap);
 
-    textEditStaticData = new QTextEdit(this);
-    textEditStaticData->setFont(QFont("Courier"));
-    textEditStaticData->setReadOnly(true);
-
-    textEditDebug = new QTextEdit(this);
-    textEditDebug->setFont(QFont("Courier"));
+    textEditStaticFile = new QTextEdit(this);
+    textEditStaticFile->setFont(QFont("Courier"));
+    textEditStaticFile->setReadOnly(true);
 
     tabWidget = new QTabWidget(this);
     tabWidget->addTab(textEditMain, tr("Main"));
-    tabWidget->addTab(textEditStaticData, tr("File"));
-    tabWidget->addTab(textEditDebug, tr("Debug"));
+    tabWidget->addTab(textEditStaticFile, tr("File"));
 
     tabWidget->setMinimumSize(640, 360);
 }
@@ -148,27 +144,29 @@ void Widget::createMainDisplay(){
 /**
  * INIT
  */
-void Widget::initialize(){
+void KifWidget::initialize(){
+    regEndsInKif = QRegExp("\\.kif$");
+
     textEditMain->append(tr("  --------------------------- HELLO! ---------------------------  \n"));
+    connect(lineEditFindFile, SIGNAL(textChanged(QString)), this, SLOT(find()));
     connect(directoryComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(find()));
     find();
 
-
-    //parser->debugKB();
-    //propnet = PPropNet(new PropNet(this));
-
-    //connect(this, SIGNAL(kifProcessed(QStringList)), player.data(), SLOT(updateKif(QStringList)));
-    //connect(this, SIGNAL(kifProcessed(QStringList)), this, SLOT(loadKif(QStringList)));
     connect(this, SIGNAL(kifProcessed(QStringList)), this, SLOT(debugFile(QStringList)));
-    connect(parser.data(), SIGNAL(output(QString)), textEditMain, SLOT(append(QString)));
-    connect(parser.data(), SIGNAL(outputDebug(QString)), textEditDebug, SLOT(append(QString)));
+
+    //connect(this, SIGNAL(kifProcessed(QStringList)), this, SLOT(loadKif(QStringList)));
+
+//    connect(parser.data(), SIGNAL(output(QString)), textEditMain, SLOT(append(QString)));
+//    connect(parser.data(), SIGNAL(outputDebug(QString)), textEditDebug, SLOT(append(QString)));
 
 
-
-    regEndsInKif = QRegExp("\\.kif$");
 }
 
-void Widget::debugFile(QStringList stringList){
+void KifWidget::debugFile(QStringList stringList){
+    QTextCursor cursor = textEditStaticFile->textCursor();
+    cursor.setPosition(0);
+    textEditStaticFile->setTextCursor(cursor);
+
 
     PParser parser = PParser(new Parser(this));
     parser->loadKif(stringList);
@@ -176,6 +174,7 @@ void Widget::debugFile(QStringList stringList){
     GDLProver prover;
     prover.setup(parser->getRelations(), parser->getRules());
 
+    output("Debugging the file");
 }
 
 
@@ -184,40 +183,38 @@ void Widget::debugFile(QStringList stringList){
  * FILE LOGIC
  */
 
-void Widget::openFileOfItem(int row, int /* column */)
+void KifWidget::openFileOfItem(int row, int /* column */)
 {
     afac++;
     tabWidget->setCurrentIndex(1);
-    textEditStaticData->clear();
+    textEditStaticFile->clear();
 
     QTableWidgetItem *item = filesTable->item(row, 0);
     //QDesktopServices::openUrl(QUrl::fromLocalFile(currentDir.absoluteFilePath(item->text())));
     QString filename(currentDir.absoluteFilePath(item->text()));
 
-    qDebug() << filename;
+    output(QString("Opening file : ").append(item->text()));
     if(filename.contains(regEndsInKif)){
         // Amusing, no RAII here
         // It seems dangerous, but I should read more about RAII and threads
         KifLoader *kifLoader = new KifLoader(this, filename);
-        connect(kifLoader, &KifLoader::lineProcessed, textEditStaticData, &QTextEdit::append);
+        connect(kifLoader, &KifLoader::lineProcessed, textEditStaticFile, &QTextEdit::append);
         connect(kifLoader, &KifLoader::finished, kifLoader, &QObject::deleteLater);
-        connect(kifLoader, &KifLoader::finished, this, &Widget::ping);
         connect(kifLoader, SIGNAL(kifProcessed(QStringList)),this, SIGNAL(kifProcessed(QStringList)));
+        connect(kifLoader, SIGNAL(emitOutput(QString)), this, SLOT(output(QString)));
         kifLoader->start();
     }
     else{
         FileLoader *fileLoader = new FileLoader(this, filename);
-        connect(fileLoader, &FileLoader::lineProcessed, textEditStaticData, &QTextEdit::append);
+        connect(fileLoader, &FileLoader::lineProcessed, textEditStaticFile, &QTextEdit::append);
         connect(fileLoader, &FileLoader::finished, fileLoader, &QObject::deleteLater);
         fileLoader->start();
     }
 
-    QTextCursor cursor = textEditStaticData->textCursor();
-    cursor.setPosition(0);
-    textEditStaticData->setTextCursor(cursor);
+
 }
 
-void Widget::browse()
+void KifWidget::browse()
 {
     QString directory = QFileDialog::getExistingDirectory(this,
                                                           tr("Find Files"), QDir::currentPath());
@@ -237,16 +234,25 @@ static void updateComboBox(QComboBox *comboBox)
 }
 
 
-void Widget::find()
+void KifWidget::find()
 {
+
     afac++;
     filesTable->setRowCount(0);
 
-    QString fileName = fileComboBox->currentText();
+    QString filename = lineEditFindFile->text();
+    if (filename.isEmpty()){
+        filename = "*";
+    }
+    QRegExp fileRegExp(filename);
+    if(filename.contains("*")){
+        fileRegExp.setPatternSyntax(QRegExp::Wildcard);
+    }
+
     QString path = directoryComboBox->currentText();
 
 
-    updateComboBox(fileComboBox);
+//    updateComboBox(fileComboBox);
     updateComboBox(directoryComboBox);
 
 
@@ -256,11 +262,22 @@ void Widget::find()
     currentDir.cdUp();
     currentDir.cdUp();
 #endif
+
+    QStringList filesTemp;
+
+    filesTemp = currentDir.entryList(QStringList(), QDir::Files | QDir::NoSymLinks);
+
     QStringList files;
-    if (fileName.isEmpty())
-        fileName = "*";
-    files = currentDir.entryList(QStringList(fileName),
-                                 QDir::Files | QDir::NoSymLinks);
+    for(QString file : filesTemp){
+        if(!file.contains(regEndsInKif)){
+            continue;
+        }
+        if( !file.contains(filename) && !(fileRegExp.indexIn(file) != -1) && !fileRegExp.exactMatch(file) ){
+            continue;
+        }
+        files.append(file);
+
+    }
 
     showFiles(files);
 }
@@ -268,7 +285,7 @@ void Widget::find()
 
 
 
-void Widget::showFiles(const QStringList &files)
+void KifWidget::showFiles(const QStringList &files)
 {
     for (int i = 0; i < files.size(); ++i) {
         QFile file(currentDir.absoluteFilePath(files[i]));
@@ -291,10 +308,7 @@ void Widget::showFiles(const QStringList &files)
     filesFoundLabel->setWordWrap(true);
 }
 
-void Widget::output(const QString & string){
+void KifWidget::output(const QString & string){
     textEditMain->append(string);
 }
 
-void Widget::ping(){
-    textEditMain->append("Ping");
-}

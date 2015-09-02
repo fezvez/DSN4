@@ -8,19 +8,19 @@
 
 class Player;
 
-enum GameState{
+enum class GameState{
     METAGAME,
     PLAY,
     STOP,
     ABORTED
 };
 
-class Networking : public QObject
+class PlayerNetwork : public QObject
 {
     Q_OBJECT
 public:
-    Networking(int port, Player *p);
-    ~Networking();
+    PlayerNetwork(int port, Player *p);
+    ~PlayerNetwork();
 
     int getPort();
 
@@ -37,6 +37,7 @@ private:
 signals:
     void emitMetagame(qint64 timeout);
     void emitPlay(QString moves, qint64 timeout);
+    void emitOutput(QString s);
 
 public:
     // Networking stuff

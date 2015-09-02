@@ -7,20 +7,24 @@
 
 Player::Player(int p)
 {
-    networking = new Networking(p, this);
-    qDebug() << "PORT IS " << networking->getPort();
+    playerNetwork = new PlayerNetwork(p, this);
+    emit emitOutput(QString("Player port is : %1").arg(playerNetwork->getPort()));
 
-    playerName = "CppPlayer";
-    networking->playerName = this->playerName;
+    setName("CppPlayer");
 
-    connect(this, SIGNAL(emitMessage(QString)), networking, SLOT(sendMessage(QString)));
-    connect(networking, SIGNAL(emitMetagame(qint64)), this, SLOT(metagame(qint64)));
-    connect(networking, SIGNAL(emitPlay(QString, qint64)), this, SLOT(play(QString, qint64)));
+    connect(this, SIGNAL(emitOutput(QString)), playerNetwork, SLOT(sendMessage(QString)));
+    connect(playerNetwork, SIGNAL(emitMetagame(qint64)), this, SLOT(metagame(qint64)));
+    connect(playerNetwork, SIGNAL(emitPlay(QString, qint64)), this, SLOT(play(QString, qint64)));
+    connect(playerNetwork, SIGNAL(emitOutput(QString)), this, SIGNAL(emitOutput(QString)));
+}
 
+void Player::setName(QString s){
+    playerName = s;
+    playerNetwork->playerName = this->playerName;
 }
 
 Player::~Player(){
-    delete networking;
+    delete playerNetwork;
 }
 
 void Player::play(QString newMoves, qint64 timeout){
@@ -52,10 +56,18 @@ StateMachine* Player::getStateMachine(){
     return stateMachine;
 }
 
+int Player::getPort(){
+    return playerNetwork->getPort();
+}
+
+QString Player::getName(){
+    return playerName;
+}
+
 void Player::finishMetagame(){
-    emit emitMessage(QString("ready"));
+    emit emitOutput(QString("ready"));
 }
 void Player::moveSelected(Move m){
-    emit emitMessage(m.getTerm()->toString());
+    emit emitOutput(m.getTerm()->toString());
 }
 

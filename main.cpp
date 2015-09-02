@@ -1,4 +1,4 @@
-#include "widget.h"
+#include "mainwidget.h"
 #include <QApplication>
 #include <QDebug>
 
@@ -24,12 +24,12 @@ int main(int argc, char *argv[])
 
     Logic::init();
 
-    //    Widget w;
-    //    w.show();
+        MainWidget w;
+        w.show();
 
 //        UnitTest unitTest(argc, argv);
     //    FirstPlayer player;
-    MonteCarloGamer player;
+//    MonteCarloGamer player;
 
     return a.exec();
 }

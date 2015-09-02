@@ -13,7 +13,7 @@ Proposition::Proposition(LRelation r):
 }
 
 Proposition::~Proposition(){
-
+//    qDebug() << "\n\n\n DELETING PROPOSITION " << name;
 }
 
 QString Proposition::getName() const{

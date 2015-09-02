@@ -39,9 +39,7 @@ private:
     void loadMoves(QList<Move> moves);
 
 protected:
-
     GDLProver prover;
-
 
     QMap<LTerm, LRelation> goalQueries;
     QMap<LTerm, LRelation> legalQueries;

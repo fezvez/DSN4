@@ -46,8 +46,8 @@ protected:
       */
 public:
     void setup(QList<LRelation> relations, QList<LRule> rules);
-    QMap<QString, LTerm> getConstantMap();
 
+    QMap<QString, LTerm> getConstantMap();
     QMap<LTerm, QList<LRule>> getConstantToRuleMap();
     QMap<LTerm, QList<LRelation>> getConstantToRelationMap();
 
