@@ -17,8 +17,8 @@ MainWidget::MainWidget()
     layout->addWidget(tabWidget);
 
     setLayout(layout);
-
     resize(1120, 500);
+    tabWidget->setCurrentIndex(1);
 
     setWindowTitle("Dynamic Semantic Net");
 }

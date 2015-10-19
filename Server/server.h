@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QComboBox>
 #include <QRegExp>
+#include <QThread>
 
 #include "../StateMachine/proverstatemachine.h"
 #include "servernetwork.h"
@@ -26,10 +27,12 @@ public:
     Server();
     ~Server();
 
+public slots:
     void setupGame(QString filename);
     void setupPlayers(QStringList adressesList, QVector<int> portList);
     void setupClock(int startClock, int playClock);
 
+public slots:
     QStringList getRoles();
     int getPlayerIndex(QString address, int port);
 
@@ -38,11 +41,15 @@ public slots:
     void manageError(QString address, int port, QAbstractSocket::SocketError error);
 
 signals:
-    void emitError(QString, int, QAbstractSocket::SocketError);
+    void emitError(int, QAbstractSocket::SocketError);
     void emitOutput(QString);
+    void playerAvailable(int, bool);
     void playerReady(int, bool);
     void playerName(int, QString);
     void outputPlayerMessage(int, QString);
+    void outputMessage(QString);
+    void matchFinished(QList<int>);
+    void done();
 
 public slots:
     void ping();
@@ -57,6 +64,7 @@ protected:
     void computeNextTurn();
     bool isLegal(int playerIndex, QString message);
     bool isTerminal();
+    int getGoal(int playerIndex);
 
 protected:
     ProverStateMachine prover;

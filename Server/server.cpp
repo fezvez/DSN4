@@ -31,10 +31,12 @@ int Server::getPlayerIndex(QString address, int port){
 }
 
 QStringList Server::getRoles(){
+    qDebug() << "Server::getRoles()";
     return roles;
 }
 
 void Server::setupGame(QString filename){
+    qDebug() << "Server::setupGame() " << filename;
     KifLoader kifLoader(nullptr, filename);
     QStringList gameStringList = kifLoader.runSynchronously();
     // Much more efficient than looping over the strings and concatenating them
@@ -46,7 +48,7 @@ void Server::setupGame(QString filename){
     prover.initialize(parser.getRelations(), parser.getRules());
     currentState = prover.getInitialState();
 
-
+    emit emitOutput(QString("\nLoading a new game"));
 
     roles.clear();
     QVector<Role> rolesTerm = prover.getRoles();
@@ -55,24 +57,30 @@ void Server::setupGame(QString filename){
         emit emitOutput(QString("This game requires a player to play the role of : %1").arg(roles.last()));
     }
 
+    moves.clear();
     for(int i = 0; i<roles.size(); ++i){
         moves.append("");
     }
+
+
 }
 
 void Server::setupPlayers(QStringList adressesList, QVector<int> portList){
+//    qDebug() << "Server::setupPlayers()";
     addresses = adressesList;
     ports = portList;
 
     int nbPlayers = addresses.size();
     Q_ASSERT(ports.size() == nbPlayers);
 
+    // Add additional players if need be
     for(int i = networkConnections.size(); i<nbPlayers; ++i){
-        networkConnections.append(new ServerNetwork());
+        qDebug() << "creation";
+        networkConnections.append(new ServerNetwork(this));
         connect(networkConnections.last(), SIGNAL(emitError(QString, int, QAbstractSocket::SocketError)),
                 this, SLOT(manageError(QString,int,QAbstractSocket::SocketError)));
         connect(networkConnections.last(), SIGNAL(emitMessage(QString, int, QString)),
-                this, SLOT(processMessage(QString,int,QString)));
+                this, SLOT(processMessage(QString,int,QString)), Qt::DirectConnection); // I don't know why a Queued Connection loses the message. I really don't
 
         networkAnswers.append(QString(""));
     }
@@ -84,6 +92,8 @@ void Server::setupPlayers(QStringList adressesList, QVector<int> portList){
 
         networkAnswers[i] = "";
     }
+
+    qDebug() << "Thread Server " << thread();
 }
 
 void Server::setupClock(int startClock, int playClock){
@@ -92,6 +102,7 @@ void Server::setupClock(int startClock, int playClock){
 }
 
 void Server::ping(){
+        qDebug() << "Server::ping()";
     waitForNewMessage(WAITING_FOR_MESSAGE::INFO);
 
     int nbPlayers = addresses.size();
@@ -102,7 +113,11 @@ void Server::ping(){
 
 void Server::start(){
     waitForNewMessage(WAITING_FOR_MESSAGE::START);
-    stepCounter = 0;
+
+    stepCounter = 0;    // Incrementation is in handleTransition()
+    currentState = prover.getInitialState(); // Update handeld in handleTransition()
+
+    emit emitOutput(QString("\nMETAGAME"));
 
     int nbPlayers = addresses.size();
     QString messageStart = QString("(start ") % matchId % " ";
@@ -116,6 +131,9 @@ void Server::start(){
 void Server::play(){
     waitForNewMessage(WAITING_FOR_MESSAGE::PLAY);
 
+        emit emitOutput(QString("\nPLAY step %1").arg(stepCounter));
+
+
     QThread::currentThread()->msleep(500);
 
     QString message = QString("(play ") % matchId % " ";
@@ -123,11 +141,19 @@ void Server::play(){
         message += "nil)";
     }
     else{
-        message += "( ";
+//        bool singlePlayer = (moves.size() == 1);
+
+//        if(!singlePlayer){
+            message += "( ";
+//        }
+
         for(QString move : moves){
-            message += QString("(") % move % ") ";
+            message += move % " ";
         }
-        message += QString(") )");
+//        if(!singlePlayer){
+                    message += QString(") ");
+//        }
+        message += ")";
     }
 
     int nbPlayers = addresses.size();
@@ -141,6 +167,9 @@ void Server::stop(){
     qDebug() << "Server::stop()";
 
     waitForNewMessage(WAITING_FOR_MESSAGE::DONE);
+
+    emit emitOutput(QString("\nMATCH FINISHED"));
+    emit matchFinished(prover.getGoals(currentState));
 
     QThread::currentThread()->msleep(500);
 
@@ -162,6 +191,7 @@ void Server::stop(){
 
     for(int i = 0; i<nbPlayers; ++i){
         networkConnections[i]->request(message, startclock);
+        emit outputPlayerMessage(i, QString("Score %1").arg(getGoal(i)));
     }
 
 }
@@ -172,6 +202,7 @@ void Server::abort(){
 }
 
 void Server::waitForNewMessage(WAITING_FOR_MESSAGE type){
+//    qDebug() << "wait for message ";// << type;
     waitingForMessage = type;
     for(int i = 0; i<networkAnswers.size(); ++i){
         networkAnswers[i] = "";
@@ -180,7 +211,7 @@ void Server::waitForNewMessage(WAITING_FOR_MESSAGE type){
 }
 
 void Server::processMessage(QString address, int port, QString message){
-    qDebug() << "\nServer::processMessage()";
+//    qDebug() << "\nServer::processMessage()";
     int playerIndex = getPlayerIndex(address, port);
     Q_ASSERT(playerIndex >=0);
 
@@ -192,7 +223,7 @@ void Server::processMessage(QString address, int port, QString message){
                  << networkAnswers[playerIndex] << " then message " <<  message;
     }
     networkAnswers[playerIndex] = message;
-    qDebug() << "Player " << playerIndex << " : " << message;
+//    qDebug() << "Player " << playerIndex << " : " << message;
 
     // Send immediate feedback
     switch(waitingForMessage){
@@ -201,10 +232,10 @@ void Server::processMessage(QString address, int port, QString message){
             emit playerName(playerIndex, rxPlayerName.cap(1));
         }
         if(rxStatusAvailable.indexIn(message) >= 0){
-            emit playerReady(playerIndex, true);
+            emit playerAvailable(playerIndex, true);
         }
         else{
-            emit playerReady(playerIndex, false);
+            emit playerAvailable(playerIndex, false);
         }
         break;
     case(WAITING_FOR_MESSAGE::START):
@@ -223,6 +254,7 @@ void Server::processMessage(QString address, int port, QString message){
         if(message != "done"){
             manageError(address, port, QAbstractSocket::UnknownSocketError);
         }
+        emit outputPlayerMessage(playerIndex, message);
         break;
     default:
         break;
@@ -231,13 +263,23 @@ void Server::processMessage(QString address, int port, QString message){
     //
     if(nbNetworkAnswers == addresses.size()){
         // Finish the job
-        qDebug() << "Server::processMessage() : Got all the messages";
+//        qDebug() << "Server::processMessage() : Got all the messages";
         handleTransition();
     }
 }
 
 void Server::manageError(QString address, int port, QAbstractSocket::SocketError error){
+
+
     int playerIndex = getPlayerIndex(address, port);
+
+    if(networkAnswers[playerIndex].isEmpty()){
+        nbNetworkAnswers++;
+    }
+    else{
+        qDebug() << "Server::manageError() : SUPER WEIRD, player sent first message "
+                 << networkAnswers[playerIndex] << " then error " <<  error;
+    }
 
     switch(waitingForMessage){
     case(WAITING_FOR_MESSAGE::INFO):
@@ -251,7 +293,11 @@ void Server::manageError(QString address, int port, QAbstractSocket::SocketError
         break;
     }
 
-    emit emitError(address, port, error);
+    if(nbNetworkAnswers == addresses.size()){
+        handleTransition();
+    }
+
+    emit emitError(playerIndex, error);
 }
 
 void Server::handleTransition(){
@@ -272,6 +318,8 @@ void Server::handleTransition(){
         }
         break;
     case(WAITING_FOR_MESSAGE::DONE):
+        emit done();
+        break;
     case(WAITING_FOR_MESSAGE::ABORT):
         break;
     default:
@@ -289,6 +337,7 @@ void Server::computeNextTurn(){
         QString potentialMove = moves[i];
         if(potentialMove.isEmpty() || !(isLegal(i, potentialMove))){
             jointMove.append(randomJointMove[i]);
+            qDebug() << "Move received is wrong : " << potentialMove;
             qDebug() << "Generated random move for player " << i << " : " << randomJointMove[i].toString();
         }
         else{
@@ -302,10 +351,13 @@ void Server::computeNextTurn(){
 }
 
 bool Server::isLegal(int playerIndex, QString message){
+//    qDebug() << "isLegal() : " << message;
     Move move = prover.getMoveFromString(message);
+//    qDebug() << move.getTerm()->toString();
 
     QList<Move> legalMoves = prover.getLegalMoves(currentState, prover.getRoles()[playerIndex]);
     for(Move potentialMove : legalMoves){
+//        qDebug() << potentialMove.getTerm()->toString();
         if(move == potentialMove){
             return true;
         }
@@ -315,4 +367,8 @@ bool Server::isLegal(int playerIndex, QString message){
 
 bool Server::isTerminal(){
     return prover.isTerminal(currentState);
+}
+
+int Server::getGoal(int playerIndex){
+    return prover.getGoal(currentState, playerIndex);
 }

@@ -22,7 +22,11 @@ public:
     Player(int p = 9147);
     ~Player();
 
-    void setName(QString s);
+    virtual void initializeStateMachine(QString filename, QString role) = 0;
+
+signals:
+    void emitOutput(QString s);
+    void emitNetworkMessage(QString s);
 
 public slots:
     virtual void metagame(qint64 timeout) = 0;
@@ -34,17 +38,15 @@ public:
     Role getRole();
     MachineState getCurrentState();
     QString getName();
-
-    virtual void initializeStateMachine(QString filename, QString role) = 0;
     StateMachine* getStateMachine();
     int getPort();
+
+    void setName(QString s);
 
 protected:
     void finishMetagame();
     void moveSelected(Move m);
 
-signals:
-    void emitOutput(QString s);
 
 protected:
     Role role;

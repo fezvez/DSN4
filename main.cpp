@@ -24,6 +24,9 @@ int main(int argc, char *argv[])
 
     Logic::init();
 
+    qRegisterMetaType<QVector<int> >("QVector<int>");
+    qRegisterMetaType<QVector<int> >("QList<int>");
+
         MainWidget w;
         w.show();
 

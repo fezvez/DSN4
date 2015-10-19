@@ -3,8 +3,9 @@
 #include <QMessageBox>
 #include <QStringBuilder>
 #include <QTextStream>
+#include <QThread>
 
-ServerNetwork::ServerNetwork()
+ServerNetwork::ServerNetwork(QObject *parent) : QObject(parent)
 {
     timer = new QTimer(this);
     timer->setSingleShot(true);
@@ -16,6 +17,9 @@ ServerNetwork::ServerNetwork()
     connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(readMessage()));
     connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(handleError(QAbstractSocket::SocketError)));
+
+
+    qDebug() << "Thread ServerNetwork " << thread();
 }
 
 ServerNetwork::~ServerNetwork()
@@ -48,7 +52,7 @@ void ServerNetwork::handleError(QAbstractSocket::SocketError socketError){
 
 void ServerNetwork::request(QString message, int time)
 {
-
+    qDebug() << "ServerNetwork::request " << message;
     messageToSend = message;
     blockSize = 0;
     tcpSocket->abort();
@@ -80,7 +84,7 @@ void ServerNetwork::readMessage()
         return;
     }
 
-//    qDebug() << "\n\nWe have a message for the server";
+//    qDebug() << "\nServerNetwork::readMessage() We have a message for the server";
     QTextStream in(tcpSocket);
 
     if (blockSize == 0) {
@@ -88,7 +92,7 @@ void ServerNetwork::readMessage()
         do {
             line = in.readLine();
 //            qDebug() << "Line " << line;
-            if(line.contains("Content-Length")){
+            if(line.contains("Content-Length", Qt::CaseInsensitive)){
                 QRegExp endNumbers("(\\d+)$");
                 int pos = 0;
                 while ((pos = endNumbers.indexIn(line, pos)) != -1) {
@@ -134,3 +138,5 @@ void ServerNetwork::noMessageReceived(){
 
     emit emitError(address, port, QAbstractSocket::SocketError::SocketTimeoutError);
 }
+
+

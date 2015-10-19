@@ -13,7 +13,7 @@ class ServerNetwork : public QObject
 {
         Q_OBJECT
 public:
-    ServerNetwork();
+    ServerNetwork(QObject * parent = 0);
     ~ServerNetwork();
 
     void setPlayerIP(QString IP);
@@ -31,6 +31,7 @@ public slots:
     void writeMessage();
     void readMessage();
     void handleError(QAbstractSocket::SocketError socketError);
+
 
 protected:
     QString address;

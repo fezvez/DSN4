@@ -23,7 +23,7 @@ KifWidget::KifWidget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     afac = 0;
-//    ui->setupUi(this);
+    //    ui->setupUi(this);
     setUpLayout();
     initialize();
 }
@@ -156,8 +156,8 @@ void KifWidget::initialize(){
 
     //connect(this, SIGNAL(kifProcessed(QStringList)), this, SLOT(loadKif(QStringList)));
 
-//    connect(parser.data(), SIGNAL(output(QString)), textEditMain, SLOT(append(QString)));
-//    connect(parser.data(), SIGNAL(outputDebug(QString)), textEditDebug, SLOT(append(QString)));
+    //    connect(parser.data(), SIGNAL(output(QString)), textEditMain, SLOT(append(QString)));
+    //    connect(parser.data(), SIGNAL(outputDebug(QString)), textEditDebug, SLOT(append(QString)));
 
 
 }
@@ -204,14 +204,13 @@ void KifWidget::openFileOfItem(int row, int /* column */)
         connect(kifLoader, SIGNAL(emitOutput(QString)), this, SLOT(output(QString)));
         kifLoader->start();
     }
+    // Should I even do this?
     else{
         FileLoader *fileLoader = new FileLoader(this, filename);
         connect(fileLoader, &FileLoader::lineProcessed, textEditStaticFile, &QTextEdit::append);
         connect(fileLoader, &FileLoader::finished, fileLoader, &QObject::deleteLater);
         fileLoader->start();
     }
-
-
 }
 
 void KifWidget::browse()
@@ -252,12 +251,13 @@ void KifWidget::find()
     QString path = directoryComboBox->currentText();
 
 
-//    updateComboBox(fileComboBox);
+    //    updateComboBox(fileComboBox);
     updateComboBox(directoryComboBox);
 
 
     currentDir = QDir(path);
 #ifdef TARGET_OS_MAC
+    currentDir.cdUp();
     currentDir.cdUp();
     currentDir.cdUp();
     currentDir.cdUp();

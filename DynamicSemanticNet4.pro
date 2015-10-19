@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets testlib network
+QT       += core gui widgets testlib network concurrent
 
 TARGET = DynamicSemanticNet
 TEMPLATE = app
@@ -62,7 +62,8 @@ SOURCES += main.cpp\
     playerwidget.cpp \
     Server/serverii.cpp \
     kifwidget.cpp \
-    Player/playernetwork.cpp
+    Player/playernetwork.cpp \
+    Server/serverchords.cpp
 
 
 HEADERS  += \
@@ -115,6 +116,7 @@ HEADERS  += \
     playerwidget.h \
     Server/serverii.h \
     kifwidget.h \
-    Player/playernetwork.h
+    Player/playernetwork.h \
+    Server/serverchords.h
 
 FORMS    += widget.ui

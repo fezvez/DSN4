@@ -48,6 +48,18 @@ int ProverStateMachine::getGoal(const MachineState& state, Role role){
 
 }
 
+int ProverStateMachine::getGoal(const MachineState& state, int roleIndex){
+    return getGoal(state, prover.getRoles()[roleIndex]);
+}
+
+QList<int> ProverStateMachine::getGoals(const MachineState& state){
+    QList<int> answer;
+    for(int r = 0; r<roles.size(); ++r){
+        answer.append(getGoal(state, r));
+    }
+    return answer;
+}
+
 bool ProverStateMachine::isTerminal(const MachineState& state){
     loadState(state);
 

@@ -113,6 +113,7 @@ void KifLoader::processLine(QString line){
 
     // Add the line to stringList
     stringList.append(line);
+    qDebug() << line;
 }
 
 

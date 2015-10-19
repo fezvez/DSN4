@@ -17,6 +17,8 @@ public:
     void initialize(QString filename);
 
     int getGoal(const MachineState& state, Role role);
+    int getGoal(const MachineState& state, int roleIndex);
+    QList<int> getGoals(const MachineState& state);
     bool isTerminal(const MachineState& state);
     QList<Move> getLegalMoves(const MachineState& state, Role role);
     MachineState getNextState(const MachineState& state, QList<Move> moves);

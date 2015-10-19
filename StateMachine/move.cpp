@@ -6,7 +6,7 @@ Move::Move(LTerm m)
 }
 
 bool Move::operator==(Move & m){
-    return (move == m.getTerm());
+    return (move->toString() == m.getTerm()->toString());
 }
 
 

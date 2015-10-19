@@ -69,7 +69,7 @@ void PlayerWidget::createPlayer(){
     portString = QString::number(port);
 
 
-    QTextEdit *textEdit = new QTextEdit();
+    QTextEdit * textEdit = new QTextEdit(this);
 
     tabPlayers->addTab(textEdit, portString);
     playerTextEdit.insert(port, textEdit);
@@ -83,5 +83,5 @@ void PlayerWidget::createPlayer(){
 
     tabPlayers->setCurrentIndex(tabPlayers->count() - 1);
 
-
+    players.insert(players.size(), newPlayer);
 }

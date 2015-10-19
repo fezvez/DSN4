@@ -21,12 +21,14 @@ void FirstPlayer::metagame(qint64 timeout){
 
 Move FirstPlayer::selectMove(qint64 timeout){
     (void)timeout;
-    qDebug() << "selectMove current state " << currentState.toString();
+    qDebug() << "FirstPlayer::selectMove current state " << currentState.toString();
 
     QList<Move> moves = stateMachine->getLegalMoves(getCurrentState(), getRole());
 
     Move move = moves[qrand() % moves.size()];
     moveSelected(move);
+    qDebug() << "FirstPlayer::selectMove selected move " << move.toString();
+
     return move;
 }
 

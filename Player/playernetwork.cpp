@@ -48,7 +48,8 @@ int PlayerNetwork::getPort(){
 }
 
 void PlayerNetwork::newConnection(){
-    emit emitOutput("PlayerNetwork::newConnection() : New connection with the game manager");
+//    qDebug() << "PlayerNetwork::newConnection() : New connection with the game manager";
+//    emit emitOutput("PlayerNetwork::newConnection() : New connection with the game manager");
     blockSize = 0;
     QTcpSocket* tcpSocket = myServer->nextPendingConnection();
 
@@ -62,6 +63,7 @@ void PlayerNetwork::newConnection(){
 }
 
 void PlayerNetwork::receiveMessage(int indexOfTheSocket){
+//    qDebug() << "Networking::receiveMessage() : MESSAGE FROM NETWORK : ";
     QTcpSocket* tcpSocket = tcpSockets[indexOfTheSocket];
     QTextStream in(tcpSocket);
 
@@ -97,7 +99,7 @@ void PlayerNetwork::receiveMessage(int indexOfTheSocket){
 
     } while (!line.isNull());
 
-    emit emitOutput(QString("Message from game manager : %1").arg(message));
+    emit emitOutput(QString("\nMessage from game manager : %1").arg(message));
 //    qDebug() << "Networking::receiveMessage() : MESSAGE FROM NETWORK : " << message;
     processMessage(message, indexOfTheSocket);
 }
@@ -116,7 +118,7 @@ void PlayerNetwork::processMessage(QString message, int index){
 
     // INFO
     if(infoRegExp.exactMatch(messageType)){
-        qDebug() << "It's an Info message";
+//        qDebug() << "It's an Info message";
         QString answer = QString("( ( name ");
         answer += playerName;
         answer += " ) ( status ";
@@ -177,7 +179,7 @@ void PlayerNetwork::processMessage(QString message, int index){
 
     // PLAY
     if(playRegExp.exactMatch(messageType)){
-//        qDebug() << "It's a Play message";
+
 
         if(!isPlaying){
             sendMessage(QString("busy"), index);
@@ -190,6 +192,7 @@ void PlayerNetwork::processMessage(QString message, int index){
 
         currentIndex = index;
         qint64 timeout = startTime + playclock*1000;
+        qDebug() << "PlayerNetwork::processMessage() : It's a Play message : " << splitMessage[2];
         emit emitPlay(splitMessage[2], timeout);
     }
 
@@ -219,8 +222,8 @@ void PlayerNetwork::processMessage(QString message, int index){
 
 
 void PlayerNetwork::sendMessage(QString message, int indexOfTheSocket){
-    emit emitOutput(QString("Sending message : %1").arg(message));
 //    qDebug() << "Networking::sendMessage() : SENDING MESSAGE : " << message;
+    emit emitOutput(QString("Sending message : %1").arg(message));
 
     QTcpSocket* tcpSocket = tcpSockets[indexOfTheSocket];
 

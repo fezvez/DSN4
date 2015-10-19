@@ -2,7 +2,10 @@
 
 #include <QFile>
 #include <QDateTime>
+#include <QFuture>
+#include <QtConcurrent>
 
+#include "firstplayer.h"
 #include "../StateMachine/proverstatemachine.h"
 
 Player::Player(int p)
@@ -10,9 +13,9 @@ Player::Player(int p)
     playerNetwork = new PlayerNetwork(p, this);
     emit emitOutput(QString("Player port is : %1").arg(playerNetwork->getPort()));
 
-    setName("CppPlayer");
+    setName("AbstractCppPlayer");
 
-    connect(this, SIGNAL(emitOutput(QString)), playerNetwork, SLOT(sendMessage(QString)));
+    connect(this, SIGNAL(emitNetworkMessage(QString)), playerNetwork, SLOT(sendMessage(QString)));
     connect(playerNetwork, SIGNAL(emitMetagame(qint64)), this, SLOT(metagame(qint64)));
     connect(playerNetwork, SIGNAL(emitPlay(QString, qint64)), this, SLOT(play(QString, qint64)));
     connect(playerNetwork, SIGNAL(emitOutput(QString)), this, SIGNAL(emitOutput(QString)));
@@ -29,6 +32,9 @@ Player::~Player(){
 
 void Player::play(QString newMoves, qint64 timeout){
     updateState(newMoves);
+
+//    FirstPlayer* p = dynamic_cast<FirstPlayer*>(this);
+//    QFuture<void> future = QtConcurrent::run(p, &FirstPlayer::selectMove, timeout);
     selectMove(timeout);
 }
 
@@ -65,9 +71,9 @@ QString Player::getName(){
 }
 
 void Player::finishMetagame(){
-    emit emitOutput(QString("ready"));
+    emit emitNetworkMessage(QString("ready"));
 }
 void Player::moveSelected(Move m){
-    emit emitOutput(m.getTerm()->toString());
+    emit emitNetworkMessage(m.getTerm()->toString());
 }
 

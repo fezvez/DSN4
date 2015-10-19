@@ -10,6 +10,7 @@
 #include <QTextEdit>
 #include <QGridLayout>
 #include <QPushButton>
+#include <QThread>
 
 #include "Prover/gdlprover.h"
 #include "Server/server.h"
@@ -26,10 +27,13 @@ public slots:
     void ping();
     void start();
     void abort();
-    void stop();
-    void displayError(QString ip, int port, QAbstractSocket::SocketError socketError);
+    void done();
+    void displayError(int playerIndex, QAbstractSocket::SocketError socketError);
+    void displayPlayerMessage(int playerIndex, QString message);
+    void playerAvailable(int playerIndex, bool isAvailable);
     void playerReady(int playerIndex, bool isReady);
     void setPlayerName(int playerIndex, QString name);
+    void playerGoals(QList<int> goals);
 
 public slots:
     void output(QString s);
@@ -51,6 +55,7 @@ private:
     QDir currentDir;
     QRegExp regEndsInKif;
     QString gameString;
+    int nbRoles;
 
     QLabel * labelStartclock;
     QLabel * labelPlayclock;
@@ -75,6 +80,7 @@ private:
 private:
     GDLProver prover;
     Server * server;
+    QThread* serverThread;
 };
 
 #endif // SERVERWIDGET_H
