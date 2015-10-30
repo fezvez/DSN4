@@ -1,7 +1,6 @@
 #include "kifwidget.h"
 #include "ui_widget.h"
 #include "fileloader.h"
-#include "kifloader.h"
 
 #include <QGridLayout>
 #include <QVBoxLayout>
@@ -14,6 +13,7 @@
 #include <QDebug>
 #include <QTextCursor>
 #include <QSizePolicy>
+#include <QStringBuilder>
 
 #include "Unification/unification_relation.h"
 #include "Prover/gdlprover.h"
@@ -150,7 +150,7 @@ void KifWidget::createMainDisplay(){
     tabWidget->addTab(textEditQueryAnswer, tr("Query"));
 
     tabWidget->setMinimumSize(640, 360);
-//    tabWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    //    tabWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
 
@@ -171,7 +171,13 @@ void KifWidget::initialize(){
     connect(textEditGDL, SIGNAL(textChanged()), this, SLOT(gdlTextChanged()));
 
     find();
-    openFile("tictactoe.kif");
+
+    QString filename;
+#ifdef TARGET_OS_MAC
+    filename = "../../../../";
+#endif
+    filename.append("tictactoe.kif");
+    openFile(filename);
 }
 
 void KifWidget::debugFile(QStringList stringList){
@@ -181,11 +187,8 @@ void KifWidget::debugFile(QStringList stringList){
     cursor.setPosition(0);
     textEditGDL->setTextCursor(cursor);
 
-    if(!parser){
-        parser = PParser(new Parser(this));
-    }
 
-    parser->generateHerbrandFromRawKif(stringList);
+    parser.generateHerbrandFromRawKif(stringList);
 
 
 
@@ -193,7 +196,7 @@ void KifWidget::debugFile(QStringList stringList){
     // Check syntax
 
     GDLProver prover;
-    prover.setup(parser->getRelations(), parser->getRules());
+    prover.setup(parser.getRelations(), parser.getRules());
 
     // Check arity
 }
@@ -221,17 +224,21 @@ void KifWidget::openFileFromUserInteraction(int row, int /* column */)
 }
 
 void KifWidget::openFile(QString filename){
-    //    qDebug() << "file "<< filename;
     textEditGDL->clear();
 
     if(filename.contains(regEndsInKif)){
         // Amusing, no RAII here (&QObject::deleteLater)
-        KifLoader *kifLoader = new KifLoader(this, filename);
-        connect(kifLoader, &KifLoader::lineProcessed, textEditGDL, &QPlainTextEdit::appendPlainText);
-        connect(kifLoader, &KifLoader::finished, kifLoader, &QObject::deleteLater);
-        connect(kifLoader, SIGNAL(kifProcessed(QStringList)),this, SIGNAL(kifProcessed(QStringList)));
-        connect(kifLoader, SIGNAL(emitOutput(QString)), this, SLOT(output(QString)));
-        kifLoader->start();
+        QStringList lines = parser.loadKifFile(filename);
+        for(QString line : lines){
+            textEditGDL->appendPlainText(line);
+        }
+
+        //        KifLoader *kifLoader = new KifLoader(this, filename);
+        //        connect(kifLoader, &KifLoader::lineProcessed, textEditGDL, &QPlainTextEdit::appendPlainText);
+        //        connect(kifLoader, &KifLoader::finished, kifLoader, &QObject::deleteLater);
+        //        connect(kifLoader, SIGNAL(kifProcessed(QStringList)),this, SIGNAL(kifProcessed(QStringList)));
+        //        connect(kifLoader, SIGNAL(emitOutput(QString)), this, SLOT(output(QString)));
+        //        kifLoader->start();
     }
     // Should I even do this?
     else{
@@ -266,7 +273,6 @@ static void updateComboBox(QComboBox *comboBox)
 
 void KifWidget::find()
 {
-
     filesTable->setRowCount(0);
 
     QString filename = lineEditFindFile->text();
@@ -344,17 +350,36 @@ void KifWidget::query(){
     QString queryString = lineEditQuery->text();
     qDebug() << "Query string " << queryString;
 
+    if(queryString.at(0) != '('){
+        queryString = QString("(") % queryString % ")";
+    }
 
     if(hasGDLChanged){
-
-        //            kb.setup();
+        qDebug() << "Computing new GDL";
+        QString plainText = textEditGDL->toPlainText();
+        QStringList stringList;
+        stringList << plainText;
+        parser.generateHerbrandFromRawKif(stringList);
+        hasGDLChanged = false;
     }
-    hasGDLChanged = false;
 
-    QString plainText = textEditGDL->toPlainText();
+    tabWidget->setCurrentIndex(2);
+    textEditQueryAnswer->clear();
 
+    LRelation relationQuery = parser.parseRelation(queryString);
+    qDebug() << "relationQuery " << relationQuery->toString();
 
+    QList<LRelation> answer = kb.evaluate(queryString);
 
+    if(answer.empty()){
+        textEditQueryAnswer->appendPlainText(QString("Query ") % queryString % " is false");
+    }
+    else{
+        textEditQueryAnswer->appendPlainText(QString("Query ") % queryString % " is true");
+        for(LRelation relation : answer){
+            textEditQueryAnswer->appendPlainText(QString("\t") % relation->toString());
+        }
+    }
 }
 
 void KifWidget::output(const QString & string){
@@ -426,28 +451,28 @@ void Highlighter::highlightBlock(const QString &text)
             index = expression.indexIn(text, index + length);
         }
     }
-//    //! [7] //! [8]
-//    setCurrentBlockState(0);
-//    //! [8]
+    //    //! [7] //! [8]
+    //    setCurrentBlockState(0);
+    //    //! [8]
 
-//    //! [9]
-//    int startIndex = 0;
-//    if (previousBlockState() != 1)
-//        startIndex = commentStartExpression.indexIn(text);
+    //    //! [9]
+    //    int startIndex = 0;
+    //    if (previousBlockState() != 1)
+    //        startIndex = commentStartExpression.indexIn(text);
 
-//    //! [9] //! [10]
-//    while (startIndex >= 0) {
-//        //! [10] //! [11]
-//        int endIndex = commentEndExpression.indexIn(text, startIndex);
-//        int commentLength;
-//        if (endIndex == -1) {
-//            setCurrentBlockState(1);
-//            commentLength = text.length() - startIndex;
-//        } else {
-//            commentLength = endIndex - startIndex
-//                    + commentEndExpression.matchedLength();
-//        }
-//        setFormat(startIndex, commentLength, multiLineCommentFormat);
-//        startIndex = commentStartExpression.indexIn(text, startIndex + commentLength);
-//    }
+    //    //! [9] //! [10]
+    //    while (startIndex >= 0) {
+    //        //! [10] //! [11]
+    //        int endIndex = commentEndExpression.indexIn(text, startIndex);
+    //        int commentLength;
+    //        if (endIndex == -1) {
+    //            setCurrentBlockState(1);
+    //            commentLength = text.length() - startIndex;
+    //        } else {
+    //            commentLength = endIndex - startIndex
+    //                    + commentEndExpression.matchedLength();
+    //        }
+    //        setFormat(startIndex, commentLength, multiLineCommentFormat);
+    //        startIndex = commentStartExpression.indexIn(text, startIndex + commentLength);
+    //    }
 }

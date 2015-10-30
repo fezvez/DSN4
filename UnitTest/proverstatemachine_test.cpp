@@ -2,7 +2,7 @@
 
 #include <QString>
 #include "../StateMachine/proverstatemachine.h"
-#include "../parser.h"
+
 
 void ProverStateMachine_Test::toUpper()
 {
@@ -17,7 +17,6 @@ void ProverStateMachine_Test::connectionTestGame(){
 
     // Tests if the PSM supports loading and unloading
     for(int i = 0; i<3; ++i){
-
         {
             QString filename = "connectionTestGame.kif";
             QFile file(filename);
@@ -47,11 +46,11 @@ void ProverStateMachine_Test::connectionTestGame(){
         for(Role role : roles){
             QList<Move> legalMoves = psm.getLegalMoves(initialState, role);
             QCOMPARE(legalMoves.size(), 1);
+//            qDebug() << "Move : " << legalMoves[0].toString();
         }
 
-        Parser parser;
-        LTerm moveTerm = parser.parseTerm("(move)");
 
+        LTerm moveTerm = parser.parseTerm("(move)");
         QList<Move> moves;
         moves.append(Move(moveTerm));
 
@@ -118,7 +117,12 @@ void ProverStateMachine_Test::connectionTestGame(){
 
 void ProverStateMachine_Test::tictactoe(){
     ProverStateMachine psm;
-    psm.initialize("../../../../tictactoe.kif");
+    QString filenameTTT;
+#ifdef TARGET_OS_MAC
+    filenameTTT = "../../../../";
+#endif
+    filenameTTT = filenameTTT.append("tictactoe.kif");
+    psm.initialize(filenameTTT);
 
     MachineState initialState = psm.getInitialState();
     QCOMPARE(initialState.getContents().size(), 10);
@@ -142,7 +146,6 @@ void ProverStateMachine_Test::tictactoe(){
         }
     }
 
-    Parser parser;
     LTerm moveTerm1 = parser.parseTerm("(mark 1 1)");
     LTerm moveTerm2 = parser.parseTerm("(noop)");
 
@@ -187,7 +190,6 @@ void ProverStateMachine_Test::connectfour(){
         }
     }
 
-    Parser parser;
     LTerm moveTerm1 = parser.parseTerm("(drop 6)");
     LTerm moveTerm2 = parser.parseTerm("(noop)");
 

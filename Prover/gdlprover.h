@@ -12,7 +12,7 @@ public:
 
 public:
     void setup(QList<LRelation> relations, QList<LRule> rules);
-    void loadKifFile(QString filename);
+    void setup(QString filename);
 
 protected:
     void linkBaseToNext();

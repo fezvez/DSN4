@@ -25,12 +25,12 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QVector<int> >("QVector<int>");
     qRegisterMetaType<QVector<int> >("QList<int>");
 
-        MainWidget w;
-        w.show();
+    MainWidget w;
+    w.show();
 
-        UnitTest unitTest(argc, argv);
+            UnitTest unitTest(argc, argv);
     //    FirstPlayer player;
-//    MonteCarloGamer player;
+    //    MonteCarloGamer player;
 
     return a.exec();
 }

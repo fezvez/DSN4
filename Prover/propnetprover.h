@@ -20,7 +20,7 @@ public:
     ~PropnetProver();
 
     void setup(QList<LRelation> relations, QList<LRule> rules);
-    void loadKifFile(QString filename);
+    void setup(QString filename);
 
     void generatePropnet();
     void cleanPropnet();
@@ -143,7 +143,7 @@ protected:
 
     // Misc
 public:
-    void debug();
+    void debugPropnet();
 };
 
 #endif // PROPNETPROVER_H

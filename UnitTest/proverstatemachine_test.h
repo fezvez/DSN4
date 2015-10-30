@@ -3,6 +3,7 @@
 
 #include <QtTest/QtTest>
 #include <QObject>
+#include "../parser.h"
 
 class ProverStateMachine_Test : public QObject
 {
@@ -14,6 +15,9 @@ private slots:
     void connectionTestGame();
     void tictactoe();
     void connectfour();
+
+private:
+            Parser parser;
 };
 
 #endif // PROVERSTATEMACHINE_TEST_H

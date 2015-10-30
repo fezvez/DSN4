@@ -24,7 +24,6 @@ void KnowledgeBase_Test::KB_01(){
     sL << "(<= terminal (not open))";
     sL << "(<= open (f ?x))";
 
-    Parser parser;
     parser.generateHerbrandFromRawKif(sL);
 
     KnowledgeBase KB;
@@ -88,7 +87,6 @@ void KnowledgeBase_Test::KB_02(){
     sL << "(<= (j ?x ?y) (f ?x) (f ?y) (distinct ?x ?y) )";
 
 
-    Parser parser;
     parser.generateHerbrandFromRawKif(sL);
 
     KnowledgeBase KB;
@@ -109,4 +107,36 @@ void KnowledgeBase_Test::KB_02(){
 
     LRelation relation5 = parser.parseRelation(QString("(j ?x)"));
     QCOMPARE(KB.evaluate(relation5).size(), 2);
+}
+
+void KnowledgeBase_Test::tictactoe(){
+    QString filenameTTT;
+#ifdef TARGET_OS_MAC
+    filenameTTT = "../../../../";
+#endif
+    filenameTTT = filenameTTT.append("tictactoe.kif");
+
+    KnowledgeBase KB;
+    KB.setup(filenameTTT);
+
+//    qDebug() << KB.evaluate("terminal")[0]->toString();
+
+//    QCOMPARE(KB.evaluate("terminal").size(), 0);
+//    QCOMPARE(KB.evaluate("(terminal)").size(), 0);
+
+    QCOMPARE(KB.evaluate("line black").size(), 0);
+
+    for(LRelation relation : KB.evaluate("line ?x")){
+        qDebug() << relation->toString();
+    }
+    QCOMPARE(KB.evaluate("line ?x").size(), 0);
+
+    QCOMPARE(KB.evaluate("row black").size(), 0);
+    QCOMPARE(KB.evaluate("row ?x").size(), 0);
+
+    QCOMPARE(KB.evaluate("legal black (mark 1 1)").size(), 0);
+    QCOMPARE(KB.evaluate("legal white (mark 1 1)").size(), 1);
+
+    QCOMPARE(KB.evaluate("legal white (mark ?x ?y)").size(), 9);
+
 }

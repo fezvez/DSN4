@@ -79,6 +79,19 @@ protected:
     QMap<LTerm, QList<LRule>> constantToRuleMap;
     QMap<LTerm, QList<LRelation>> constantToRelationMap;
 
+/**
+  * Arity
+  */
+public:
+    QMap<LTerm, int> getArity();
+
+protected:
+    void buildArity();
+    void checkArity(LRelation relation);
+    void printConstantsWithArity();
+
+protected:
+    QMap<LTerm, int> arity;
 
     /**
       * Static analysis
@@ -86,19 +99,14 @@ protected:
       * Note that Stratum cannot be computed if the arity are not computed beforehand (I think)
       */
 public:
-    QMap<LTerm, int> getArity();
     QMap<LTerm, LStratum> getStratumMap();
     QList<QList<LTerm>> getStratifiedConstants();
 
 protected:
-    void buildArity();
-    void checkArity(LRelation relation);
-    void printConstantsWithArity();
     void generateStratum();
     void printFreeVariables();
 
 protected:
-    QMap<LTerm, int> arity;
     QMap<LTerm, LStratum> stratumMap;
     QList<QList<LTerm>> stratifiedConstants;
 
@@ -108,6 +116,10 @@ protected:
     /**
       * Methods and data structures related to Prolog-like evaluation
       */
+
+public:
+    QList<LRelation> evaluate(LRelation relation);                          // The single most important function of the whole class
+    QList<LRelation> evaluate(QString relation);
 
     // Helper functions to guarantee that everyone uses the same objects
     // Necessary to call it before calling evaluate()
@@ -120,14 +132,12 @@ public:
     LTerm manageRelationConstant(LTerm c);
     LTerm manageObjectConstant(LTerm c);
 
-public:
-    QList<LRelation> evaluate(LRelation relation);                          // The single most important function of the whole class
 
 
 protected:
     QList<LRule> ruleSubstitution(LRule rule);
     LRule buildSkolemRule(LRule originalRule, LRule ruleFromKB);
-    bool isRelationValid(LRelation r);
+//    bool isRelationValid(LRelation r);
 
     static int skolemNumber;
 

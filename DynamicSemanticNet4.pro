@@ -20,7 +20,6 @@ QMAKE_CXXFLAGS += -Wno-inconsistent-missing-override
 
 SOURCES += main.cpp\
     fileloader.cpp \
-    kifloader.cpp \
     dynamicsemanticnet.cpp \
     PropNet/proposition.cpp \
     PropNet/propositionconstant.cpp \
@@ -72,7 +71,6 @@ SOURCES += main.cpp\
 
 HEADERS  += \
     fileloader.h \
-    kifloader.h \
     dynamicsemanticnet.h \
     tree.hh \
     Trilogic.h \

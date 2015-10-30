@@ -1,7 +1,5 @@
 #include "propnetprover.h"
 
-#include "../kifloader.h"
-
 #include <QStringList>
 #include <QDebug>
 #include <QFile>
@@ -11,6 +9,7 @@
 #include "../PropNet/componentand.h"
 #include "../PropNet/componentor.h"
 #include "../PropNet/componentnot.h"
+#include "../flags.h"
 
 #include <chrono>
 #include <thread>
@@ -25,15 +24,19 @@ PropnetProver::~PropnetProver()
 
 }
 
+void PropnetProver::setup(QString filename){
+    Parser parser;
+    parser.generateHerbrandFromFile(filename);
+    setup(parser.getRelations(), parser.getRules());
+}
+
 void PropnetProver::setup(QList<LRelation> relations, QList<LRule> rules){
     GDLProver::setup(relations, rules);
 
-#ifndef QT_NO_DEBUG
-    qDebug() << "Propnet setup";
-#endif
+    criticalDebug("Propnet setup start");
+
     KnowledgeBase::generateStratum();
 
-    //        qDebug() << "Propnet setup";
     generatePropnet();
 
     buildBaseDoesPropositions();
@@ -45,17 +48,11 @@ void PropnetProver::setup(QList<LRelation> relations, QList<LRule> rules){
 
     buildDepthChargeMembers();
     buildOptimizedPropnet();
+
+    criticalDebug("Propnet setup end");
 }
 
-void PropnetProver::loadKifFile(QString filename){
-    KifLoader kifLoader(nullptr, filename);
-    QStringList sL = kifLoader.runSynchronously();
 
-    Parser parser;
-    parser.generateHerbrandFromRawKif(sL);
-
-    setup(parser.getRelations(), parser.getRules());
-}
 
 /***
  *
@@ -83,9 +80,7 @@ void PropnetProver::loadKifFile(QString filename){
  * */
 
 void PropnetProver::generatePropnet(){
-#ifndef QT_NO_DEBUG
-    qDebug() << "GENERATE PROPNET";
-#endif
+    criticalDebug("Generate Propnet");
 
 
     propositionDatabase->clear();
@@ -357,9 +352,7 @@ void PropnetProver::initializeSavedValuesMap(){
                                  */
 
 void PropnetProver::cleanPropnet(){
-#ifndef QT_NO_DEBUG
-    qDebug() << "CLEAN PROPNET";
-#endif
+    criticalDebug("Clean Propnet");
 
     // Remove the input of does and base
     auto propositionMap = propositionDatabase->getPropositionsMap();
@@ -479,16 +472,16 @@ PDatabase PropnetProver::getDatabase(){
     return propositionDatabase;
 }
 
-/***
-                                 * TO FILE
-                                */
+/**
+  * TO FILE
+  */
 void PropnetProver::toFile(QString filename){
     indexDot = 0;
     indexDotMap.clear();
 
     QFile file(filename);
     if (file.open(QFile::WriteOnly | QFile::Truncate)) {
-        qDebug() << "Saving file " << filename;
+        debug("Saving file ", filename);
         QTextStream out(&file);
         out << "digraph propnet {\n";
         for(PComponent component : components){
@@ -705,7 +698,7 @@ bool PropnetProver::propnetEvaluate(PProposition proposition){
 }
 
 void PropnetProver::buildDepthChargeMembers(){
-    qDebug() << "buildDepthChargeMembers";
+    debug("Build Depth Charge Members");
     depthChargeGoalVector.clear();
     for(int i = 0; i<roles.size(); ++i){
         depthChargeGoalVector.append(-1);
@@ -753,9 +746,9 @@ void PropnetProver::buildMapNextPropositionToBaseProposition(){
         qDebug() << "Linking " << nextProposition->getName();
         PProposition baseProposition = mapNextPropositionToBaseProposition[nextProposition];
         qDebug() << "to " << baseProposition->getName();
-//        qDebug() << "Linking " << nextProposition->getName() << " to " << baseProposition->getName();
+        //        qDebug() << "Linking " << nextProposition->getName() << " to " << baseProposition->getName();
     }
-        qDebug() << "LINK NEXT TO BASE END";
+    qDebug() << "LINK NEXT TO BASE END";
     qDebug() << "\n";
 #endif
 }
@@ -894,7 +887,7 @@ QVector<int> PropnetProver::depthCharge(QVector<LRelation> baseProp){
  *
  */
 void PropnetProver::buildOptimizedPropnet(){
-    qDebug() << "buildOptimizedPropnet";
+    criticalDebug("Build Optimized Propnet");
 
     buildOptimizedMembers();
     buildPropositionsOptimized();
@@ -920,14 +913,14 @@ void PropnetProver::buildOptimizedMembers(){
 
 #ifndef QT_NO_DEBUG
     qDebug() << "There are " << propositionIndexOptimized.size() << " propositions";
-//    for(PProposition prop : propositionIndexOptimized.keys()){
-//        qDebug() << "\tProposition " << prop->getName() << " has index " << propositionIndexOptimized[prop];
-//    }
+    //    for(PProposition prop : propositionIndexOptimized.keys()){
+    //        qDebug() << "\tProposition " << prop->getName() << " has index " << propositionIndexOptimized[prop];
+    //    }
     int index2 = 0;
-        for(PProposition prop : propnetOptimizedIndexReversed){
-            qDebug() << "\tProposition " << prop->getName() << " has index " << index2;
-            index2++;
-        }
+    for(PProposition prop : propnetOptimizedIndexReversed){
+        qDebug() << "\tProposition " << prop->getName() << " has index " << index2;
+        index2++;
+    }
 #endif
 
     depthChargeGoalVectorOptimized.clear();
@@ -1155,14 +1148,14 @@ void PropnetProver::fillComponentAndOptimized(PCAnd p, std::vector<uint32_t> & p
 
 
 QVector<int> PropnetProver::depthChargeOptimized(QVector<LRelation> baseProp){
-//    volatile int j = 12;
-//    qDebug() << "j=" << j;
-//    for(int i=0; i<1000000; ++i){
-//       j += i;
-//    }
-////    using namespace std::literals;
-//    std::this_thread::sleep_for(std::chrono::seconds(2));
-//    qDebug() << "j=" << j;
+    //    volatile int j = 12;
+    //    qDebug() << "j=" << j;
+    //    for(int i=0; i<1000000; ++i){
+    //       j += i;
+    //    }
+    ////    using namespace std::literals;
+    //    std::this_thread::sleep_for(std::chrono::seconds(2));
+    //    qDebug() << "j=" << j;
     loadPropnetBasePropositionsOptimized(baseProp);
     int nbStateExpanded = 0;
 
@@ -1191,16 +1184,16 @@ QVector<int> PropnetProver::depthChargeOptimized(QVector<LRelation> baseProp){
         randomizeLegalMoveOptimized();
 
 #ifndef QT_NO_DEBUG
-//    for(int i = 0; i<roles.size(); ++i){
-//        QVector<int> & legalMoves = randomRoleOrderOptimized[i];
-//        QString str = "Random order for role " + roles[i]->toString() + " : ";
-//        for(int index : legalMoves){
-//            str += QString::number(index);
-//            str += " / ";
-//        }
-//        str.remove(str.size()-2,3);
-//        qDebug() << str;
-//    }
+        //    for(int i = 0; i<roles.size(); ++i){
+        //        QVector<int> & legalMoves = randomRoleOrderOptimized[i];
+        //        QString str = "Random order for role " + roles[i]->toString() + " : ";
+        //        for(int index : legalMoves){
+        //            str += QString::number(index);
+        //            str += " / ";
+        //        }
+        //        str.remove(str.size()-2,3);
+        //        qDebug() << str;
+        //    }
 #endif
 
         for(int indexRole=0; indexRole<roles.size(); ++indexRole){
@@ -1214,8 +1207,8 @@ QVector<int> PropnetProver::depthChargeOptimized(QVector<LRelation> baseProp){
                 int indexLegal = legalForOneRole[indexRandom];
                 bool isLegal = propnetOptimized[indexLegal].computeValue(propnetOptimized);
                 if(isLegal){
-//                    currentDoesMovesOptimized[indexRole] = doesMovesOptimized[indexRole][indexRandom];
-//                    propnetOptimized[indexLegal].setValue(true);
+                    //                    currentDoesMovesOptimized[indexRole] = doesMovesOptimized[indexRole][indexRandom];
+                    //                    propnetOptimized[indexLegal].setValue(true);
                     propnetOptimized[doesMovesOptimized[indexRole][indexRandom]].setValue(true);
                     propnetOptimized[doesMovesOptimized[indexRole][indexRandom]].setAlreadyComputed(true);
                     break;
@@ -1320,11 +1313,11 @@ bool PropnetProver::propnetEvaluateOptimized(QString s){
     return propnetOptimized[propositionIndexOptimized[propositionDatabase->getProposition(s)]].computeValue(propnetOptimized);
 }
 
-/***
-                                 * Misc
-                                 */
+/**
+  * Misc
+  */
 
-void PropnetProver::debug(){
+void PropnetProver::debugPropnet(){
 
     qDebug() << "DEBUG";
     for(PProposition proposition : propositionDatabase->getPropositionsMap().values()){

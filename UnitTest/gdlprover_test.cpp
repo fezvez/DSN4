@@ -6,6 +6,7 @@
 
 #include "../Prover/gdlprover.h"
 #include "../parser.h"
+#include "../flags.h"
 
 void GDLProver_Test::toUpper()
 {
@@ -17,9 +18,9 @@ void GDLProver_Test::toUpper()
 
 void GDLProver_Test::Prover_01(){
 
-    qDebug() << "Current directory " << QDir::current();
+    debug("Current directory ", QDir::current().path());
     GDLProver prover;
-    prover.loadKifFile("../../../../tictactoe.kif");
+    prover.setup("../../../../tictactoe.kif");
 
     QCOMPARE(prover.getInitPropositions().size(), 10);
     QCOMPARE(prover.getRoles().size(), 2);

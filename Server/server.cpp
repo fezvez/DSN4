@@ -3,7 +3,6 @@
 #include <QStringBuilder>
 #include <QDateTime>
 
-#include "kifloader.h"
 
 Server::Server()
 {
@@ -37,15 +36,16 @@ QStringList Server::getRoles(){
 
 void Server::setupGame(QString filename){
     qDebug() << "Server::setupGame() " << filename;
-    KifLoader kifLoader(nullptr, filename);
-    QStringList gameStringList = kifLoader.runSynchronously();
-    // Much more efficient than looping over the strings and concatenating them
-    gameString = "( " % gameStringList.join(" ") % " )";
+//    KifLoader kifLoader(nullptr, filename);
+//    QStringList gameStringList = kifLoader.runSynchronously();
+//    // Much more efficient than looping over the strings and concatenating them
+//    gameString = "( " % gameStringList.join(" ") % " )";
 
-    Parser parser;
-    parser.generateHerbrandFromRawKif(gameStringList);
+//    Parser parser;
+//    parser.generateHerbrandFromRawKif(gameStringList);
 
-    prover.initialize(parser.getRelations(), parser.getRules());
+    prover.initialize(filename);
+//    prover.initialize(parser.getRelations(), parser.getRules());
     currentState = prover.getInitialState();
 
     emit emitOutput(QString("\nLoading a new game"));

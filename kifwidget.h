@@ -25,10 +25,6 @@ typedef QSharedPointer<Parser> PParser;
 
 class Highlighter;
 
-//namespace Ui {
-//class Widget;
-//}
-
 class KifWidget : public QWidget
 {
     Q_OBJECT
@@ -119,7 +115,7 @@ private:
       * Logic
       */
 private:
-    PParser parser;
+    Parser parser;
     KnowledgeBase kb;
 
     bool hasGDLChanged;
@@ -133,6 +129,10 @@ private:
     void showFiles(const QStringList &files);
 
 };
+
+/**
+ * @brief The Highlighter class
+ */
 
 class Highlighter : public QSyntaxHighlighter
 {

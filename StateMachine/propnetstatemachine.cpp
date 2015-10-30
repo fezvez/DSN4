@@ -23,7 +23,7 @@ void PropnetStateMachine::initialize(QList<LRelation> relations, QList<LRule> ru
 }
 
 void PropnetStateMachine::initialize(QString filename){
-    prover.loadKifFile(filename);
+    prover.setup(filename);
 
     buildInitialState();
     buildRoles();

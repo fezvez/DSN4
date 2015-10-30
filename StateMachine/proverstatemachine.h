@@ -49,8 +49,7 @@ protected:
     QMap<LTerm, int> roleIndex;
     LRelation terminal;
 
-public:
-    void debug();
+
 };
 
 #endif // PROVERSTATEMACHINE_H

@@ -49,10 +49,10 @@ public slots:
     QList<LRelation> getRelations();
 
 public:
-    void splitLines();
-    void mergeLines();
-    void cleanFile();
-    void generateHerbrand();
+//    void splitLines();
+//    void mergeLines();
+//    void cleanFile();
+//    void generateHerbrand();
 
     QStringList removeComments(const QStringList &kif);
     QStringList splitLines(const QStringList &kif);
@@ -62,10 +62,10 @@ public:
 
 private:
     // Clean file
-    void printRawKif();
-    void cleanLines();
-    void createDoeses();
-    void printCleanKif();
+//    void printRawKif();
+//    void cleanLines();
+//    void createDoeses();
+//    void printCleanKif();
 
     // Generate Herbrand
     void processKifLine(QString line);
@@ -80,10 +80,10 @@ private:
 
 
 protected:
-    QStringList originalKif;
-    QStringList noCommentKif;
-    QStringList rawKif;
-    QStringList lineKif;
+//    QStringList originalKif;
+//    QStringList noCommentKif;
+//    QStringList rawKif;
+//    QStringList lineKif;
 
 
 

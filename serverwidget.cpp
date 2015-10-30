@@ -8,7 +8,6 @@
 #include <QStringBuilder>
 #include <QMessageBox>
 
-#include "kifloader.h"
 #include "parser.h"
 #include "Prover/gdlprover.h"
 

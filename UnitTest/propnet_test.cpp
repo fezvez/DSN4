@@ -17,7 +17,7 @@ void Propnet_Test::propnet1()
         }
         file.close();
     }
-    prover.loadKifFile(filename);
+    prover.setup(filename);
     prover.toFile("connectionTestGame.dot");
 
     QCOMPARE(prover.propnetEvaluate("terminal"), prover.propnetEvaluateOptimized("terminal"));
@@ -46,7 +46,7 @@ void Propnet_Test::propnet2()
         }
         file.close();
     }
-    prover.loadKifFile(filename);
+    prover.setup(filename);
 
     prover.toFile("connectionTestGame2.dot");
 
@@ -64,7 +64,7 @@ void Propnet_Test::propnet2()
 
 void Propnet_Test::propnetThreePuzzle(){
     PropnetProver prover;
-    prover.loadKifFile("../../../../threepuzzle.kif");
+    prover.setup("../../../../threepuzzle.kif");
     prover.toFile("threepuzzle.dot");
     QVector<LRelation> init;
     for(LRelation relation : prover.getInitPropositions().values()){

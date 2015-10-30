@@ -13,6 +13,10 @@ private slots:
 
     void KB_01();
     void KB_02();
+    void tictactoe();
+
+private:
+    Parser parser;
 };
 
 #endif // KNOWLEDGEBASE_TEST_H

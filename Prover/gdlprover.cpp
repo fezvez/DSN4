@@ -2,7 +2,6 @@
 
 #include <QDebug>
 
-#include "../kifloader.h"
 #include "../parser.h"
 #include "../flags.h"
 
@@ -15,6 +14,36 @@ GDLProver::~GDLProver()
 {
 
 }
+
+/**
+  * Setup
+  */
+
+void GDLProver::setup(QString filename){
+    Parser parser;
+    parser.generateHerbrandFromFile(filename);
+    setup(parser.getRelations(), parser.getRules());
+}
+
+void GDLProver::setup(QList<LRelation> relations, QList<LRule> rules){
+    KnowledgeBase::setup(relations, rules);
+
+    criticalDebug("GDLProver setup start");
+
+    linkBaseToNext();
+
+    buildRelationTypesAndQualifiers();
+    buildRulesTypesAndQualifiers();
+    buildBaseInitInputDoesPropositions();
+    buildRolePropositions(relations);
+    buildStandardEvaluationStructures();
+
+    criticalDebug("GDLProver setup finished");
+}
+
+/**
+ * Getters
+ */
 
 const QMap<QString, LRelation>& GDLProver::getInitPropositions() const{
     return initPropositions;
@@ -37,27 +66,8 @@ const QMap<LTerm, LTerm>& GDLProver::getMapNextToBase() const{
 }
 
 
-void GDLProver::setup(QList<LRelation> relations, QList<LRule> rules){
-    KnowledgeBase::setup(relations, rules);
 
-    linkBaseToNext();
 
-    buildRelationTypesAndQualifiers();
-    buildRulesTypesAndQualifiers();
-    buildBaseInitInputDoesPropositions();
-    buildRolePropositions(relations);
-    buildStandardEvaluationStructures();
-}
-
-void GDLProver::loadKifFile(QString filename){
-    KifLoader kifLoader(nullptr, filename);
-    QStringList sL = kifLoader.runSynchronously();
-
-    Parser parser;
-    parser.generateHerbrandFromRawKif(sL);
-
-    setup(parser.getRelations(), parser.getRules());
-}
 
 /**
  * @brief GDLProver::linkBaseToNext
@@ -87,17 +97,6 @@ void GDLProver::linkBaseToNext(){
         }
     }
 
-    mapNextToQuery.clear();
-    for(LTerm head : mapNextToBase.keys()){
-        QList<LTerm> body;
-        for(int i = 0; i<arity[head]; ++i){
-            body.append(LTerm(new Logic_Term(QString("?x").append(QString::number(i)), LOGIC_TERM_TYPE::VARIABLE)));
-        }
-        mapNextToQuery[head] = LRelation(new Logic_Relation(head, body));
-    }
-
-
-
 #ifndef QT_NO_DEBUG
     qDebug() << "\n\nLink Base Propositions to Next Propositions";
 
@@ -109,6 +108,25 @@ void GDLProver::linkBaseToNext(){
         qDebug() << "Next proposition " << padSpace(base->toString(), padSpaceSize) << "matched with : " << mapNextToBase[base]->toString();
     }
 #endif
+
+    mapNextToQuery.clear();
+    for(LTerm head : mapNextToBase.keys()){
+        QList<LTerm> body;
+        for(int i = 0; i<arity[head]; ++i){
+            body.append(LTerm(new Logic_Term(QString("?x").append(QString::number(i)), LOGIC_TERM_TYPE::VARIABLE)));
+        }
+        mapNextToQuery[head] = LRelation(new Logic_Relation(head, body));
+    }
+
+
+#ifndef QT_NO_DEBUG
+    qDebug() << "\n\nAll next queries";
+    for(LTerm head : mapNextToQuery.keys()){
+        qDebug() << "Next query : " << mapNextToQuery[head]->toString();
+    }
+
+#endif
+
 
 }
 

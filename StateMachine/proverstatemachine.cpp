@@ -8,26 +8,27 @@ ProverStateMachine::ProverStateMachine() : StateMachine()
 {
 }
 
+void ProverStateMachine::initialize(QString filename){
+    Parser parser;
+    parser.generateHerbrandFromFile(filename);
+    initialize(parser.getRelations(), parser.getRules());
+}
 
 void ProverStateMachine::initialize(QList<LRelation> relations, QList<LRule> rules){
     prover.setup(relations, rules);
 
+    criticalDebug("Prover State Machine Setup Start");
+
     buildInitialState();
     buildRoles();
     buildTerminalProposition();
     buildGoalQueries();
     buildLegalQueries();
+
+    criticalDebug("Prover State Machine Setup Finished");
 }
 
-void ProverStateMachine::initialize(QString filename){
-    prover.loadKifFile(filename);
 
-    buildInitialState();
-    buildRoles();
-    buildGoalQueries();
-    buildTerminalProposition();
-    buildLegalQueries();
-}
 
 
 int ProverStateMachine::getGoal(const MachineState& state, Role role){
@@ -36,8 +37,7 @@ int ProverStateMachine::getGoal(const MachineState& state, Role role){
     QList<LRelation> answer = prover.evaluate(goalRelation);
 
 #ifndef QT_NO_DEBUG
-    qDebug() << "Relation to evaluate " << goalRelation->toString();
-    qDebug() << "Answer size " << answer.size();
+    qDebug() << "Goal Relation to evaluate " << goalRelation->toString();
 #endif
 
 
@@ -65,9 +65,13 @@ bool ProverStateMachine::isTerminal(const MachineState& state){
 
     QList<LRelation> answer = prover.evaluate(terminal);
 
+
+
     if(answer.isEmpty()){
+        debug("ProverStateMachine::isTerminal : the current state is not terminal");
         return false;
     }
+    debug("ProverStateMachine::isTerminal : the current state is terminal");
     return true;
 }
 
@@ -92,6 +96,7 @@ QList<Move> ProverStateMachine::getLegalMoves(const MachineState& state, Role ro
 MachineState ProverStateMachine::getNextState(const MachineState& state, QList<Move> moves){
     loadState(state);
     loadMoves(moves);
+
 
     QMap<LTerm, LRelation> nextQueries = prover.getNextQueries();
     QMap<LTerm, LTerm> mapNextToBase = prover.getMapNextToBase();
@@ -138,14 +143,14 @@ void ProverStateMachine::buildInitialState(){
     }
     initialState = MachineState(initialPropositions);
 
-#ifndef QT_NO_DEBUG
-    qDebug() << "ProverStateMachine Initial state " << initialState.toString();
-#endif
+    debug("ProverStateMachine Initial state : ", initialState.toString());
+
 }
 
 void ProverStateMachine::buildTerminalProposition(){
     QMap<QString, LTerm> constantMap = prover.getConstantMap();
 
+    Q_ASSERT_X(constantMap.contains("terminal"), "ProverStateMachine::buildTerminalProposition()", "There is no TERMINAL defined");
     if(!constantMap.contains("terminal")){
         qDebug() << "No terminal";
         return;
@@ -173,7 +178,7 @@ void ProverStateMachine::buildRoles(){
 #ifndef QT_NO_DEBUG
     qDebug() << "ProverStateMachine Roles : ";
     for(Role role : roles){
-        qDebug() << role.toString();
+        qDebug() << "\t" << role.toString();
     }
 #endif
 }
@@ -210,11 +215,12 @@ void ProverStateMachine::buildRoleIndex(){
 //}
 
 void ProverStateMachine::buildGoalQueries(){
+    debug("Building goal queries");
     goalQueries.clear();
     QMap<QString, LTerm> constantMap = prover.getConstantMap();
 
-    //qDebug() << "buildGoalQueries";
-
+    // If there is no goal at all in the rules, you have a severe problem
+    Q_ASSERT_X(constantMap.contains("goal"), "ProverStateMachine::buildGoalQueries()", "There is no GOAL defined");
     if(!constantMap.contains("goal")){
         qDebug() << "No goal";
         return;
@@ -230,16 +236,21 @@ void ProverStateMachine::buildGoalQueries(){
         LRelation relation = LRelation(new Logic_Relation(goalTerm, body));
         goalQueries.insert(role.getTerm(), relation);
     }
+
+
 }
 
 void ProverStateMachine::buildLegalQueries(){
+    debug("Building legal queries");
     legalQueries.clear();
     QMap<QString, LTerm> constantMap = prover.getConstantMap();
 
+    Q_ASSERT_X(constantMap.contains("legal"), "ProverStateMachine::buildLegalQueries()", "There is no LEGAL defined");
     if(!constantMap.contains("legal")){
         qDebug() << "No legal constant";
         return;
     }
+
     LTerm legalTerm = constantMap.value("legal");
 
     for(Role role : roles){
@@ -252,7 +263,9 @@ void ProverStateMachine::buildLegalQueries(){
     }
 }
 
-
+/**
+ * When you actually want to ask queries for real games
+ */
 
 void ProverStateMachine::loadState(const MachineState& state){
     prover.loadTempRelations(state.getContents());
@@ -275,6 +288,4 @@ void ProverStateMachine::loadMoves(QList<Move> moves){
     prover.loadAdditionalTempRelations(doeses);
 }
 
-void ProverStateMachine::debug(){
-    qDebug() <<  "legalQueries is of size " << legalQueries.size();
-}
+

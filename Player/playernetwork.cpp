@@ -158,7 +158,7 @@ void PlayerNetwork::processMessage(QString message, int index){
             file.close();
         }
         else{
-            qDebug() << "Can't open file";
+            qDebug() << "Can't open file " << filename;
         }
 
 

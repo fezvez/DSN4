@@ -22,11 +22,11 @@ UnitTest::UnitTest(int argc, char* argv[])
     KnowledgeBase_Test knowledgeBaseTest;
     QTest::qExec(&knowledgeBaseTest, argc, argv);
 
-    GDLProver_Test gdlproverTest;
-    QTest::qExec(&gdlproverTest, argc, argv);
+//    GDLProver_Test gdlproverTest;
+//    QTest::qExec(&gdlproverTest, argc, argv);
 
-    ProverStateMachine_Test proverTest;
-    QTest::qExec(&proverTest, argc, argv);
+//    ProverStateMachine_Test proverTest;
+//    QTest::qExec(&proverTest, argc, argv);
 
 //    Propnet_Test propnetTest;
 //    QTest::qExec(&propnetTest, argc, argv);

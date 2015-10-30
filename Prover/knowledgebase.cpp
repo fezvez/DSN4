@@ -53,22 +53,26 @@ void KnowledgeBase::setup(QString filename){
 
 void KnowledgeBase::setup(QList<LRelation> relations, QList<LRule> rules){
 
-    criticalDebug("Knowledge Base Setup");
+    criticalDebug("Knowledge Base Setup Start");
 
     relationList = relations;
     ruleList = rules;
     
     storeConstants();   // Also cleans the rules and relations
     buildFullConstantMap();
+    buildArity();
     
+    // By default, use every single rules and relations if ou want to evaluate a query
+    // Subclasses of KnowledgeBase can add or remove evaluation rules/relations before making a query
     evaluationRules = ruleList;
     evaluationRelations = relationList;
     buildEvaluationMap();
     
+    criticalDebug("Knowledge Base Setup Finished");
 
     // Optional
     //    printFreeVariables();
-    //    buildArity();
+    //
     //    printConstantsWithArity();
     //    generateStratum();
 
@@ -191,8 +195,6 @@ void KnowledgeBase::buildEvaluationMap(){
         constantToRelationEvaluationMap[head].append(relation);
     }
     
-
-    
     constantToRuleEvaluationMap.clear();
     for(LRule rule : evaluationRules){
         LTerm head = rule->getHead()->getHead();
@@ -201,8 +203,6 @@ void KnowledgeBase::buildEvaluationMap(){
         }
         constantToRuleEvaluationMap[head].append(rule);
     }
-    
-
 }
 
 /**
@@ -385,7 +385,9 @@ LTerm KnowledgeBase::manageObjectConstant(LTerm c){
  * Takes a relation (optionnaly with variables) and returns all the grounded
  * relations that are true
  */
-
+QList<LRelation> KnowledgeBase::evaluate(QString relation){
+    return evaluate(manageRelation(parser.parseRelation(relation)));
+}
 
 QList<LRelation> KnowledgeBase::evaluate(LRelation r){
 #ifndef QT_NO_DEBUG
