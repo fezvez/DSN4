@@ -3,6 +3,7 @@
 #include "parser.h"
 
 #include <QDebug>
+#include <QStringBuilder>
 
 Unification_Relation::Unification_Relation(){
 
@@ -14,8 +15,16 @@ Unification_Relation::Unification_Relation(LRelation relation1, LRelation relati
     QList<LTerm> body1 = relation1->getBody();
     QList<LTerm> body2 = relation2->getBody();
 
-    int size = body1.size();
-    for(int i=0; i<size; ++i){
+    int size1 = body1.size();
+    int size2 = body2.size();
+
+    if(size1 != size2){
+        solverMessage = QString("Different arity between : ") % relation1->toString() % " and " % relation2->toString();
+        isValid = false;
+        return;
+    }
+
+    for(int i=0; i<size1; ++i){
         addEquation(UTerm(new Unification_Term(body1[i], body2[i])));
     }
     solve();

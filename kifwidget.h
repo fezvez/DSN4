@@ -20,6 +20,7 @@
 
 #include "parser.h"
 #include "Prover/knowledgebase.h"
+#include "Prover/gdlprover.h"
 
 typedef QSharedPointer<Parser> PParser;
 
@@ -117,6 +118,7 @@ private:
 private:
     Parser parser;
     KnowledgeBase kb;
+    GDLProver gdlProver;
 
     bool hasGDLChanged;
 

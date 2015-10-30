@@ -18,7 +18,7 @@ QRegExp KnowledgeBase::nextRegExp = QRegExp("^next_");
 QRegExp KnowledgeBase::newlineRegExp = QRegExp("[\\n\\r]");
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// CONSTRUCTOR, GETTERS, SETTERS
+//// CONSTRUCTOR
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 KnowledgeBase::KnowledgeBase()
@@ -26,13 +26,13 @@ KnowledgeBase::KnowledgeBase()
 
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// GETTERS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 QMap<QString, LTerm> KnowledgeBase::getConstantMap(){
     return constantMap;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// CONSTRUCTOR, GETTERS, SETTERS
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 QMap<LTerm, QList<LRule>> KnowledgeBase::getConstantToRuleMap(){
     return constantToRuleMap;
@@ -40,6 +40,34 @@ QMap<LTerm, QList<LRule>> KnowledgeBase::getConstantToRuleMap(){
 
 QMap<LTerm, QList<LRelation>> KnowledgeBase::getConstantToRelationMap(){
     return constantToRelationEvaluationMap;
+}
+
+QList<LRelation> KnowledgeBase::getEvaluationRelations(){
+    return evaluationRelations;
+}
+
+QList<LRule> KnowledgeBase::getEvaluationRules(){
+    return evaluationRules;
+}
+
+QList<LRelation> KnowledgeBase::getEvaluationTempRelations(){
+    return evaluationTempRelations;
+}
+
+QMap<LTerm, QList<LRelation>> KnowledgeBase::getConstantToTempRelationEvaluationMap(){
+    return constantToTempRelationEvaluationMap;
+}
+
+QMap<LTerm, int> KnowledgeBase::getArity(){
+    return arity;
+}
+
+QMap<LTerm, LStratum> KnowledgeBase::getStratumMap(){
+    return stratumMap;
+}
+
+QList<QList<LTerm>> KnowledgeBase::getStratifiedConstants(){
+    return stratifiedConstants;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,20 +95,14 @@ void KnowledgeBase::setup(QList<LRelation> relations, QList<LRule> rules){
     evaluationRules = ruleList;
     evaluationRelations = relationList;
     buildEvaluationMap();
-    
-    criticalDebug("Knowledge Base Setup Finished");
 
+    printFreeVariables();
+    printConstantsWithArity();
     // Optional
-    //    printFreeVariables();
-    //
-    //    printConstantsWithArity();
     //    generateStratum();
 
-    
+    criticalDebug("Knowledge Base Setup Finished");
 }
-
-
-
 
 
 /**
@@ -146,10 +168,7 @@ void KnowledgeBase::storeConstants(){
             Q_ASSERT(mapTermToPointer[head->toString()] == QString("0x%1").arg((quintptr)head.data(), QT_POINTER_SIZE * 2, 16, QChar('0')));
         }
     }
-#endif
-
-
-
+#endif   
 }
 
 void KnowledgeBase::buildFullConstantMap(){
@@ -286,19 +305,445 @@ void KnowledgeBase::buildArity(){
 }
 
 
-/**
- * @brief KnowledgeBase::checkArity
- * @param relation
- * Debugging tool
- */
-void KnowledgeBase::checkArity(LRelation relation){
-    //    qDebug() << "Cheack arity " << relation->toString();
-    LTerm relationHead = relation->getHead();
-    int ar = relation->getBody().size();
-    Q_ASSERT(arity.contains(relationHead));
-    Q_ASSERT(arity[relationHead] == ar);
+// Is just a debugging tool
+// It is not needed for the computation
+// It is just to check that the GDL rules are well formed
+void KnowledgeBase::generateStratum(){
+    stratumMap.clear();
+    stratifiedConstants.clear();
+
+    // Put everything in memory
+    for(LTerm constant : relationConstantSet){
+        stratumMap.insert(constant, LStratum(new Stratum(constant)));
+    }
+
+    // Create dependency
+    for(LRule rule : ruleList){
+        LTerm head = rule->getHead()->getHead();
+        LStratum stratum = stratumMap[head];
+
+
+        QSet<LTerm> dependents;
+        QSet<LTerm> dependentsNegative;
+
+        for(LRelation relation : rule->getBody()){
+            LTerm relationConstant = relation->getHead();
+            if(relation->isNegation()){
+                dependentsNegative.insert(relationConstant);
+            }
+            else{
+                dependents.insert(relationConstant);
+            }
+        }
+
+        for(LTerm d : dependents){
+            Q_ASSERT(stratumMap.contains(d));
+            stratum->addDependency(stratumMap[d]);
+        }
+
+        for(LTerm dn : dependentsNegative){
+            Q_ASSERT(stratumMap.contains(dn));
+            stratum->addDependencyNegative(stratumMap[dn]);
+        }
+    }
+
+
+    bool update = true;
+    int nbStrongIteration = 0;
+
+    while(update && nbStrongIteration<10000){
+        update = false;
+        nbStrongIteration++;
+        for(LStratum stratum : stratumMap.values()){
+            update = update || stratum->updateStrataStrongly();
+        }
+    }
+
+    update = true;
+    int nbIteration = 0;
+
+    while(update && nbIteration<10000){
+        update = false;
+        nbIteration++;
+        for(LStratum stratum : stratumMap.values()){
+            update = update || stratum->updateStrata();
+        }
+    }
+
+
+
+    QList<LStratum> listOfStratum = stratumMap.values();
+    qSort(listOfStratum.begin(), listOfStratum.end(), Stratum::greaterThan);
+
+    int strata = -1;
+    for(LStratum s : listOfStratum){
+        int currentStrata = s->getStrata();
+        if(strata != currentStrata){
+            //            qDebug() << "Pushed a new strata level";
+            //            qDebug() << "Strata = " << strata;
+            //            qDebug() << "currentStrata = " << currentStrata;
+            stratifiedConstants.push_back(QList<LTerm>());
+            strata = currentStrata;
+
+
+        }
+        stratifiedConstants.last().append(s->getNode());
+    }
+
+#ifndef QT_NO_DEBUG
+    qDebug() << "GENERATE STRATUM";
+    qDebug() << "Nb strong iterations : " << nbStrongIteration;
+    qDebug() << "Nb iterations : " << nbIteration;
+    int index = 0;
+    for(QList<LTerm> v : stratifiedConstants){
+        qDebug() << "Stratum " << index << "is comprised of : ";
+        for(LTerm c : v){
+            qDebug() << "\t" << c->toString();
+        }
+        index++;
+    }
+
+    for(LStratum stratum : listOfStratum){
+        qDebug() << "Stratum " << stratum->toString();
+    }
+    qDebug() << "\n";
+#endif
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// EVALUATE
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/**
+ * @brief KnowledgeBase::evaluateRelation
+ * @param relation
+ * @return
+ * Takes a relation (optionaly with variables) and returns all the grounded
+ * relations that are true
+ */
+QList<LRelation> KnowledgeBase::evaluate(QString relation){
+    return evaluate(manageRelation(parser.parseRelation(relation)));
+}
+
+QList<LRelation> KnowledgeBase::evaluate(LRelation r){
+    specialDebug("\n\nKnowledgeBase::EVALUATE(). Relation is : ", r->toString());
+    LRelation relation = manageRelation(r);
+
+    QList<LRelation> body;
+    body.append(relation);
+    LRule rule = LRule(new Logic_Rule(relation, body));
+
+    QList<LRelation> answer;
+    QSet<QString> answerString;
+
+    QList<LRule> possibleAnswers;
+    possibleAnswers.append(rule);
+
+
+    while (!possibleAnswers.isEmpty()) {
+        LRule possibleRule = possibleAnswers.last();
+        possibleAnswers.removeLast();
+        specialDebug("KnowledgeBase::evaluate(). Possible Answer under scrutiny: ", possibleRule->toString());
+
+        // If the rule is fully grounded
+        if(possibleRule->getHead()->isGround()){
+            // If we know it's already true for that grounding, we can discard it
+            if(answerString.contains(possibleRule->getHead()->toString())){
+                specialDebug("    This possible answer leads to an already known answer. We stop there");
+                continue;
+            }
+        }
+
+        // If the body is empty, we have an answer to our evaluation query
+        if(possibleRule->isBodyEmpty()){
+            specialDebug("    We have a new answer : ", possibleRule->getHead()->toString());
+            answer.append(possibleRule->getHead());
+            answerString << possibleRule->getHead()->toString();
+            continue;
+        }
+
+        // Else, we take the first relation and process it
+        QList<LRule> substitutions = ruleSubstitution(possibleRule);
+        possibleAnswers.append(substitutions);
+    }
+
+    specialDebug("\n\nKnowledgeBase::EVALUATE() finished");
+    if(answer.isEmpty()){
+        specialDebug("No answer");
+    }
+    else{
+        for(QString string : answerString){
+            specialDebug("    ", string);
+        }
+    }
+    return answer;
+}
+
+
+
+/**
+ * @brief KnowledgeBase::ruleSubstitution
+ * @param rule
+ * @return
+ * Take the first relation of the body :
+ *  - substitute it with a relation from constantToRelationEvaluationMap
+ *  - substitute it with a rule from constantToRuleEvaluationMap
+ */
+QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
+    specialDebug("\n\nKnowledgeBase::ruleSubstitution ", rule->toString());
+
+    QList<LRule> answer;
+
+    LRelation firstRelation = rule->getBody().first();
+    LTerm head = firstRelation->getHead();
+
+    specialDebug("The first relation is ", firstRelation->toString());
+
+    // "Not" special case
+    if(firstRelation->isNegation()){
+        LRelation nonNegativeRelation = Logic_Relation::clone(firstRelation);
+        nonNegativeRelation->setNegation(false);
+        specialDebug("Negation, trying to solve a subproblem ", nonNegativeRelation->toString());
+        QList<LRelation> subproblemAnswer = evaluate(nonNegativeRelation);
+        if(subproblemAnswer.size() == 0){
+            specialDebug("Negation Subproblem ", nonNegativeRelation->toString(), " is false");
+            QList<LRelation> endOfBody = rule->getBody();
+            endOfBody.removeFirst();
+
+            LRule partialAnswer = manageRule(LRule(new Logic_Rule(rule->getHead(), endOfBody)));
+            answer.append(partialAnswer);
+        }
+        else{
+            specialDebug("Negation Subproblem ", nonNegativeRelation->toString(), " is true, we stop here");
+        }
+        return answer;
+    }
+
+    // Distinct special case
+    if(head->toString() == QString("distinct")){
+        QList<LTerm> body = firstRelation->getBody();
+
+        if(body[0]->toString() != body[1]->toString()){
+            QList<LRelation> endOfBody = rule->getBody();
+            endOfBody.removeFirst();
+
+            LRule partialAnswer = manageRule(LRule(new Logic_Rule(rule->getHead(), endOfBody)));
+            answer.append(partialAnswer);
+
+            specialDebug("Distinct : The constants are indeed distinct");
+        }
+        else{
+            specialDebug("Distinct : The constants are identical, we stop here");
+        }
+        return answer;
+
+    }
+
+    // Otherwise
+    // Substitute with facts
+    if(constantToRelationEvaluationMap.contains(head)){
+        QList<LRelation> canBeSubstituted = constantToRelationEvaluationMap[head];
+        for(LRelation r : canBeSubstituted){
+            specialDebug("Sub possible with relation ", r->toString());
+            URelation unification = URelation(new Unification_Relation(firstRelation, r));
+            if(unification->isUnificationValid()){
+
+                LRule tempRule = unification->applySubstitution(rule);
+                specialDebug("    Unification is valid and gives : ", tempRule->toString());
+                //unification->printSolverResults();
+
+                QList<LRelation> endOfBody = tempRule->getBody();
+                endOfBody.removeFirst();
+
+                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), endOfBody)));
+                specialDebug("    Partial Answer : ", partialAnswer->toString());
+                answer.append(partialAnswer);
+            }
+            else{
+                specialDebug("    Unification fails");
+            }
+        }
+    }
+
+    // Substitute with temporary facts
+    if(constantToTempRelationEvaluationMap.contains(head)){
+        QList<LRelation> canBeSubstituted = constantToTempRelationEvaluationMap[head];
+        for(LRelation r : canBeSubstituted){
+            specialDebug("Sub possible with temp relation ", r->toString());
+            URelation unification = URelation(new Unification_Relation(firstRelation, r));
+            if(unification->isUnificationValid()){
+
+                LRule tempRule = unification->applySubstitution(rule);
+                specialDebug("    Unification is valid and gives : ", tempRule->toString());
+                //unification->printSolverResults();
+
+                QList<LRelation> endOfBody = tempRule->getBody();
+                endOfBody.removeFirst();
+
+                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), endOfBody)));
+                specialDebug("    Partial Answer : ", partialAnswer->toString());
+                answer.append(partialAnswer);
+            }
+            else{
+                specialDebug("    Unification fails");
+            }
+        }
+    }
+
+    // Substitute with rule
+    if(constantToRuleEvaluationMap.contains(head)){
+        QList<LRule> canBeSubstituted = constantToRuleEvaluationMap[head];
+        for(LRule r : canBeSubstituted){
+            specialDebug("Sub possible with rule", r->toString());
+            LRule skolemRule = buildSkolemRule(rule, r);
+            specialDebug("    Which is skolemized in ", skolemRule->toString());
+            URelation unification = URelation(new Unification_Relation(firstRelation, skolemRule->getHead()));
+            if(unification->isUnificationValid()){
+                unification->applySubstitutionInPlace(skolemRule);
+                LRule tempRule = unification->applySubstitution(rule);
+
+                specialDebug("    Unification is valid and gives original rule : ", tempRule->toString());
+                specialDebug("    and the skolem : ", skolemRule->toString());
+                //unification->printSolverResults();
+
+                QList<LRelation> body;
+                body.append(skolemRule->getBody());
+                QList<LRelation> endOfBody = tempRule->getBody();
+                endOfBody.removeFirst();
+                body.append(endOfBody);
+
+                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), body)));
+                specialDebug("    Partial Answer : ", partialAnswer->toString());
+                answer.append(partialAnswer);
+            }
+            else{
+                specialDebug("    Unification fails");
+            }
+        }
+    }
+    return answer;
+}
+
+/**
+ * @brief KnowledgeBase::buildSkolemRule
+ * @param originalRule
+ * @param ruleFromKB
+ * @return
+ * We have the first relation of the body, and we want to substitute it with a rule in our KB
+ * It's necessary to rename variables in the body of this 2nd rule to prevent name clashing
+ */
+LRule KnowledgeBase::buildSkolemRule(LRule originalRule, LRule ruleFromKB){
+    LRule answer = ruleFromKB->clone();
+
+    QSet<QString> var1 = originalRule->getFreeVariables();
+    QSet<QString> var2 = ruleFromKB->getFreeVariables();
+
+    //    qDebug() << "        SKOLEM";
+    //    for(QString varName : var1){
+    //        qDebug() << "        Var in 1st rule : " << varName;
+    //    }
+    //    for(QString varName : var2){
+    //        qDebug() << "        Var in 2nd rule : " << varName;
+    //    }
+
+    QSet<QString> skolemizedVariables; // All the skolem variables we used so far
+
+    for(QString varName : var2){
+        if(!var1.contains(varName)){
+            continue;
+        }
+        //        qDebug() << "        Matching variable between the 2 rules : " << varName;
+
+        QString skolemVariable;
+        bool readableSkolem = false;
+
+        // First try
+        // Try to add a character to the end of the name of the variable
+        for(int i=0; i<26; ++i){
+            QChar c(97+25-i);
+            QString s("?");
+            s.append(c);
+            //            qDebug() << "        Try skolem variable " << s;
+
+            if(var1.contains(s)){
+                continue;
+            }
+            if(var2.contains(s)){
+                continue;
+            }
+            if(skolemizedVariables.contains(s)){
+                continue;
+            }
+
+            skolemizedVariables << s;
+            readableSkolem = true;
+            skolemVariable = s;
+            break;
+        }
+        // Second try
+        // Add a number that is guaranteed to be unique
+        if(!readableSkolem){
+            skolemVariable = QString("SK_").append(QString::number(KnowledgeBase::skolemNumber));
+            skolemNumber++;
+        }
+
+        LTerm v1 = LTerm(new Logic_Term(varName, VARIABLE));
+        LTerm v2 = LTerm(new Logic_Term(skolemVariable, VARIABLE));
+
+        //        qDebug() << "        Try to skolemize var " << varName << " into skolem " << skolemVariable << " in rule " << answer->toString();
+        answer->substitute(v1, v2);
+        //        qDebug() << "        Result is " << answer->toString();
+    }
+    return answer;
+}
+
+
+
+void KnowledgeBase::loadTempRelations(const QVector<LRelation> contents){
+    evaluationTempRelations.clear();
+    constantToTempRelationEvaluationMap.clear();
+
+    for(LRelation relation : contents){
+        evaluationTempRelations.append(relation);
+
+        LTerm head = relation->getHead();
+        if(!constantToTempRelationEvaluationMap.contains(head)){
+            constantToTempRelationEvaluationMap.insert(head, QList<LRelation>());
+        }
+        constantToTempRelationEvaluationMap[head].append(relation);
+    }
+}
+
+void KnowledgeBase::loadAdditionalTempRelations(const QVector<LRelation> contents){
+    for(LRelation relation : contents){
+        evaluationTempRelations.append(relation);
+
+        LTerm head = relation->getHead();
+        if(!constantToTempRelationEvaluationMap.contains(head)){
+            constantToTempRelationEvaluationMap.insert(head, QList<LRelation>());
+        }
+        constantToTempRelationEvaluationMap[head].append(relation);
+    }
+}
+
+
+LRelation KnowledgeBase::getRelationfromString(QString s){
+    return manageRelation(parser.parseRelation(s));
+}
+
+LTerm KnowledgeBase::getTermFromString(QString s){
+    return manageTerm(parser.parseTerm(s));
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// MANAGE TO SHARE OBJECTS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 LRule KnowledgeBase::manageRule(LRule r){
     LRelation head = manageRelation(r->getHead());
     QList<LRelation> body;
@@ -374,473 +819,20 @@ LTerm KnowledgeBase::manageObjectConstant(LTerm c){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// EVALUATE
+//// STRATUM
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * @brief KnowledgeBase::evaluateRelation
- * @param relation
- * @return
- * Takes a relation (optionnaly with variables) and returns all the grounded
- * relations that are true
- */
-QList<LRelation> KnowledgeBase::evaluate(QString relation){
-    return evaluate(manageRelation(parser.parseRelation(relation)));
-}
-
-QList<LRelation> KnowledgeBase::evaluate(LRelation r){
-#ifndef QT_NO_DEBUG
-    //    qDebug() << "KnowledgeBase::evaluate(). Relation is : " << r->toString();
-#endif
-    LRelation relation = manageRelation(r);
-    
-    QList<LRelation> body;
-    body.append(relation);
-    LRule rule = LRule(new Logic_Rule(relation, body));
-    
-    QList<LRelation> answer;
-    QSet<QString> answerString;
-    
-    QList<LRule> possibleAnswers;
-    possibleAnswers.append(rule);
-    
-    
-    while (!possibleAnswers.isEmpty()) {
-        //                qDebug() << "\tKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
-        LRule possibleRule = possibleAnswers.last();
-        possibleAnswers.removeLast();
-        
-        // If the rule is fully grounded
-        if(possibleRule->getHead()->isGround()){
-            // If we know it's already true for that grounding, we can discard it
-            if(answerString.contains(possibleRule->getHead()->toString())){
-                continue;
-            }
-        }
-        
-        // If the body is empty, we have an answer to our evaluation query
-        if(possibleRule->isBodyEmpty()){
-            //            qDebug() << "We have an answer : " << possibleRule->getHead()->toString();
-            answer.append(possibleRule->getHead());
-            answerString << possibleRule->getHead()->toString();
-            continue;
-        }
-        
-        // Else, we take the first relation and process it
-        QList<LRule> substitutions = ruleSubstitution(possibleRule);
-        possibleAnswers.append(substitutions);
-    }
-    //    if(answer.isEmpty()){
-    //                qDebug() << "No answer";
-    //    }
-    return answer;
-}
-
-
-
-/**
- * @brief KnowledgeBase::ruleSubstitution
- * @param rule
- * @return
- * Take the first relation of the body :
- *  - substitute it with a relation from constantToRelationEvaluationMap
- *  - substitute it with a rule from constantToRuleEvaluationMap
- */
-QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
-    //#ifndef QT_NO_DEBUG
-    //    qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
-    //#endif
-    QList<LRule> answer;
-    
-    LRelation firstRelation = rule->getBody().first();
-    LTerm head = firstRelation->getHead();
-    
-    //
-    if(firstRelation->isNegation()){
-        LRelation nonNegativeRelation = Logic_Relation::clone(firstRelation);
-        nonNegativeRelation->setNegation(false);
-        //        qDebug() << "Negation, trying to solve a subproblem " << nonNegativeRelation->toString();
-        QList<LRelation> subproblemAnswer = evaluate(nonNegativeRelation);
-        if(subproblemAnswer.size() == 0){
-            //            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is false";
-            QList<LRelation> endOfBody = rule->getBody();
-            endOfBody.removeFirst();
-            
-            LRule partialAnswer = manageRule(LRule(new Logic_Rule(rule->getHead(), endOfBody)));
-            answer.append(partialAnswer);
-        }
-        else{
-            //            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is true, we stop here";
-        }
-        return answer;
-    }
-    
-    if(head->toString() == QString("distinct")){
-        QList<LTerm> body = firstRelation->getBody();
-        if(body[0]->toString() != body[1]->toString()){
-            QList<LRelation> endOfBody = rule->getBody();
-            endOfBody.removeFirst();
-            
-            LRule partialAnswer = manageRule(LRule(new Logic_Rule(rule->getHead(), endOfBody)));
-            answer.append(partialAnswer);
-        }
-        else{
-            
-        }
-        return answer;
-        
-    }
-    
-    
-    // Substitute with facts
-    if(constantToRelationEvaluationMap.contains(head)){
-        QList<LRelation> canBeSubstituted = constantToRelationEvaluationMap[head];
-        for(LRelation r : canBeSubstituted){
-            //            qDebug() << "\n    Sub possible with relation " << r->toString();
-            URelation unification = URelation(new Unification_Relation(firstRelation, r));
-            if(unification->isUnificationValid()){
-                
-                LRule tempRule = unification->applySubstitution(rule);
-                //                qDebug() << "    Unification is valid and gives : " << tempRule->toString();
-                //unification->printSolverResults();
-                
-                QList<LRelation> endOfBody = tempRule->getBody();
-                endOfBody.removeFirst();
-                
-                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), endOfBody)));
-                //                qDebug() << "    Partial Answer : " << partialAnswer->toString();
-                answer.append(partialAnswer);
-            }
-        }
-    }
-    
-    // Substitute with temporary facts
-    if(constantToTempRelationEvaluationMap.contains(head)){
-        QList<LRelation> canBeSubstituted = constantToTempRelationEvaluationMap[head];
-        for(LRelation r : canBeSubstituted){
-            //            qDebug() << "\n    Sub possible with temp relation " << r->toString();
-            URelation unification = URelation(new Unification_Relation(firstRelation, r));
-            if(unification->isUnificationValid()){
-                
-                LRule tempRule = unification->applySubstitution(rule);
-                //                qDebug() << "    Unification is valid and gives : " << tempRule->toString();
-                //unification->printSolverResults();
-                
-                QList<LRelation> endOfBody = tempRule->getBody();
-                endOfBody.removeFirst();
-                
-                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), endOfBody)));
-                //                qDebug() << "    Partial Answer : " << partialAnswer->toString();
-                answer.append(partialAnswer);
-            }
-        }
-    }
-    
-    // Substitute with rule
-    if(constantToRuleEvaluationMap.contains(head)){
-        QList<LRule> canBeSubstituted = constantToRuleEvaluationMap[head];
-        for(LRule r : canBeSubstituted){
-            //            qDebug() << "\n    Sub possible with rule" << r->toString();
-            LRule skolemRule = buildSkolemRule(rule, r);
-            //            qDebug() << "    Which is updated in " << skolemRule->toString();
-            URelation unification = URelation(new Unification_Relation(firstRelation, skolemRule->getHead()));
-            if(unification->isUnificationValid()){
-                unification->applySubstitutionInPlace(skolemRule);
-                LRule tempRule = unification->applySubstitution(rule);
-                
-                //                qDebug() << "    Unification is valid and gives original rule : " << tempRule->toString();
-                //                qDebug() << "    and the skolem : " << skolemRule->toString();
-                //unification->printSolverResults();
-                
-                QList<LRelation> body;
-                body.append(skolemRule->getBody());
-                QList<LRelation> endOfBody = tempRule->getBody();
-                endOfBody.removeFirst();
-                body.append(endOfBody);
-                
-                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), body)));
-                //                qDebug() << "    Partial Answer : " << partialAnswer->toString();
-                answer.append(partialAnswer);
-            }
-        }
-    }
-    return answer;
-}
-
-/**
- * @brief KnowledgeBase::buildSkolemRule
- * @param originalRule
- * @param ruleFromKB
- * @return
- * We have the first relation of the body, and we want to substitute it with a rule in our KB
- * It's necessary to rename variables in the body of this 2nd rule to prevent name clashing
- */
-LRule KnowledgeBase::buildSkolemRule(LRule originalRule, LRule ruleFromKB){
-    LRule answer = ruleFromKB->clone();
-    
-    QSet<QString> var1 = originalRule->getFreeVariables();
-    QSet<QString> var2 = ruleFromKB->getFreeVariables();
-    
-    //    qDebug() << "        SKOLEM";
-    //    for(QString varName : var1){
-    //        qDebug() << "        Var in 1st rule : " << varName;
-    //    }
-    //    for(QString varName : var2){
-    //        qDebug() << "        Var in 2nd rule : " << varName;
-    //    }
-    
-    QSet<QString> skolemizedVariables; // All the skolem variables we used so far
-    
-    for(QString varName : var2){
-        if(!var1.contains(varName)){
-            continue;
-        }
-        //        qDebug() << "        Matching variable between the 2 rules : " << varName;
-        
-        QString skolemVariable;
-        bool readableSkolem = false;
-        
-        // First try
-        // Try to add a character to the end of the name of the variable
-        for(int i=0; i<26; ++i){
-            QChar c(97+25-i);
-            QString s("?");
-            s.append(c);
-            //            qDebug() << "        Try skolem variable " << s;
-            
-            if(var1.contains(s)){
-                continue;
-            }
-            if(var2.contains(s)){
-                continue;
-            }
-            if(skolemizedVariables.contains(s)){
-                continue;
-            }
-            
-            skolemizedVariables << s;
-            readableSkolem = true;
-            skolemVariable = s;
-            break;
-        }
-        // Second try
-        // Add a number that is guaranteed to be unique
-        if(!readableSkolem){
-            skolemVariable = QString("SK_").append(QString::number(KnowledgeBase::skolemNumber));
-            skolemNumber++;
-        }
-        
-        LTerm v1 = LTerm(new Logic_Term(varName, VARIABLE));
-        LTerm v2 = LTerm(new Logic_Term(skolemVariable, VARIABLE));
-        
-        //        qDebug() << "        Try to skolemize var " << varName << " into skolem " << skolemVariable << " in rule " << answer->toString();
-        answer->substitute(v1, v2);
-        //        qDebug() << "        Result is " << answer->toString();
-    }
-    return answer;
-}
-
-
-
-void KnowledgeBase::loadTempRelations(const QVector<LRelation> contents){
-    evaluationTempRelations.clear();
-    constantToTempRelationEvaluationMap.clear();
-    
-    for(LRelation relation : contents){
-        evaluationTempRelations.append(relation);
-        
-        LTerm head = relation->getHead();
-        if(!constantToTempRelationEvaluationMap.contains(head)){
-            constantToTempRelationEvaluationMap.insert(head, QList<LRelation>());
-        }
-        constantToTempRelationEvaluationMap[head].append(relation);
-    }
-}
-
-void KnowledgeBase::loadAdditionalTempRelations(const QVector<LRelation> contents){
-    for(LRelation relation : contents){
-        evaluationTempRelations.append(relation);
-        
-        LTerm head = relation->getHead();
-        if(!constantToTempRelationEvaluationMap.contains(head)){
-            constantToTempRelationEvaluationMap.insert(head, QList<LRelation>());
-        }
-        constantToTempRelationEvaluationMap[head].append(relation);
-    }
-}
-
-
-
-
-// Is just a debugging tool
-// It is not needed for the computation
-// It is just to check that the GDL rules are well formed
-void KnowledgeBase::generateStratum(){
-    stratumMap.clear();
-    stratifiedConstants.clear();
-
-    // Put everything in memory
-    for(LTerm constant : relationConstantSet){
-        stratumMap.insert(constant, LStratum(new Stratum(constant)));
-    }
-    
-    // Create dependency
-    for(LRule rule : ruleList){
-        LTerm head = rule->getHead()->getHead();
-        LStratum stratum = stratumMap[head];
-        
-        
-        QSet<LTerm> dependents;
-        QSet<LTerm> dependentsNegative;
-        
-        for(LRelation relation : rule->getBody()){
-            LTerm relationConstant = relation->getHead();
-            if(relation->isNegation()){
-                dependentsNegative.insert(relationConstant);
-            }
-            else{
-                dependents.insert(relationConstant);
-            }
-        }
-        
-        for(LTerm d : dependents){
-            Q_ASSERT(stratumMap.contains(d));
-            stratum->addDependency(stratumMap[d]);
-        }
-        
-        for(LTerm dn : dependentsNegative){
-            Q_ASSERT(stratumMap.contains(dn));
-            stratum->addDependencyNegative(stratumMap[dn]);
-        }
-    }
-    
-    
-    bool update = true;
-    int nbStrongIteration = 0;
-    
-    while(update && nbStrongIteration<10000){
-        update = false;
-        nbStrongIteration++;
-        for(LStratum stratum : stratumMap.values()){
-            update = update || stratum->updateStrataStrongly();
-        }
-    }
-    
-    update = true;
-    int nbIteration = 0;
-    
-    while(update && nbIteration<10000){
-        update = false;
-        nbIteration++;
-        for(LStratum stratum : stratumMap.values()){
-            update = update || stratum->updateStrata();
-        }
-    }
-    
-    
-    
-    QList<LStratum> listOfStratum = stratumMap.values();
-    qSort(listOfStratum.begin(), listOfStratum.end(), Stratum::greaterThan);
-    
-    int strata = -1;
-    for(LStratum s : listOfStratum){
-        int currentStrata = s->getStrata();
-        if(strata != currentStrata){
-            //            qDebug() << "Pushed a new strata level";
-            //            qDebug() << "Strata = " << strata;
-            //            qDebug() << "currentStrata = " << currentStrata;
-            stratifiedConstants.push_back(QList<LTerm>());
-            strata = currentStrata;
-
-
-        }
-        stratifiedConstants.last().append(s->getNode());
-    }
-    
-#ifndef QT_NO_DEBUG
-    qDebug() << "GENERATE STRATUM";
-    qDebug() << "Nb strong iterations : " << nbStrongIteration;
-    qDebug() << "Nb iterations : " << nbIteration;
-    int index = 0;
-    for(QList<LTerm> v : stratifiedConstants){
-        qDebug() << "Stratum " << index << "is comprised of : ";
-        for(LTerm c : v){
-            qDebug() << "\t" << c->toString();
-        }
-        index++;
-    }
-
-    for(LStratum stratum : listOfStratum){
-        qDebug() << "Stratum " << stratum->toString();
-    }
-    qDebug() << "\n";
-#endif
-}
-
-QMap<LTerm, int> KnowledgeBase::getArity(){
-    return arity;
-}
-
-QMap<LTerm, LStratum> KnowledgeBase::getStratumMap(){
-    return stratumMap;
-}
-
-QList<QList<LTerm>> KnowledgeBase::getStratifiedConstants(){
-    return stratifiedConstants;
-}
-
-
-/**
- * @brief KnowledgeBase::printFreeVariables
- * Debug?
- */
-void KnowledgeBase::printFreeVariables(){
-    qDebug() <<"\nPRINT FREE VARIABLES";
-    
-    for(LRule r : ruleList){
-        qDebug() << "\nFree variable of rule " << r->toString();
-        QSet<QString> freeVar = r->getFreeVariables();
-        for(QString s : freeVar){
-            qDebug() << "\tVariable " << s;
-        }
-    }
-}
-
-
-
-
-void KnowledgeBase::printConstantsWithArity(){
-    qDebug() << "\n\nLIST OF CONSTANTS";
-    for(LTerm constant : objectConstantSet){
-        qDebug() << "Object constant : " << constant->toString() << "\twith address : " << constant.data();
-    }
-    for(LTerm constant : relationConstantSet){
-        qDebug() << "Relation constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
-    }
-    for(LTerm constant : functionConstantSet){
-        qDebug() << "Function constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
-    }
-}
-
-LTerm KnowledgeBase::getTermFromString(QString s){
-    return manageTerm(parser.parseTerm(s));
-}
-
-LRelation KnowledgeBase::getRelationfromString(QString s){
-    return manageRelation(parser.parseRelation(s));
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -926,137 +918,9 @@ bool Stratum::updateStrataStrongly(){
 
 
 
-
-//QList<LRelation> KnowledgeBase::evaluate2(LRelation r){
-//    //    qDebug() << "\nKnowledgeBase::evaluate(). Relation is : " << r->toString();
-//    LRelation head = manageRelation(r->clone());
-//    QList<LRelation> body;
-//    body.append(manageRelation(r->clone()));
-
-//    LRule rule = LRule(new Logic_Rule(head, body));
-
-//    QList<LRelation> answer;
-//    QSet<QString> answerString;
-
-//    QList<LRule> possibleAnswers;
-//    possibleAnswers.append(rule);
-
-
-//    while (!possibleAnswers.isEmpty()) {
-//        qDebug() << "\nKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
-//        LRule possibleRule = possibleAnswers.last();
-//        possibleAnswers.removeLast();
-
-//        // If the rule is fully grounded
-//        if(possibleRule->getHead()->isGround()){
-//            // If we know it's already true for that grounding, we can discard it
-//            if(answerString.contains(possibleRule->getHead()->toString())){
-//                continue;
-//            }
-//        }
-
-//        // If the body is empty, we have an answer to our evaluation query
-//        if(possibleRule->isBodyEmpty()){
-//            //            qDebug() << "We have an answer : " << possibleRule->getHead()->toString();
-//            answer.append(possibleRule->getHead());
-//            answerString << possibleRule->getHead()->toString();
-//            continue;
-//        }
-
-//        // Else, we take the first relation and process it
-//        QList<LRule> substitutions = ruleSubstitution2(possibleRule);
-//        possibleAnswers.append(substitutions);
-//    }
-//    //    if(answer.isEmpty()){
-//    //                qDebug() << "No answer";
-//    //    }
-//    return answer;
-//}
-
-//QList<LRule> KnowledgeBase::ruleSubstitution2(LRule rule){
-//    qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
-//    QList<LRule> answer;
-
-//    LRelation firstRelation = rule->getBody().first();
-//    LTerm head = firstRelation->getHead();
-
-
-
-//    // Substitute with facts
-//    if(constantToRelationEvaluationMap.contains(head)){
-//        QList<LRelation> canBeSubstituted = constantToRelationEvaluationMap[head];
-//        for(LRelation r : canBeSubstituted){
-//            qDebug() << "\n    Sub possible with relation " << r->toString();
-//            URelation unification = URelation(new Unification_Relation(firstRelation, r));
-//            if(unification->isUnificationValid()){
-
-//                LRule tempRule = unification->applySubstitution(rule);
-//                //                qDebug() << "    Unification is valid and gives : " << tempRule->toString();
-//                //unification->printSolverResults();
-
-//                QList<LRelation> endOfBody = tempRule->getBody();
-//                endOfBody.removeFirst();
-
-//                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), endOfBody)));
-//                //                qDebug() << "    Partial Answer : " << partialAnswer->toString();
-//                answer.append(partialAnswer);
-//            }
-//        }
-//    }
-
-//    // Substitute with temporary facts
-//    //    if(constantToTempRelationEvaluationMap.contains(head)){
-//    //        QList<LRelation> canBeSubstituted = constantToTempRelationEvaluationMap[head];
-//    //        for(LRelation r : canBeSubstituted){
-//    //                        qDebug() << "\n    Sub possible with temp relation " << r->toString();
-//    //            URelation unification = URelation(new Unification_Relation(firstRelation, r));
-//    //            if(unification->isUnificationValid()){
-
-//    //                LRule tempRule = unification->applySubstitution(rule);
-//    //                //                qDebug() << "    Unification is valid and gives : " << tempRule->toString();
-//    //                //unification->printSolverResults();
-
-//    //                QList<LRelation> endOfBody = tempRule->getBody();
-//    //                endOfBody.removeFirst();
-
-//    //                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), endOfBody)));
-//    //                //                qDebug() << "    Partial Answer : " << partialAnswer->toString();
-//    //                answer.append(partialAnswer);
-//    //            }
-//    //        }
-//    //    }
-
-//    // Substitute with rule
-//    if(constantToRuleEvaluationMap.contains(head)){
-//        QList<LRule> canBeSubstituted = constantToRuleEvaluationMap[head];
-//        for(LRule r : canBeSubstituted){
-//            qDebug() << "\n    Sub possible with rule" << r->toString();
-//            LRule skolemRule = buildSkolemRule(rule, r);
-//            //            qDebug() << "    Which is updated in " << skolemRule->toString();
-//            URelation unification = URelation(new Unification_Relation(firstRelation, skolemRule->getHead()));
-//            if(unification->isUnificationValid()){
-//                unification->applySubstitutionInPlace(skolemRule);
-//                LRule tempRule = unification->applySubstitution(rule);
-
-//                //                qDebug() << "    Unification is valid and gives original rule : " << tempRule->toString();
-//                //                qDebug() << "    and the skolem : " << skolemRule->toString();
-//                //unification->printSolverResults();
-
-//                QList<LRelation> body;
-//                body.append(skolemRule->getBody());
-//                QList<LRelation> endOfBody = tempRule->getBody();
-//                endOfBody.removeFirst();
-//                body.append(endOfBody);
-
-//                LRule partialAnswer = manageRule(LRule(new Logic_Rule(tempRule->getHead(), body)));
-//                //                qDebug() << "    Partial Answer : " << partialAnswer->toString();
-//                answer.append(partialAnswer);
-//            }
-//        }
-//    }
-//    return answer;
-//}
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// DEBUGGIN TOOLS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void KnowledgeBase::printRuleEvaluation(){
     
@@ -1073,21 +937,52 @@ void KnowledgeBase::printTempRelationEvaluation(){
     }
 }
 
-QList<LRelation> KnowledgeBase::getEvaluationRelations(){
-    return evaluationRelations;
+/**
+ * @brief KnowledgeBase::checkArity
+ * @param relation
+ * Debugging tool
+ */
+void KnowledgeBase::checkArity(LRelation relation){
+    //    qDebug() << "Cheack arity " << relation->toString();
+    LTerm relationHead = relation->getHead();
+    int ar = relation->getBody().size();
+    Q_ASSERT(arity.contains(relationHead));
+    Q_ASSERT(arity[relationHead] == ar);
 }
 
-QList<LRule> KnowledgeBase::getEvaluationRules(){
-    return evaluationRules;
+/**
+ * @brief KnowledgeBase::printFreeVariables
+ * Debug?
+ */
+void KnowledgeBase::printFreeVariables(){
+#ifndef QT_NO_DEBUG
+    qDebug() <<"\n\nPrint Free Variables\n";
+
+    for(LRule r : ruleList){
+        qDebug() << "Free variable of rule " << r->toString();
+        QSet<QString> freeVar = r->getFreeVariables();
+        for(QString s : freeVar){
+            qDebug() << "\tVariable " << s;
+        }
+    }
+#endif
 }
 
-QList<LRelation> KnowledgeBase::getEvaluationTempRelations(){
-    return evaluationTempRelations;
+
+
+
+void KnowledgeBase::printConstantsWithArity(){
+#ifndef QT_NO_DEBUG
+    qDebug() << "\n\nLIST OF CONSTANTS";
+    for(LTerm constant : objectConstantSet){
+        qDebug() << "Object constant : " << constant->toString() << "\twith address : " << constant.data();
+    }
+    for(LTerm constant : relationConstantSet){
+        qDebug() << "Relation constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
+    }
+    for(LTerm constant : functionConstantSet){
+        qDebug() << "Function constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
+    }
+#endif
 }
-
-QMap<LTerm, QList<LRelation>> KnowledgeBase::getConstantToTempRelationEvaluationMap(){
-    return constantToTempRelationEvaluationMap;
-}
-
-
 

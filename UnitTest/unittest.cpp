@@ -13,20 +13,20 @@
 
 UnitTest::UnitTest(int argc, char* argv[])
 {
-//    Logic_Test logicTest;
-//    QTest::qExec(&logicTest, argc, argv);
+    Logic_Test logicTest;
+    QTest::qExec(&logicTest, argc, argv);
 
-//    Unification_Test unificationTest;
-//    QTest::qExec(&unificationTest, argc, argv);
+    Unification_Test unificationTest;
+    QTest::qExec(&unificationTest, argc, argv);
 
     KnowledgeBase_Test knowledgeBaseTest;
     QTest::qExec(&knowledgeBaseTest, argc, argv);
 
-//    GDLProver_Test gdlproverTest;
-//    QTest::qExec(&gdlproverTest, argc, argv);
+    GDLProver_Test gdlproverTest;
+    QTest::qExec(&gdlproverTest, argc, argv);
 
-//    ProverStateMachine_Test proverTest;
-//    QTest::qExec(&proverTest, argc, argv);
+    ProverStateMachine_Test proverStateMachineTest;
+    QTest::qExec(&proverStateMachineTest, argc, argv);
 
 //    Propnet_Test propnetTest;
 //    QTest::qExec(&propnetTest, argc, argv);

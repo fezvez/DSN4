@@ -1,5 +1,7 @@
 #include "flags.h"
 
+bool specialDebugOn = false;
+
 void debug(QString string){
 #ifndef QT_NO_DEBUG
     qDebug() << string;
@@ -21,6 +23,36 @@ void debug(QString string, QString string1, QString string2){
 void criticalDebug(QString string){
 #ifndef QT_NO_DEBUG
     qDebug() << "\n\n" << string.toUpper() << "\n";
+#endif
+}
+
+void specialDebug(QString string){
+#ifndef QT_NO_DEBUG
+    if(specialDebugOn)
+        qDebug() << string;
+#endif
+}
+
+void specialDebug(QString string, QString string1){
+#ifndef QT_NO_DEBUG
+    if(specialDebugOn)
+        qDebug() << string << " " << string1;
+#endif
+}
+
+void specialDebug(QString string, QString string1, QString string2){
+#ifndef QT_NO_DEBUG
+    if(specialDebugOn)
+        qDebug() << string << " " << string1 << " " << string2;
+#endif
+}
+
+void debugStringList(const QStringList &stringList, QString title){
+#ifndef QT_NO_DEBUG
+    qDebug() << "Printing full list : " << title << " of size : " << stringList.size();
+    for(QString string : stringList){
+        qDebug() << "\t" << string;
+    }
 #endif
 }
 

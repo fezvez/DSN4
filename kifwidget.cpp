@@ -16,9 +16,11 @@
 #include <QStringBuilder>
 
 #include "Unification/unification_relation.h"
-#include "Prover/gdlprover.h"
 
-//
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// CONSTRUCTOR
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 KifWidget::KifWidget(QWidget *parent) :
     QWidget(parent)
 {
@@ -32,9 +34,9 @@ KifWidget::~KifWidget()
 }
 
 
-/**
- * GUI
- */
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// GUI
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void KifWidget::setUpLayout(){
     // Widgets
 
@@ -155,9 +157,9 @@ void KifWidget::createMainDisplay(){
 
 
 
-/**
- * INIT
- */
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// INITIALIZE
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void KifWidget::initialize(){
     regEndsInKif = QRegExp("\\.kif$");
 
@@ -180,32 +182,13 @@ void KifWidget::initialize(){
     openFile(filename);
 }
 
-void KifWidget::debugFile(QStringList stringList){
-    output("STATIC ANALYSIS");
-
-    QTextCursor cursor = textEditGDL->textCursor();
-    cursor.setPosition(0);
-    textEditGDL->setTextCursor(cursor);
-
-
-    parser.generateHerbrandFromRawKif(stringList);
 
 
 
-    // Check parenthesis
-    // Check syntax
 
-    GDLProver prover;
-    prover.setup(parser.getRelations(), parser.getRules());
-
-    // Check arity
-}
-
-
-
-/**
- * FILE LOGIC
- */
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// OPENING FILE
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void KifWidget::openFileFromUserInteraction(int row, int /* column */)
 {
@@ -226,26 +209,9 @@ void KifWidget::openFileFromUserInteraction(int row, int /* column */)
 void KifWidget::openFile(QString filename){
     textEditGDL->clear();
 
-    if(filename.contains(regEndsInKif)){
-        // Amusing, no RAII here (&QObject::deleteLater)
-        QStringList lines = parser.loadKifFile(filename);
-        for(QString line : lines){
-            textEditGDL->appendPlainText(line);
-        }
-
-        //        KifLoader *kifLoader = new KifLoader(this, filename);
-        //        connect(kifLoader, &KifLoader::lineProcessed, textEditGDL, &QPlainTextEdit::appendPlainText);
-        //        connect(kifLoader, &KifLoader::finished, kifLoader, &QObject::deleteLater);
-        //        connect(kifLoader, SIGNAL(kifProcessed(QStringList)),this, SIGNAL(kifProcessed(QStringList)));
-        //        connect(kifLoader, SIGNAL(emitOutput(QString)), this, SLOT(output(QString)));
-        //        kifLoader->start();
-    }
-    // Should I even do this?
-    else{
-        FileLoader *fileLoader = new FileLoader(this, filename);
-        connect(fileLoader, &FileLoader::lineProcessed, textEditGDL, &QPlainTextEdit::appendPlainText);
-        connect(fileLoader, &FileLoader::finished, fileLoader, &QObject::deleteLater);
-        fileLoader->start();
+    QStringList lines = parser.loadKifFile(filename);
+    for(QString line : lines){
+        textEditGDL->appendPlainText(line);
     }
 
     hasGDLChanged = true;
@@ -344,6 +310,10 @@ void KifWidget::showFiles(const QStringList &files)
     filesFoundLabel->setWordWrap(true);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// QUERY
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void KifWidget::query(){
     qDebug() << "Query";
 
@@ -382,13 +352,40 @@ void KifWidget::query(){
     }
 }
 
-void KifWidget::output(const QString & string){
-    textEditDebug->appendPlainText(string);
+void KifWidget::debugFile(QStringList stringList){
+    output("STATIC ANALYSIS");
+    output("Typical behavior : the program crashes at a Q_ASSERT if something is wrong");
+
+    QTextCursor cursor = textEditGDL->textCursor();
+    cursor.setPosition(0);
+    textEditGDL->setTextCursor(cursor);
+
+
+    parser.generateHerbrandFromRawKif(stringList);
+
+    output("Check parenthesis balance");
+    output("Check syntax");
+
+    GDLProver prover;
+    prover.setup(parser.getRelations(), parser.getRules());
+
+    // Checks arity
 }
 
 void KifWidget::gdlTextChanged(){
     hasGDLChanged = true;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// OUTPUT
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void KifWidget::output(const QString & string){
+    textEditDebug->appendPlainText(string);
+}
+
+
 
 
 
@@ -451,28 +448,4 @@ void Highlighter::highlightBlock(const QString &text)
             index = expression.indexIn(text, index + length);
         }
     }
-    //    //! [7] //! [8]
-    //    setCurrentBlockState(0);
-    //    //! [8]
-
-    //    //! [9]
-    //    int startIndex = 0;
-    //    if (previousBlockState() != 1)
-    //        startIndex = commentStartExpression.indexIn(text);
-
-    //    //! [9] //! [10]
-    //    while (startIndex >= 0) {
-    //        //! [10] //! [11]
-    //        int endIndex = commentEndExpression.indexIn(text, startIndex);
-    //        int commentLength;
-    //        if (endIndex == -1) {
-    //            setCurrentBlockState(1);
-    //            commentLength = text.length() - startIndex;
-    //        } else {
-    //            commentLength = endIndex - startIndex
-    //                    + commentEndExpression.matchedLength();
-    //        }
-    //        setFormat(startIndex, commentLength, multiLineCommentFormat);
-    //        startIndex = commentStartExpression.indexIn(text, startIndex + commentLength);
-    //    }
 }

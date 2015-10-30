@@ -11,8 +11,9 @@ public:
     ~GDLProver();
 
 public:
-    void setup(QList<LRelation> relations, QList<LRule> rules);
     void setup(QString filename);
+    void setup(QList<LRelation> relations, QList<LRule> rules);
+
 
 protected:
     void linkBaseToNext();
@@ -31,6 +32,7 @@ public:
       * Keywords and shit
       */
     public:
+        const QVector<LRelation>& getInitState() const;
         const QMap<QString, LRelation>& getInitPropositions() const;
         const QMap<QString, LRelation>& getRolePropositions() const;
         const QVector<LTerm>& getRoles() const;
@@ -87,6 +89,8 @@ public:
         QVector<LTerm> roles;
 
         QMap<QString, LTerm> baseConstants;
+
+        QVector<LRelation> initState; // Convenience
 };
 
 #endif // GDLPROVER_H

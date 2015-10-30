@@ -19,20 +19,26 @@ void GDLProver_Test::toUpper()
 void GDLProver_Test::Prover_01(){
 
     debug("Current directory ", QDir::current().path());
+
+
+    QString filenameTTT;
+#ifdef TARGET_OS_MAC
+    filenameTTT = "../../../../";
+#endif
+    filenameTTT = filenameTTT.append("tictactoe.kif");
+
     GDLProver prover;
-    prover.setup("../../../../tictactoe.kif");
+    prover.setup(filenameTTT);
 
     QCOMPARE(prover.getInitPropositions().size(), 10);
     QCOMPARE(prover.getRoles().size(), 2);
 
-    QMap<QString, LRelation> initProposition = prover.getInitPropositions();
-    QVector<LRelation> initialState;
-    for(LRelation relation : initProposition.values()){
-        initialState.append(relation);
-    }
-    prover.loadTempRelations(initialState);
+    QVector<LRelation> initState = prover.getInitState();
+    prover.loadTempRelations(initState);
 
     Parser parser;
+
+    // Initial state
     LRelation relation1 = parser.parseRelation(QString("(legal ?x noop)"));
     QCOMPARE(prover.evaluate(relation1).size(), 1);
 
@@ -48,9 +54,10 @@ void GDLProver_Test::Prover_01(){
     LRelation relation5 = parser.parseRelation(QString("(line ?x)"));
     QCOMPARE(prover.evaluate(relation5).size(), 1);
 
-    initialState.append(prover.manageRelation(parser.parseRelation("(does white (mark 1 1))")));
-    prover.loadTempRelations(initialState);
-
+    // Does a move
+    QVector<LRelation> doesMove;
+    doesMove.append(prover.manageRelation(parser.parseRelation("(does white (mark 1 1))")));
+    prover.loadAdditionalTempRelations(doesMove);
 
     QCOMPARE(prover.evaluate(relation1).size(), 1);
 

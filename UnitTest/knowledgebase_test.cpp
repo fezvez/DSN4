@@ -23,6 +23,7 @@ void KnowledgeBase_Test::KB_01(){
     sL << "(<= (h ?x) (f ?x))";
     sL << "(<= terminal (not open))";
     sL << "(<= open (f ?x))";
+    sL << "(<= (j ?x ?y) (h ?x) (h ?y) (g ?x ?y))";
 
     parser.generateHerbrandFromRawKif(sL);
 
@@ -73,6 +74,19 @@ void KnowledgeBase_Test::KB_01(){
 
     LRelation relation14 = parser.parseRelation(QString("terminal"));
     QCOMPARE(KB.evaluate(relation14).size(), 0);
+
+    QCOMPARE(KB.evaluate("(not (h c))").size(), 1);
+    QCOMPARE(KB.evaluate("(f a b)").size(), 0);
+
+    // Interesting point
+    // Negation does not bind variables
+    // This is why every variable must appear in a positive subgoal
+    // Othewise, you would end up with (f a ?x) is true for any possible ?x possible
+    QCOMPARE(KB.evaluate("(not (f ?x ?y))")[0]->toString(), QString("(not (f ?x ?y))"));
+    QCOMPARE(KB.evaluate("(j ?x ?y)").size(), 2);
+    QCOMPARE(KB.evaluate("(j ?x ?x)").size(), 1);
+
+
 }
 
 void KnowledgeBase_Test::KB_02(){
@@ -106,7 +120,10 @@ void KnowledgeBase_Test::KB_02(){
     QCOMPARE(KB.evaluate(relation4).size(), 1);
 
     LRelation relation5 = parser.parseRelation(QString("(j ?x)"));
-    QCOMPARE(KB.evaluate(relation5).size(), 2);
+    QCOMPARE(KB.evaluate(relation5).size(), 0);
+
+    QCOMPARE(KB.evaluate("k ?x").size(), 0);
+
 }
 
 void KnowledgeBase_Test::tictactoe(){
@@ -119,24 +136,18 @@ void KnowledgeBase_Test::tictactoe(){
     KnowledgeBase KB;
     KB.setup(filenameTTT);
 
-//    qDebug() << KB.evaluate("terminal")[0]->toString();
 
-//    QCOMPARE(KB.evaluate("terminal").size(), 0);
-//    QCOMPARE(KB.evaluate("(terminal)").size(), 0);
+    // Remember that ALL the logic program is considered possible for evaluation
+    // Every single base proposition is true. Every single does proposition is true
 
-    QCOMPARE(KB.evaluate("line black").size(), 0);
-
-    for(LRelation relation : KB.evaluate("line ?x")){
-        qDebug() << relation->toString();
-    }
-    QCOMPARE(KB.evaluate("line ?x").size(), 0);
-
+    QCOMPARE(KB.evaluate("control white").size(), 1);
+    QCOMPARE(KB.evaluate("control black").size(), 1);
+    QCOMPARE(KB.evaluate("legal black (mark 1 1)").size(), 1);
+    QCOMPARE(KB.evaluate("legal white (mark 1 1)").size(), 1);
+    QCOMPARE(KB.evaluate("legal white (mark ?x ?y)").size(), 9);
     QCOMPARE(KB.evaluate("row black").size(), 0);
     QCOMPARE(KB.evaluate("row ?x").size(), 0);
-
-    QCOMPARE(KB.evaluate("legal black (mark 1 1)").size(), 0);
-    QCOMPARE(KB.evaluate("legal white (mark 1 1)").size(), 1);
-
-    QCOMPARE(KB.evaluate("legal white (mark ?x ?y)").size(), 9);
-
+    QCOMPARE(KB.evaluate("line b").size(), 1);
+    QCOMPARE(KB.evaluate("line ?x").size(), 3);
+    QCOMPARE(KB.evaluate("terminal").size(), 1);
 }

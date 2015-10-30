@@ -5,6 +5,10 @@
 #include "../parser.h"
 #include "../flags.h"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// CONSTRUCTORS / DESTRUCTORS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 GDLProver::GDLProver() : KnowledgeBase()
 {
 
@@ -15,9 +19,38 @@ GDLProver::~GDLProver()
 
 }
 
-/**
-  * Setup
-  */
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// GETTERS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const QMap<QString, LRelation>& GDLProver::getInitPropositions() const{
+    return initPropositions;
+}
+
+const QVector<LRelation>& GDLProver::getInitState() const{
+    return initState;
+}
+
+const QMap<QString, LRelation>& GDLProver::getRolePropositions() const{
+    return rolePropositions;
+}
+
+const QVector<LTerm>& GDLProver::getRoles() const{
+    return roles;
+}
+
+const QMap<LTerm, LRelation>& GDLProver::getNextQueries() const{
+    return mapNextToQuery;
+}
+
+const QMap<LTerm, LTerm>& GDLProver::getMapNextToBase() const{
+    return mapNextToBase;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// SETUP
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GDLProver::setup(QString filename){
     Parser parser;
@@ -40,32 +73,6 @@ void GDLProver::setup(QList<LRelation> relations, QList<LRule> rules){
 
     criticalDebug("GDLProver setup finished");
 }
-
-/**
- * Getters
- */
-
-const QMap<QString, LRelation>& GDLProver::getInitPropositions() const{
-    return initPropositions;
-}
-
-const QMap<QString, LRelation>& GDLProver::getRolePropositions() const{
-    return rolePropositions;
-}
-
-const QVector<LTerm>& GDLProver::getRoles() const{
-    return roles;
-}
-
-const QMap<LTerm, LRelation>& GDLProver::getNextQueries() const{
-    return mapNextToQuery;
-}
-
-const QMap<LTerm, LTerm>& GDLProver::getMapNextToBase() const{
-    return mapNextToBase;
-}
-
-
 
 
 
@@ -138,8 +145,6 @@ void GDLProver::linkBaseToNext(){
  * A Type is a GDL keyword (role, terminal...)
  */
 void GDLProver::buildRelationTypesAndQualifiers(){
-
-
     baseRelations.clear();
     initRelations.clear();
     standardTypeRelations.clear();
@@ -516,6 +521,13 @@ void GDLProver::buildBaseInitInputDoesPropositions(){
     }
 #endif
 
+
+    // INIT for convenience (can call loadTempRelations(initState))
+    initState.clear();
+    for(LRelation relation : initPropositions.values()){
+        initState.append(relation);
+    }
+
     inputPropositions.clear();
     for(LRelation relation : inputRelations){
         inputPropositions[relation->toString()] = relation;
@@ -591,7 +603,7 @@ void GDLProver::buildRolePropositions(QList<LRelation> relations){
 
     Q_ASSERT(constantMap.contains("role"));
     //    qDebug() << "List of Roles";
-    LTerm roleConstant = constantMap["role"];
+//    LTerm roleConstant = constantMap["role"];
     for(LRelation relation : relations){
         //        qDebug() << "Relation " << relation->toString();
         if(relation->getHead()->toString() == "role"){ // Can't use LTerm equality here
@@ -601,7 +613,6 @@ void GDLProver::buildRolePropositions(QList<LRelation> relations){
         }
     }
 
-//    qDebug() << "GRUUL";
 //    for(LTerm roleTerm : roles){
 //        qDebug() << "Role " << roleTerm->toString() << " with address " << roleTerm.data();
 //    }

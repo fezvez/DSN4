@@ -18,7 +18,7 @@
 
 
 /**
- * THIS CLASS IS FULL OF JUNK. CLEAN IT
+ * This class is pretty cool
  */
 
 class Parser : public QObject
@@ -28,17 +28,12 @@ class Parser : public QObject
 public:
     Parser(QObject * parent = 0);
 
-signals:
-    void output(const QString & message);
-    void outputDebug(const QString & message);
-
+    // The fundamental usage
 public slots:
-
     QStringList loadKifFile(QString filename);
-    QStringList cleanRawKif(const QStringList &rawKiff);
+    QStringList cleanRawKif(const QStringList &rawKif);
     void generateHerbrandFromFile(QString filename);
     void generateHerbrandFromRawKif(const QStringList &rawKif);
-
 
 public slots:
     LTerm parseTerm(QString term);
@@ -48,12 +43,7 @@ public slots:
     QList<LRule> getRules();
     QList<LRelation> getRelations();
 
-public:
-//    void splitLines();
-//    void mergeLines();
-//    void cleanFile();
-//    void generateHerbrand();
-
+protected:
     QStringList removeComments(const QStringList &kif);
     QStringList splitLines(const QStringList &kif);
     QStringList makePureLines(const QStringList &kif);  // Racist coding, here I come!
@@ -61,35 +51,23 @@ public:
     void generateHerbrand(const QStringList &cleanKif);
 
 private:
-    // Clean file
-//    void printRawKif();
-//    void cleanLines();
-//    void createDoeses();
-//    void printCleanKif();
-
-    // Generate Herbrand
     void processKifLine(QString line);
     LRule processRule(QString line);
     LRelation processRelation(QString line, Logic::LOGIC_QUALIFIER = Logic::LOGIC_QUALIFIER::NO_QUAL, bool isNegative = false, bool isNext = false);
     LTerm processTerm(QString line);
     LTerm processFunction(QString line);
 
-    void outputStringList(const QStringList &stringList, QString title = QString("Unknown"));
-
-
-
-
-protected:
-//    QStringList originalKif;
-//    QStringList noCommentKif;
-//    QStringList rawKif;
-//    QStringList lineKif;
-
-
 
 protected:
     QList<LRule> ruleList;
     QList<LRelation> relationList;
+
+    /**
+      *
+      */
+signals:
+    void output(const QString & message);
+    void outputDebug(const QString & message);
 
     /**
       * Static helper functions to split strings
