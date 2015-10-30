@@ -3,6 +3,7 @@
 #include "../parser.h"
 #include "../Unification/unification_relation.h"
 #include "../Logic/logic_rule.h"
+#include "../flags.h"
 
 #include <QStringList>
 
@@ -24,12 +25,13 @@ void KnowledgeBase_Test::KB_01(){
     sL << "(<= open (f ?x))";
 
     Parser parser;
-    parser.loadKif(sL);
+    parser.generateHerbrandFromRawKif(sL);
 
     KnowledgeBase KB;
     KB.setup(parser.getRelations(), parser.getRules());
 
-    qDebug() << "Setup done";
+
+    debug("KB_01 Setup done");
 
     LRelation relation1 = parser.parseRelation(QString("(f ?x)"));
     QCOMPARE(KB.evaluate(relation1).size(), 2);
@@ -87,7 +89,7 @@ void KnowledgeBase_Test::KB_02(){
 
 
     Parser parser;
-    parser.loadKif(sL);
+    parser.generateHerbrandFromRawKif(sL);
 
     KnowledgeBase KB;
     KB.setup(parser.getRelations(), parser.getRules());

@@ -11,8 +11,12 @@ TEMPLATE = app
 
 CONFIG += c++11
 
-QMAKE_MAC_SDK = macosx10.9
+
+
+QMAKE_MAC_SDK = macosx10.11
 QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -std=gnu0x -stdlib=libc+
+
+QMAKE_CXXFLAGS += -Wno-inconsistent-missing-override
 
 SOURCES += main.cpp\
     fileloader.cpp \
@@ -119,4 +123,4 @@ HEADERS  += \
     Player/playernetwork.h \
     Server/serverchords.h
 
-FORMS    += widget.ui
+FORMS    +=

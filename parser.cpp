@@ -14,16 +14,14 @@ QRegExp Parser::leftPar = QRegExp("^\\($");
 QRegExp Parser::rightPar = QRegExp("^\\)$");
 QRegExp Parser::inputRegExp = QRegExp("(\\(|\\s)input(?![\\w|_|-])");
 QRegExp Parser::nextRegExp = QRegExp("^next_");
+QRegExp Parser::newlineRegExp = QRegExp("[\\n\\r]");
 
 Parser::Parser(QObject *parent):
     QObject(parent)
 {
-    createRegExp();
-}
-
-void Parser::createRegExp(){
 
 }
+
 
 QList<LRule> Parser::getRules(){
     return ruleList;
@@ -33,38 +31,185 @@ QList<LRelation> Parser::getRelations(){
     return relationList;
 }
 
+/**
+ *
+ */
 
-
-void Parser::loadKif(const QStringList & sl){
-    // Load file
-#ifndef QT_NO_DEBUG
-    qDebug() << "\n\nPARSER LOAD KIF LINES";
-#endif
-    rawKif = sl;
-
-    cleanFile();
-    generateHerbrand();
+void Parser::generateHerbrandFromFile(QString filename){
+    QStringList rawKif = loadKifFile(filename);
+    generateHerbrandFromRawKif(rawKif);
 }
+
+// SOON TO DIE
+void Parser::generateHerbrandFromRawKif(const QStringList & rawKif){
+
+    QStringList cleanKif = cleanRawKif(rawKif);
+    generateHerbrand(cleanKif);
+    //    rawKif = sl;
+    //    cleanFile();
+    //    generateHerbrand();
+}
+
+
+QStringList Parser::loadKifFile(QString filename){
+    debug("Loading KIF file : ", filename);
+    QStringList answer;
+
+    QFile file(filename);
+    if (file.open(QIODevice::ReadOnly)) {
+        QString line;
+        QTextStream in(&file);
+        while (!in.atEnd()) {
+            line = in.readLine();
+            answer.append(line);
+        }
+    }
+    else{
+        qDebug() << "Can't open file : " << filename;
+    }
+
+    return answer;
+}
+
+
+QStringList Parser::cleanRawKif(const QStringList &rawKiff){
+    QStringList answer;
+
+    answer = splitLines(rawKiff);
+    //    qDebug() << "Answer size " << answer.size();
+    answer = removeComments(answer);
+    //    qDebug() << "Answer size " << answer.size();
+    answer = makePureLines(answer);
+    //    qDebug() << "Answer size " << answer.size();
+    answer = createDoeses(answer);
+    //    qDebug() << "Answer size " << answer.size();
+
+#ifndef QT_NO_DEBUG
+    outputStringList(answer, "Clean KIF");
+#endif
+
+    return answer;
+}
+
+QStringList Parser::splitLines(const QStringList &kif){
+    QStringList answer;
+    for(QString line : kif){
+        QStringList lineSplit = line.split(newlineRegExp);
+        for(QString subline : lineSplit){
+            answer.append(subline);
+        }
+    }
+    return answer;
+}
+
+
+// Just kill all the comments and the empty lines (that can result from nuking the comments)
+QStringList Parser::removeComments(const QStringList &kif){
+    QStringList answer;
+    for(QString line : kif){
+        int indexOfComment = line.indexOf(';');
+        switch(indexOfComment){
+        // There are no comments, proceed
+        case (-1):
+            break;
+            // There are comments, remove them
+        default:
+            line.truncate(indexOfComment);
+            break;
+        }
+
+        // Check if the line is only made of whitespace
+        bool isWhitespace = (line.indexOf(whitespaceRegExp) == (-1));
+        if(isWhitespace)
+            continue;
+
+        // It's a line with actual content, trim it and add it to the answer
+        //    qDebug() << line;
+        line = line.trimmed();
+        answer.append(line);
+    }
+    return answer;
+}
+
+// Some string lines may contain several kif lines
+// (role black) (role white)
+//
+// Some string lines may contain only partial kif lines
+// ( <= (base (cell ?x ?y))
+//   (index ?x)
+//   (index ?y))
+QStringList Parser::makePureLines(const QStringList &kif){
+    QStringList answer;
+
+    int nbOpenParenthesis = 0;
+    QString partialLine;
+    for(QString line : kif){
+
+        for(int j = 0; j<line.size(); ++j){
+            if(!partialLine.isEmpty()){
+                partialLine.append(line[j]);
+            }
+
+            if(line[j] == '('){
+                if(nbOpenParenthesis == 0){
+                    partialLine = line[j];
+                }
+                nbOpenParenthesis++;
+                continue;
+            }
+            if(line[j] == ')'){
+                nbOpenParenthesis--;
+                if(nbOpenParenthesis == 0){
+                    // int indexEnd = j;
+                    answer.append(partialLine);
+                    partialLine.clear();
+                }
+            }
+        }
+    }
+
+    return answer;
+}
+
+QStringList Parser::createDoeses(const QStringList &kif){
+    QStringList answer;
+
+    for(QString line : kif){
+        answer.append(line);
+        if(line.contains(inputRegExp)){
+            QString doesLine = line;
+            doesLine.replace(inputRegExp, "\\1does");
+            answer.append(doesLine);
+        }
+    }
+
+    return answer;
+}
+
+
+
 
 /**
  * STEP 1
  * @brief Parser::cleanFile
  */
 void Parser::cleanFile(){
-//#ifndef QT_NO_DEBUG
-//    printRawKif();
-//#endif
+#ifndef QT_NO_DEBUG
+    qDebug() << "Parser::cleanFile() : Original kif";
+    printRawKif();
+#endif
     splitLines();
     mergeLines();
     createDoeses();
 #ifndef QT_NO_DEBUG
+    qDebug() << "Parser::cleanFile() : Improved kif";
     printCleanKif();
 #endif
     emit output(QString("Kif loaded and cleaned"));
 }
 
 void Parser::printRawKif(){
-    qDebug() << "\n\nPrinting raw kif";
+    qDebug() << "Printing raw kif";
     for(int i=0; i<rawKif.size(); ++i){
         qDebug() << rawKif[i];
     }
@@ -74,17 +219,15 @@ void Parser::printRawKif(){
 void Parser::splitLines(){
     QStringList tempRawKif;
     for(int i=0; i<rawKif.size(); ++i){
-        int nbLeftParenthesis = rawKif[i].count('(');
-        int nbRightParenthesis = rawKif[i].count(')');
+        QString line = rawKif[i];
+        int nbLeftParenthesis = line.count('(');
+        int nbRightParenthesis = line.count(')');
 
         if(nbLeftParenthesis != nbRightParenthesis){
-            tempRawKif.append(rawKif[i]);
+            tempRawKif.append(line);
             continue;
         }
 
-
-
-        QString line = rawKif[i];
 
         int nbOpenParenthesis = 0;
         int indexStart = 0;
@@ -98,14 +241,14 @@ void Parser::splitLines(){
             }
             if(line[j] == ')'){
                 nbOpenParenthesis--;
-
                 if(nbOpenParenthesis == 0){
+                    // int indexEnd = j;
                     tempRawKif.append(line.mid(indexStart, j-indexStart+1));
                 }
             }
-
         }
     }
+
 
     rawKif = tempRawKif;
 }
@@ -118,6 +261,8 @@ void Parser::splitLines(){
  */
 
 void Parser::mergeLines(){
+    lineKif.clear();
+
     QString currentLine;
     bool isLineContinuation = false;
     int nbParenthesis, nbLeftParenthesis, nbRightParenthesis;
@@ -166,20 +311,47 @@ void Parser::printCleanKif(){
     }
 }
 
+void Parser::outputStringList(const QStringList &stringList, QString title){
+    qDebug() << "";
+    qDebug() << "Printing : " << title << " of size : " << stringList.size();
+    for(QString string : stringList){
+        qDebug() << string;
+    }
+}
+
 void Parser::generateHerbrand(){
-    #ifndef QT_NO_DEBUG
-    qDebug() << "\n\nGenerate Herbrand";
-    #endif
+#ifndef QT_NO_DEBUG
+    criticalDebug("Generate Herbrand");
+#endif
+
+    ruleList.clear();
+    relationList.clear();
+
     for(int i=0; i<lineKif.size(); ++i){
 
-//        qDebug() << "Processing line " << lineKif[i];
+        //        qDebug() << "Processing line " << lineKif[i];
 
         processKifLine(lineKif[i]);
     }
     emit output(QString("Herbrand generated"));
 }
 
+void Parser::generateHerbrand(const QStringList& cleanKif){
+#ifndef QT_NO_DEBUG
+    criticalDebug("Generate Herbrand");
+#endif
 
+    ruleList.clear();
+    relationList.clear();
+
+    for(QString line : cleanKif){
+
+        //        qDebug() << "Processing line " << lineKif[i];
+
+        processKifLine(line);
+    }
+    emit output(QString("Herbrand generated"));
+}
 
 /**
  * @brief Parser::processKifLine
@@ -190,6 +362,7 @@ void Parser::processKifLine(QString line){
     // If it is a rule
     if(line.contains(ruleRegExp)){
         LRule rule = processRule(line);
+
         //qDebug() << "New rule processed : " << rule->toString();
         ruleList.append(rule);
     }
@@ -208,7 +381,7 @@ void Parser::processKifLine(QString line){
 
 
 LRule Parser::processRule(QString line){
-//    qDebug() << "Rule " << line;
+    //    qDebug() << "Rule " << line;
 
     QStringList splitLine = split(line);
 
@@ -347,9 +520,7 @@ LRelation Parser::parseRelation(QString relation){
 
 
 /**
- * @brief Parser::split
- * @param line
- * @return
+ * Shit I don't even know what this is for when compared to splitSeveral
  */
 
 

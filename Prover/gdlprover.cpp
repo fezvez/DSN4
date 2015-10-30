@@ -54,7 +54,7 @@ void GDLProver::loadKifFile(QString filename){
     QStringList sL = kifLoader.runSynchronously();
 
     Parser parser;
-    parser.loadKif(sL);
+    parser.generateHerbrandFromRawKif(sL);
 
     setup(parser.getRelations(), parser.getRules());
 }
@@ -99,13 +99,14 @@ void GDLProver::linkBaseToNext(){
 
 
 #ifndef QT_NO_DEBUG
-    qDebug() << "\nLINK BASE TO NEXT";
+    qDebug() << "\n\nLink Base Propositions to Next Propositions";
 
+    int padSpaceSize = 16;
     for(LTerm base : mapBaseToNext.keys()){
-        qDebug() << "Base proposition " << base->toString() << "\tmatched with : " << mapBaseToNext[base]->toString();
+        qDebug() << "Base proposition " << padSpace(base->toString(), padSpaceSize) << " matched with : " << mapBaseToNext[base]->toString();
     }
     for(LTerm base : mapNextToBase.keys()){
-        qDebug() << "Next proposition " << base->toString() << "\tmatched with : " << mapNextToBase[base]->toString();
+        qDebug() << "Next proposition " << padSpace(base->toString(), padSpaceSize) << "matched with : " << mapNextToBase[base]->toString();
     }
 #endif
 
@@ -193,7 +194,7 @@ void GDLProver::buildRelationTypesAndQualifiers(){
     Q_ASSERT(!mapTypeToRelationContainer.contains(Logic::DISTINCT));
 
 #ifndef QT_NO_DEBUG
-    qDebug() << "\n\nORDERED RELATIONS";
+    qDebug() << "\n\nOrdered Relations";
     qDebug() << "There are " << relationList.size() << " relations";
     qDebug() << "Printing relation qualifiers : ";
     for(Logic::LOGIC_QUALIFIER qualifier : mapQualifierToRelationContainer.keys()){
@@ -294,7 +295,7 @@ void GDLProver::buildRulesTypesAndQualifiers(){
     Q_ASSERT(!mapTypeToRuleContainer.contains(Logic::DISTINCT));
 
 #ifndef QT_NO_DEBUG
-    qDebug() << "ORDERED RULES";
+    qDebug() << "\n\nOrdered Rules";
     qDebug() << "There are " << ruleList.size() << " rules";
     qDebug() << "Printing rules qualifiers";
     for(Logic::LOGIC_QUALIFIER qualifier : mapQualifierToRuleContainer.keys()){
@@ -310,7 +311,6 @@ void GDLProver::buildRulesTypesAndQualifiers(){
             qDebug() << "\tRule of type \t" << Logic::getStringFromGDLKeyword(type) << "\t: " << rule->toString();
         }
     }
-    qDebug() << "\n";
 #endif
 
 
@@ -425,13 +425,12 @@ void GDLProver::buildBaseInputEvaluationStructures(){
  * @brief GDLProver::buildBaseInitInputDoesPropositions
  */
 void GDLProver::buildBaseInitInputDoesPropositions(){
-#ifndef QT_NO_DEBUG
-    qDebug() << "BASE AND INPUT PROPOSITIONS";
-#endif
+
+    debug("\n\nBase, Init, Input and Does Propositions");
 
     buildBaseInputEvaluationStructures();
 
-
+    // BASE
     basePropositions.clear();
     for(LRelation relation : baseRelations){
         basePropositions[relation->toString()] = relation;
@@ -464,11 +463,11 @@ void GDLProver::buildBaseInitInputDoesPropositions(){
 #ifndef QT_NO_DEBUG
     qDebug() << "Nb of base constant relations : " << baseConstants.size();
     for(LTerm term : baseConstants.values()){
-        qDebug() << "Base constant : " << term->toString();
+        qDebug() << "\tBase constant : " << term->toString();
     }
 #endif
 
-    //
+    // INIT
     initPropositions.clear();
     for(LRelation relation : initRelations){
 //        LRelation relationWithoutInit = Logic_Relation::clone(relation);
@@ -495,7 +494,7 @@ void GDLProver::buildBaseInitInputDoesPropositions(){
 #ifndef QT_NO_DEBUG
     qDebug() << "There are " << initPropositions.size() << " init propositions";
     for(QString s : initPropositions.keys()){
-        qDebug() << "\tinit proposition : " << s;
+        qDebug() << "\tInit proposition : " << s;
     }
 #endif
 
@@ -545,7 +544,6 @@ void GDLProver::buildBaseInitInputDoesPropositions(){
     for(QString s : doesPropositions.keys()){
         qDebug() << "\tDoes proposition : " << s;
     }
-    qDebug() << "\n";
 #endif
 }
 

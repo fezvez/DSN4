@@ -17,6 +17,9 @@
 #include <QSet>
 
 
+/**
+ * THIS CLASS IS FULL OF JUNK. CLEAN IT
+ */
 
 class Parser : public QObject
 {
@@ -25,30 +28,39 @@ class Parser : public QObject
 public:
     Parser(QObject * parent = 0);
 
+signals:
+    void output(const QString & message);
+    void outputDebug(const QString & message);
+
 public slots:
-    void loadKif(const QStringList &sl);
+
+    QStringList loadKifFile(QString filename);
+    QStringList cleanRawKif(const QStringList &rawKiff);
+    void generateHerbrandFromFile(QString filename);
+    void generateHerbrandFromRawKif(const QStringList &rawKif);
+
+
+public slots:
     LTerm parseTerm(QString term);
     LRelation parseRelation(QString relation);
+
+public slots:
     QList<LRule> getRules();
     QList<LRelation> getRelations();
 
-protected:
+public:
     void splitLines();
     void mergeLines();
     void cleanFile();
     void generateHerbrand();
 
-public:
-
-
-signals:
-    void output(const QString & message);
-    void outputDebug(const QString & message);
+    QStringList removeComments(const QStringList &kif);
+    QStringList splitLines(const QStringList &kif);
+    QStringList makePureLines(const QStringList &kif);  // Racist coding, here I come!
+    QStringList createDoeses(const QStringList &kif);
+    void generateHerbrand(const QStringList &cleanKif);
 
 private:
-    // Init
-    void createRegExp();
-
     // Clean file
     void printRawKif();
     void cleanLines();
@@ -62,17 +74,30 @@ private:
     LTerm processTerm(QString line);
     LTerm processFunction(QString line);
 
+    void outputStringList(const QStringList &stringList, QString title = QString("Unknown"));
 
-public:
-    // Helper function
-    static QStringList split(QString line);
-    static QStringList splitSeveral(QString lines);
 
 
 
 protected:
+    QStringList originalKif;
+    QStringList noCommentKif;
     QStringList rawKif;
     QStringList lineKif;
+
+
+
+protected:
+    QList<LRule> ruleList;
+    QList<LRelation> relationList;
+
+    /**
+      * Static helper functions to split strings
+      */
+
+public:
+    static QStringList split(QString line);
+    static QStringList splitSeveral(QString lines);
 
 public:
     static QRegExp ruleRegExp;
@@ -82,10 +107,7 @@ public:
     static QRegExp rightPar;
     static QRegExp inputRegExp;
     static QRegExp nextRegExp;
-
-protected:
-    QList<LRule> ruleList;
-    QList<LRelation> relationList;
+    static QRegExp newlineRegExp;
 };
 
 

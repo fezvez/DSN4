@@ -8,13 +8,22 @@
 
 int KnowledgeBase::skolemNumber = 1000;
 
+QRegExp KnowledgeBase::ruleRegExp = QRegExp("<=");
+QRegExp KnowledgeBase::whitespaceRegExp = QRegExp("\\s+");
+QRegExp KnowledgeBase::wordRegExp = QRegExp("^\\S+$");
+QRegExp KnowledgeBase::leftPar = QRegExp("^\\($");
+QRegExp KnowledgeBase::rightPar = QRegExp("^\\)$");
+QRegExp KnowledgeBase::inputRegExp = QRegExp("(\\(|\\s)input(?![\\w|_|-])");
+QRegExp KnowledgeBase::nextRegExp = QRegExp("^next_");
+QRegExp KnowledgeBase::newlineRegExp = QRegExp("[\\n\\r]");
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// CONSTRUCTOR, GETTERS, SETTERS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 KnowledgeBase::KnowledgeBase()
 {
-    createRegExp();
+
 }
 
 QMap<QString, LTerm> KnowledgeBase::getConstantMap(){
@@ -37,19 +46,15 @@ QMap<LTerm, QList<LRelation>> KnowledgeBase::getConstantToRelationMap(){
 //// SETUP
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void KnowledgeBase::setup(QString filename){
+    parser.generateHerbrandFromFile(filename);
+    setup(parser.getRelations(), parser.getRules());
+}
 
 void KnowledgeBase::setup(QList<LRelation> relations, QList<LRule> rules){
-#ifndef QT_NO_DEBUG
-    qDebug() <<"\n\nKNOWLEDGE BASE SETUP";
-#endif
-//    relationList.clear();
-//    ruleList.clear();
-//    for(LRelation relation : relations){
-//        relationList.append(relation->clone());
-//    }
-//    for(LRule rule : rules){
-//        ruleList.append(rule->clone());
-//    }
+
+    criticalDebug("Knowledge Base Setup");
+
     relationList = relations;
     ruleList = rules;
     
@@ -60,30 +65,19 @@ void KnowledgeBase::setup(QList<LRelation> relations, QList<LRule> rules){
     evaluationRelations = relationList;
     buildEvaluationMap();
     
-    buildArity();
-#ifndef QT_NO_DEBUG
-    printConstantsWithArity();
-#endif
+
     // Optional
     //    printFreeVariables();
+    //    buildArity();
+    //    printConstantsWithArity();
     //    generateStratum();
+
     
 }
 
 
 
-/**
- * @brief KnowledgeBase::createRegExp
- * Regular expressions for parsing
- */
-void KnowledgeBase::createRegExp(){
-    ruleRegExp = QRegExp("<=");
-    whitespaceRegExp = QRegExp("\\s+");
-    leftPar = QRegExp("^\\($");
-    rightPar = QRegExp("^\\)$");
-    inputRegExp = QRegExp("(\\(|\\s)input(?![\\w|_|-])");
-    nextRegExp = QRegExp("^next_");
-}
+
 
 /**
  * @brief KnowledgeBase::storeConstants
@@ -113,13 +107,45 @@ void KnowledgeBase::storeConstants(){
     ruleList = clonedRuleList;
     
 #ifndef QT_NO_DEBUG
+    qDebug() << "";
+    qDebug() << "Ensuring all the Object Constants with the same name share the same address";
+
+    QMap<QString, QString> mapTermToPointer;
+
+    int padSpaceSize = 16;
     for(LRelation relation : relationList){
-        qDebug() << "Relation " << relation->toString() << " head address " << relation->getHead().data();
+        LTerm head = relation->getHead();
+
+
+        if(!mapTermToPointer.contains(head->toString())){
+            mapTermToPointer.insert(head->toString(), QString("0x%1").arg((quintptr)head.data(), QT_POINTER_SIZE * 2, 16, QChar('0')));
+            qDebug() << "Relation constant " << padSpace(head->toString(), padSpaceSize)  << "address " << head.data();
+        }
+        Q_ASSERT(mapTermToPointer[head->toString()] == QString("0x%1").arg((quintptr)head.data(), QT_POINTER_SIZE * 2, 16, QChar('0')));
     }
     for(LRule rule : ruleList){
-        qDebug() << "Rule " << rule->toString() << " head address " << rule->getHead()->getHead().data();
+        LTerm head = rule->getHead()->getHead();
+
+        if(!mapTermToPointer.contains(head->toString())){
+            mapTermToPointer.insert(head->toString(), QString("0x%1").arg((quintptr)head.data(), QT_POINTER_SIZE * 2, 16, QChar('0')));
+            qDebug() << "Relation constant " << padSpace(head->toString(), padSpaceSize) << "address " << head.data();
+        }
+        Q_ASSERT(mapTermToPointer[head->toString()] == QString("0x%1").arg((quintptr)head.data(), QT_POINTER_SIZE * 2, 16, QChar('0')));
+
+        for(LRelation relation : rule->getBody()){
+            LTerm head = relation->getHead();
+
+            if(!mapTermToPointer.contains(head->toString())){
+                mapTermToPointer.insert(head->toString(), QString("0x%1").arg((quintptr)head.data(), QT_POINTER_SIZE * 2, 16, QChar('0')));
+                qDebug() << "Relation constant " << padSpace(head->toString(), padSpaceSize) << "address " << head.data();
+            }
+            Q_ASSERT(mapTermToPointer[head->toString()] == QString("0x%1").arg((quintptr)head.data(), QT_POINTER_SIZE * 2, 16, QChar('0')));
+        }
     }
 #endif
+
+
+
 }
 
 void KnowledgeBase::buildFullConstantMap(){
@@ -140,6 +166,19 @@ void KnowledgeBase::buildFullConstantMap(){
         }
         constantToRuleMap[head].append(rule);
     }
+
+#ifndef QT_NO_DEBUG
+    qDebug() << "";
+    qDebug() << "How many rules/relations for a specific Object Constant : ";
+    int padSpaceSize = 16;
+    for(LTerm head : constantToRelationMap.keys()){
+        qDebug() << "Relation " << padSpace(head->toString(), padSpaceSize) << "has nb entries : " << constantToRelationMap[head].size();
+    }
+
+    for(LTerm head : constantToRuleMap.keys()){
+        qDebug() << "Rule     " << padSpace(head->toString(), padSpaceSize) << "has nb entries : " << constantToRuleMap[head].size();
+    }
+#endif
 }
 
 void KnowledgeBase::buildEvaluationMap(){
@@ -152,9 +191,7 @@ void KnowledgeBase::buildEvaluationMap(){
         constantToRelationEvaluationMap[head].append(relation);
     }
     
-    //    for(LTerm key : constantToRelationEvaluationMap.keys()){
-    //        qDebug() << "Relation " << key->toString() << " has nb entries : " << constantToRelationEvaluationMap[key].size();
-    //    }
+
     
     constantToRuleEvaluationMap.clear();
     for(LRule rule : evaluationRules){
@@ -165,9 +202,7 @@ void KnowledgeBase::buildEvaluationMap(){
         constantToRuleEvaluationMap[head].append(rule);
     }
     
-    //    for(LTerm key : constantToRuleEvaluationMap.keys()){
-    //        qDebug() << "Rule " << key->toString() << " has nb entries : " << constantToRuleEvaluationMap[key].size();
-    //    }
+
 }
 
 /**
@@ -257,7 +292,7 @@ void KnowledgeBase::buildArity(){
  * Debugging tool
  */
 void KnowledgeBase::checkArity(LRelation relation){
-//    qDebug() << "Cheack arity " << relation->toString();
+    //    qDebug() << "Cheack arity " << relation->toString();
     LTerm relationHead = relation->getHead();
     int ar = relation->getBody().size();
     Q_ASSERT(arity.contains(relationHead));
@@ -348,13 +383,13 @@ LTerm KnowledgeBase::manageObjectConstant(LTerm c){
  * @param relation
  * @return
  * Takes a relation (optionnaly with variables) and returns all the grounded
- * relations that are true (given the current )
+ * relations that are true
  */
 
 
 QList<LRelation> KnowledgeBase::evaluate(LRelation r){
 #ifndef QT_NO_DEBUG
-//    qDebug() << "KnowledgeBase::evaluate(). Relation is : " << r->toString();
+    //    qDebug() << "KnowledgeBase::evaluate(). Relation is : " << r->toString();
 #endif
     LRelation relation = manageRelation(r);
     
@@ -370,7 +405,7 @@ QList<LRelation> KnowledgeBase::evaluate(LRelation r){
     
     
     while (!possibleAnswers.isEmpty()) {
-//                qDebug() << "\tKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
+        //                qDebug() << "\tKnowledgeBase::evaluate() possibleAnswer : " << possibleAnswers.last()->toString();
         LRule possibleRule = possibleAnswers.last();
         possibleAnswers.removeLast();
         
@@ -411,9 +446,9 @@ QList<LRelation> KnowledgeBase::evaluate(LRelation r){
  *  - substitute it with a rule from constantToRuleEvaluationMap
  */
 QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
-//#ifndef QT_NO_DEBUG
-//    qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
-//#endif
+    //#ifndef QT_NO_DEBUG
+    //    qDebug() << "\nKnowledgeBase::ruleSubstitution " << rule->toString();
+    //#endif
     QList<LRule> answer;
     
     LRelation firstRelation = rule->getBody().first();
@@ -423,10 +458,10 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
     if(firstRelation->isNegation()){
         LRelation nonNegativeRelation = Logic_Relation::clone(firstRelation);
         nonNegativeRelation->setNegation(false);
-//        qDebug() << "Negation, trying to solve a subproblem " << nonNegativeRelation->toString();
+        //        qDebug() << "Negation, trying to solve a subproblem " << nonNegativeRelation->toString();
         QList<LRelation> subproblemAnswer = evaluate(nonNegativeRelation);
         if(subproblemAnswer.size() == 0){
-//            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is false";
+            //            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is false";
             QList<LRelation> endOfBody = rule->getBody();
             endOfBody.removeFirst();
             
@@ -434,7 +469,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
             answer.append(partialAnswer);
         }
         else{
-//            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is true, we stop here";
+            //            qDebug() << "Subproblem " << nonNegativeRelation->toString() << " is true, we stop here";
         }
         return answer;
     }
@@ -710,9 +745,9 @@ void KnowledgeBase::generateStratum(){
     for(LStratum s : listOfStratum){
         int currentStrata = s->getStrata();
         if(strata != currentStrata){
-//            qDebug() << "Pushed a new strata level";
-//            qDebug() << "Strata = " << strata;
-//            qDebug() << "currentStrata = " << currentStrata;
+            //            qDebug() << "Pushed a new strata level";
+            //            qDebug() << "Strata = " << strata;
+            //            qDebug() << "currentStrata = " << currentStrata;
             stratifiedConstants.push_back(QList<LTerm>());
             strata = currentStrata;
 
@@ -741,7 +776,9 @@ void KnowledgeBase::generateStratum(){
 #endif
 }
 
-
+QMap<LTerm, int> KnowledgeBase::getArity(){
+    return arity;
+}
 
 QMap<LTerm, LStratum> KnowledgeBase::getStratumMap(){
     return stratumMap;

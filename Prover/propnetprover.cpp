@@ -52,7 +52,7 @@ void PropnetProver::loadKifFile(QString filename){
     QStringList sL = kifLoader.runSynchronously();
 
     Parser parser;
-    parser.loadKif(sL);
+    parser.generateHerbrandFromRawKif(sL);
 
     setup(parser.getRelations(), parser.getRules());
 }

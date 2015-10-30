@@ -43,7 +43,7 @@ void Server::setupGame(QString filename){
     gameString = "( " % gameStringList.join(" ") % " )";
 
     Parser parser;
-    parser.loadKif(gameStringList);
+    parser.generateHerbrandFromRawKif(gameStringList);
 
     prover.initialize(parser.getRelations(), parser.getRules());
     currentState = prover.getInitialState();

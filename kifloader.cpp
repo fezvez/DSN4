@@ -15,6 +15,16 @@ KifLoader::KifLoader(QObject *parent, QString & f) :
     regWhitespace = QRegExp("^\\s*$");
 }
 
+/**
+ * A pointer to kifloader doesn't always need to be explicitely deleted
+ * Typical usage :
+ * connect(kifLoader, &KifLoader::finished, kifLoader, &QObject::deleteLater);
+ */
+KifLoader::~KifLoader(){
+
+//    qDebug() << "KifLoader::~KifLoader()";
+}
+
 void KifLoader::run(){
     QFile file(filename);
 
@@ -22,7 +32,7 @@ void KifLoader::run(){
         QString line;
         QTextStream in(&file);
         //qint64 size = QFileInfo(file).size();
-        int maxCharDisplayed = 1 << 18;
+        int maxCharDisplayed = 1 << 20;
         int nbCharDisplayed = 0;
 
         stringList.clear();
@@ -43,13 +53,13 @@ void KifLoader::run(){
         }
 
         // Wrap up
-        emit kifProcessed(stringList);
-        emit emitOutput(QString("Displaying nb of characters : ").append(QString::number(nbCharDisplayed)));
+        emit kifProcessed(stringList); // Emit all the kif lines (no comments, no empty lines, etc...)
+        emit emitOutput(QString("Number of characters : ").append(QString::number(nbCharDisplayed)));
         if(nbCharDisplayed>=maxCharDisplayed){
             emit emitOutput(QString("The file is too large, the display is truncated"));
         }
         else{
-            emit emitOutput(QString("The complete file is displayed"));
+            emit emitOutput(QString("The entire file is displayed"));
         }
     }
 }
@@ -91,11 +101,6 @@ QStringList KifLoader::runSynchronously(){
 
 
 void KifLoader::processLine(QString line){
-    // Check if the line is only made of whitespace
-    int isWhitespace = (line.indexOf(regWhitespace) == (-1)) ? false : true;
-    if(isWhitespace)
-        return;
-
     // Remove comments
     int indexOfComment = line.indexOf(';');
     switch(indexOfComment){
@@ -111,9 +116,14 @@ void KifLoader::processLine(QString line){
     // Trim whitespaces
     line = line.trimmed();
 
-    // Add the line to stringList
+    // Check if the line is only made of whitespace
+    bool isWhitespace = (line.indexOf(regWhitespace) == (-1)) ? false : true;
+    if(isWhitespace)
+        return;
+
+    // It's a line with actual content : add the line to stringList
+//    qDebug() << line;
     stringList.append(line);
-    qDebug() << line;
 }
 
 

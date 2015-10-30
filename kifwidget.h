@@ -2,7 +2,7 @@
 #define WIDGET_H
 
 #include <QWidget>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QLabel>
 #include <QLineEdit>
@@ -14,15 +14,20 @@
 #include <QSharedPointer>
 #include <QDir>
 #include <QRegExp>
+#include <QCheckBox>
 
+#include <QSyntaxHighlighter>
 
 #include "parser.h"
+#include "Prover/knowledgebase.h"
 
 typedef QSharedPointer<Parser> PParser;
 
-namespace Ui {
-class Widget;
-}
+class Highlighter;
+
+//namespace Ui {
+//class Widget;
+//}
 
 class KifWidget : public QWidget
 {
@@ -32,33 +37,61 @@ public:
     explicit KifWidget(QWidget *parent = 0);
     ~KifWidget();
 
+/**
+  * Setup
+  */
+
+private:
+    void setUpLayout();
+    void initialize();
+
+    /**
+      * Signals and slots
+      */
 signals:
     void kifProcessed(const QStringList &sl);
 
 public slots:
-    void output(const QString &string);
+    void output(const QString &string); // Output text on textEditDebug
+    void gdlTextChanged();              // If the logic program changes
 
 
 private slots:
     void browse();
     void find();
-    void openFileOfItem(int row, int column);
+    void query();
+
+    void openFileFromUserInteraction(int row, int column);
+    void openFile(QString filename);
     void debugFile(QStringList stringList);
+
+    /**
+      * GUI
+      */
+private:
+    void createFilesTable();
+    void createMainDisplay();
+
+    QPushButton *createButton(const QString &text, const char *member);
+    QComboBox *createComboBox(const QString &text = QString());
 
 
 private:
-    Ui::Widget *ui;
-
+    // Text Edit menu
     QTabWidget *tabWidget;
 
-    QTextEdit *textEditMain;
-    QTextEdit *textEditStaticFile;
-
-
-    QLineEdit *lineEditFindFile;
-    QPushButton *loadButton;
+    QPlainTextEdit *textEditDebug;
+    QPlainTextEdit *textEditGDL;
+    QPlainTextEdit *textEditQueryAnswer;
+    Highlighter* highlighter;
 
     // Left menu
+    QLineEdit *lineEditFindFile;
+    QPushButton *loadButton;
+    QCheckBox *checkBoxInit;
+    QPushButton *queryButton;
+
+
     QComboBox *directoryComboBox;
     QLabel *fileLabel;
     QLabel *directoryLabel;
@@ -70,28 +103,60 @@ private:
     QDir currentDir;
     QRegExp regEndsInKif;
 
+    // Top menu
     QLabel *labelTopMenu;
+    QLineEdit *lineEditQuery;
 
+
+    // Grouping those things together
     QGroupBox *leftMenuGroupBox;
     QGroupBox *topMenuGroupBox;
     QGroupBox *textEditGroupBox;
 
-    int afac;
 
+
+    /**
+      * Logic
+      */
 private:
     PParser parser;
+    KnowledgeBase kb;
 
+    bool hasGDLChanged;
+
+
+    /**
+      * File
+      */
 private:
-    void setUpLayout();
-    void initialize();
-
-
     QStringList findFiles(const QStringList &files, const QString &text);
     void showFiles(const QStringList &files);
-    QPushButton *createButton(const QString &text, const char *member);
-    QComboBox *createComboBox(const QString &text = QString());
-    void createFilesTable();
-    void createMainDisplay();
+
+};
+
+class Highlighter : public QSyntaxHighlighter
+{
+    Q_OBJECT
+
+public:
+    Highlighter(QTextDocument *parent = 0);
+
+protected:
+    void highlightBlock(const QString &text) Q_DECL_OVERRIDE;
+
+private:
+    struct HighlightingRule
+    {
+        QRegExp pattern;
+        QTextCharFormat format;
+    };
+    QVector<HighlightingRule> highlightingRules;
+
+    QTextCharFormat logicQualifierFormat;
+    QTextCharFormat logicKeywordFormat;
+    QTextCharFormat logicSemanticsFormat;
+    QTextCharFormat singleLineCommentFormat;
+    QTextCharFormat variableFormat;
 };
 
 #endif // WIDGET_H

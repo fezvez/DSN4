@@ -17,8 +17,10 @@ MainWidget::MainWidget()
     layout->addWidget(tabWidget);
 
     setLayout(layout);
-    resize(1120, 500);
-    tabWidget->setCurrentIndex(1);
+    resize(1120, 800);
+
+    // Choose which tab you show at startup
+    tabWidget->setCurrentIndex(0);
 
     setWindowTitle("Dynamic Semantic Net");
 }
