@@ -13,22 +13,26 @@
 
 #include "PropNet/componentor.h"
 
+#include <QFont>
 
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-
+    QFont font;
+    font.setPointSize(18);
+    a.setFont(font);
 
     Logic::init();
 
     qRegisterMetaType<QVector<int> >("QVector<int>");
     qRegisterMetaType<QVector<int> >("QList<int>");
+//    qRegisterMetaType<QVector<int> >("QAbstractSocket::SocketError");
 
     MainWidget w;
     w.show();
 
-            UnitTest unitTest(argc, argv);
+//            UnitTest unitTest(argc, argv);
     //    FirstPlayer player;
     //    MonteCarloGamer player;
 

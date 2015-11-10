@@ -8,28 +8,12 @@ ProverStateMachine::ProverStateMachine() : StateMachine()
 {
 }
 
-void ProverStateMachine::initialize(QString filename){
-    Parser parser;
-    parser.generateHerbrandFromFile(filename);
-    initialize(parser.getRelations(), parser.getRules());
-}
-
-void ProverStateMachine::initialize(QList<LRelation> relations, QList<LRule> rules){
-    prover.setup(relations, rules);
-
-    criticalDebug("Prover State Machine Setup Start");
-
-    buildInitialState();
-    buildRoles();
-    buildTerminalProposition();
-    buildGoalQueries();
-    buildLegalQueries();
-
-    criticalDebug("Prover State Machine Setup Finished");
-}
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// COMMON QUERIES
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int ProverStateMachine::getGoal(const MachineState& state, Role role){
     loadState(state);
@@ -132,13 +116,39 @@ QList<Move> ProverStateMachine::getMovesFromString(QString s){
     return answer;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// INIT
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void ProverStateMachine::initialize(QString filename){
+    Parser parser;
+    parser.generateHerbrandFromFile(filename);
+    initialize(parser.getRelations(), parser.getRules());
+}
+
+void ProverStateMachine::initialize(QList<LRelation> relations, QList<LRule> rules){
+    prover.setup(relations, rules);
+
+    criticalDebug("Prover State Machine Setup Start");
+
+    buildInitialState();            // GDLProver has the initial propositions
+    buildRoles();                   // Should be in GDLProver
+    buildTerminalProposition();     // Should be in GDLProver
+    buildGoalQueries();
+    buildLegalQueries();
+
+    criticalDebug("Prover State Machine Setup Finished");
+}
 
 void ProverStateMachine::buildInitialState(){
     QMap<QString, LRelation> map = prover.getInitPropositions();
+
+    qDebug() <<"Init size " << map.size();
     QVector<LRelation> initialPropositions;
     initialPropositions.reserve(map.size());
     for(auto entry : map){
+        debug("\tinit proposition ", entry->toString());
+
         initialPropositions.push_back(entry);
     }
     initialState = MachineState(initialPropositions);

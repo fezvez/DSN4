@@ -21,6 +21,7 @@
 #include "parser.h"
 #include "Prover/knowledgebase.h"
 #include "Prover/gdlprover.h"
+#include "StateMachine/proverstatemachine.h"
 
 typedef QSharedPointer<Parser> PParser;
 
@@ -45,22 +46,28 @@ private:
     /**
       * Signals and slots
       */
-signals:
-    void kifProcessed(const QStringList &sl);
+//signals:
+//    void kifProcessed(const QStringList &sl);
 
 public slots:
     void output(const QString &string); // Output text on textEditDebug
-    void gdlTextChanged();              // If the logic program changes
 
+
+protected slots:
+    void query();
+    void gdlTextChanged();              // If the logic program changes
 
 private slots:
     void browse();
     void find();
-    void query();
+
 
     void openFileFromUserInteraction(int row, int column);
     void openFile(QString filename);
     void debugFile(QStringList stringList);
+    void debugFile(QString string);
+    void debugFile();
+
 
     /**
       * GUI
@@ -103,6 +110,7 @@ private:
     // Top menu
     QLabel *labelTopMenu;
     QLineEdit *lineEditQuery;
+    QLineEdit *lineEditDoes;
 
 
     // Grouping those things together
@@ -119,6 +127,7 @@ private:
     Parser parser;
     KnowledgeBase kb;
     GDLProver gdlProver;
+    ProverStateMachine proverSM;
 
     bool hasGDLChanged;
 

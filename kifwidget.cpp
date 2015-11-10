@@ -17,6 +17,8 @@
 
 #include "Unification/unification_relation.h"
 
+#include "flags.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// CONSTRUCTOR
@@ -42,7 +44,8 @@ void KifWidget::setUpLayout(){
 
     // Top menu
     labelTopMenu = new QLabel("Make a query", this);
-    lineEditQuery = new QLineEdit("terminal", this);
+    lineEditQuery = new QLineEdit("legal ?x ?y", this);
+    lineEditDoes = new QLineEdit("(does white (set (mark 3 3 1) (set (mark 3 3 2) nil)))", this);
     checkBoxInit = new QCheckBox("Init ", this);
     queryButton = createButton(tr("&Query"), SLOT(query()));
 
@@ -85,6 +88,7 @@ void KifWidget::setUpLayout(){
     QHBoxLayout *topMenuLayout = new QHBoxLayout(this);
     topMenuLayout->addWidget(labelTopMenu);
     topMenuLayout->addWidget(lineEditQuery);
+    topMenuLayout->addWidget(lineEditDoes);
     topMenuLayout->addWidget(checkBoxInit);
     topMenuLayout->addWidget(queryButton);
     topMenuGroupBox->setLayout(topMenuLayout);
@@ -98,6 +102,8 @@ void KifWidget::setUpLayout(){
     layout->addWidget(topMenuGroupBox,0,0,1,3);
     layout->addWidget(leftMenuGroupBox,1,0,2,1);
     layout->addWidget(textEditGroupBox,1,1,2,2);
+    layout->setColumnStretch(0,1);
+    layout->setColumnStretch(1,2);
     this->setLayout(layout);
 }
 
@@ -145,6 +151,7 @@ void KifWidget::createMainDisplay(){
 
     textEditQueryAnswer = new QPlainTextEdit(this);
     textEditQueryAnswer->setFont(QFont("Courier"));
+//    textEditQueryAnswer->setCenterOnScroll(true);
 
     tabWidget = new QTabWidget(this);
     tabWidget->addTab(textEditDebug, tr("Debug"));
@@ -169,8 +176,10 @@ void KifWidget::initialize(){
 
     connect(lineEditFindFile, SIGNAL(textChanged(QString)), this, SLOT(find()));
     connect(directoryComboBox, SIGNAL(editTextChanged(QString)), this, SLOT(find()));
-    connect(this, SIGNAL(kifProcessed(QStringList)), this, SLOT(debugFile(QStringList)));
+    connect(lineEditQuery, SIGNAL(returnPressed()), this, SLOT(query()));
     connect(textEditGDL, SIGNAL(textChanged()), this, SLOT(gdlTextChanged()));
+    connect(lineEditDoes, SIGNAL(textChanged(QString)), this, SLOT(gdlTextChanged()));
+
 
     find();
 
@@ -178,8 +187,10 @@ void KifWidget::initialize(){
 #ifdef TARGET_OS_MAC
     filename = "../../../../";
 #endif
-    filename.append("tictactoe.kif");
+    filename.append("tictactoeChord.kif");
+
     openFile(filename);
+
 }
 
 
@@ -204,6 +215,7 @@ void KifWidget::openFileFromUserInteraction(int row, int /* column */)
 
     // Actually open the file
     openFile(filename);
+    debugFile();
 }
 
 void KifWidget::openFile(QString filename){
@@ -315,10 +327,17 @@ void KifWidget::showFiles(const QStringList &files)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void KifWidget::query(){
+
+
+
     qDebug() << "Query";
 
     QString queryString = lineEditQuery->text();
     qDebug() << "Query string " << queryString;
+
+    QString doesString = lineEditDoes->text();
+    doesString = QString("( ") % doesString % " )";
+    qDebug() << "Does string " << doesString;
 
     if(queryString.at(0) != '('){
         queryString = QString("(") % queryString % ")";
@@ -327,11 +346,20 @@ void KifWidget::query(){
     if(hasGDLChanged){
         qDebug() << "Computing new GDL";
         QString plainText = textEditGDL->toPlainText();
-        QStringList stringList;
-        stringList << plainText;
-        parser.generateHerbrandFromRawKif(stringList);
+        parser.generateHerbrandFromRawKif(plainText);
+        gdlProver.setup(parser.getRelations(), parser.getRules());
+        gdlProver.loadTempRelations(gdlProver.getInitState());
         hasGDLChanged = false;
     }
+
+    QVector<LRelation> moves = parser.parseRelations(doesString);
+    QVector<LRelation> cleanMoves;
+    for(LRelation relation : moves){
+        LRelation cleanRelation = gdlProver.manageRelation(relation);;
+        cleanMoves << cleanRelation;
+        qDebug () << "BLABLA " << cleanRelation->toString();
+    }
+    gdlProver.loadAdditionalTempRelations(cleanMoves);
 
     tabWidget->setCurrentIndex(2);
     textEditQueryAnswer->clear();
@@ -339,37 +367,61 @@ void KifWidget::query(){
     LRelation relationQuery = parser.parseRelation(queryString);
     qDebug() << "relationQuery " << relationQuery->toString();
 
-    QList<LRelation> answer = kb.evaluate(queryString);
+    specialDebugOn = true;
+    QList<LRelation> answer = gdlProver.evaluate(queryString);
+    specialDebugOn = false;
+
+    gdlProver.printRuleEvaluation();
+    gdlProver.printRelationEvaluation();
+    gdlProver.printTempRelationEvaluation();
 
     if(answer.empty()){
         textEditQueryAnswer->appendPlainText(QString("Query ") % queryString % " is false");
     }
     else{
-        textEditQueryAnswer->appendPlainText(QString("Query ") % queryString % " is true");
+        textEditQueryAnswer->appendPlainText(QString("Query ") % queryString % " is true (" % QString::number(answer.size()) % " valid unifications)");
         for(LRelation relation : answer){
             textEditQueryAnswer->appendPlainText(QString("\t") % relation->toString());
         }
     }
+
+
+    textEditQueryAnswer->moveCursor(QTextCursor::Start);
+
+
+}
+
+void KifWidget::debugFile(){
+    debugFile(textEditGDL->toPlainText());
+}
+
+void KifWidget::debugFile(QString string){
+    QStringList stringList;
+    stringList << string;
+    debugFile(stringList);
 }
 
 void KifWidget::debugFile(QStringList stringList){
-    output("STATIC ANALYSIS");
-    output("Typical behavior : the program crashes at a Q_ASSERT if something is wrong");
-
     QTextCursor cursor = textEditGDL->textCursor();
     cursor.setPosition(0);
     textEditGDL->setTextCursor(cursor);
 
+    output("STATIC ANALYSIS");
+    output("Typical behavior : the program crashes at a Q_ASSERT if something is wrong");
 
     parser.generateHerbrandFromRawKif(stringList);
-
     output("Check parenthesis balance");
     output("Check syntax");
 
-    GDLProver prover;
-    prover.setup(parser.getRelations(), parser.getRules());
+    kb.setup(parser.getRelations(), parser.getRules());
+    output("Check arity");
 
-    // Checks arity
+    gdlProver.setup(parser.getRelations(), parser.getRules());
+    output("Check that each next has a corresponding base");
+    output("Check presence of role");
+
+    proverSM.initialize(parser.getRelations(), parser.getRules());
+    output("Check presence of terminal, legal and goal");
 }
 
 void KifWidget::gdlTextChanged(){

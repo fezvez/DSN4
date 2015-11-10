@@ -20,6 +20,12 @@ enum class WAITING_FOR_MESSAGE{
     ABORT
 };
 
+/**
+ *
+ *
+ */
+
+
 class Server : public QObject
 {
     Q_OBJECT
@@ -67,7 +73,8 @@ protected:
     int getGoal(int playerIndex);
 
 protected:
-    ProverStateMachine prover;
+    Parser parser;
+    ProverStateMachine proverSM;
 
     QString matchId;
     QString gameString;
@@ -89,10 +96,10 @@ protected:
     QStringList moves;
     int stepCounter;
 
-    //
-    QRegExp rxStatusAvailable;
-    QRegExp rxReady;
-    QRegExp rxPlayerName;
+public:
+    static QRegExp rxStatusAvailable;
+    static QRegExp rxReady;
+    static QRegExp rxPlayerName;
 
 protected:
 };

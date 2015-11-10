@@ -262,7 +262,7 @@ void KnowledgeBase::buildArity(){
             LTerm relationHead = head->getHead();
             int ar = head->getBody().size();
             if(arity.contains(relationHead)){
-                Q_ASSERT(arity[relationHead] == ar);
+                Q_ASSERT_X(arity[relationHead] == ar, relationHead->toString().toLatin1().data(), "Different arities (bug in the GDL)");
             }
             else{
                 arity.insert(relationHead, ar);
@@ -281,8 +281,8 @@ void KnowledgeBase::buildArity(){
             LRelation relationHead = rule->getHead();
             LTerm headConstant = relationHead->getHead();
             int ar = relationHead->getBody().size();
-            Q_ASSERT(arity.contains(headConstant));
-            Q_ASSERT(arity[headConstant] == ar);
+            Q_ASSERT_X(arity.contains(headConstant), headConstant->toString().toLatin1().data(), "Object constant not in memory (bug in the software)");
+            Q_ASSERT_X(arity[headConstant] == ar, headConstant->toString().toLatin1().data(), "Different arities (bug in the GDL)");
             
             for(LRelation sentence : rule->getBody()){
                 checkArity(sentence);
@@ -919,15 +919,21 @@ bool Stratum::updateStrataStrongly(){
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// DEBUGGIN TOOLS
+//// DEBUGGING TOOLS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void KnowledgeBase::printRuleEvaluation(){
-    
+    qDebug() << "printRuleEvaluation()";
+    for(LRule rule : evaluationRules){
+        qDebug() << rule->toString() << " with head ";
+    }
 }
 
 void KnowledgeBase::printRelationEvaluation(){
-    
+    qDebug() << "printRelationEvaluation()";
+    for(LRelation relation : evaluationRelations){
+        qDebug() << relation->toString() << " with head " << relation->getHead()->toString() << " at address " << relation->getHead().data();
+    }
 }
 
 void KnowledgeBase::printTempRelationEvaluation(){
@@ -943,10 +949,17 @@ void KnowledgeBase::printTempRelationEvaluation(){
  * Debugging tool
  */
 void KnowledgeBase::checkArity(LRelation relation){
-    //    qDebug() << "Cheack arity " << relation->toString();
+        qDebug() << "Check arity " << relation->toString();
     LTerm relationHead = relation->getHead();
     int ar = relation->getBody().size();
-    Q_ASSERT(arity.contains(relationHead));
+
+
+    // HACK
+    //Q_ASSERT(arity.contains(relationHead));
+    if(!arity.contains(relationHead)){
+        arity[relationHead] = ar;
+    }
+
     Q_ASSERT(arity[relationHead] == ar);
 }
 
@@ -973,15 +986,16 @@ void KnowledgeBase::printFreeVariables(){
 
 void KnowledgeBase::printConstantsWithArity(){
 #ifndef QT_NO_DEBUG
+    int padSpaceSize = 16;
     qDebug() << "\n\nLIST OF CONSTANTS";
     for(LTerm constant : objectConstantSet){
-        qDebug() << "Object constant : " << constant->toString() << "\twith address : " << constant.data();
+        qDebug() << "Object constant : " << padSpace(constant->toString(), padSpaceSize) << " with address : " << constant.data();
     }
     for(LTerm constant : relationConstantSet){
-        qDebug() << "Relation constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
+        qDebug() << "Relation constant : " << padSpace(constant->toString(), padSpaceSize) << " with address : " << constant.data()<< "\tand arity " << arity[constant];
     }
     for(LTerm constant : functionConstantSet){
-        qDebug() << "Function constant : " << constant->toString() << "\twith address : " << constant.data()<< "\tand arity " << arity[constant];
+        qDebug() << "Function constant : " << padSpace(constant->toString(), padSpaceSize) << " with address : " << constant.data()<< "\tand arity " << arity[constant];
     }
 #endif
 }

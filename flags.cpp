@@ -3,30 +3,38 @@
 bool specialDebugOn = false;
 
 void debug(QString string){
+    (void)string;
 #ifndef QT_NO_DEBUG
     qDebug() << string;
 #endif
 }
 
 void debug(QString string, QString string1){
+    (void)string;
+    (void)string1;
 #ifndef QT_NO_DEBUG
     qDebug() << string << " " << string1;
 #endif
 }
 
 void debug(QString string, QString string1, QString string2){
+    (void)string;
+    (void)string1;
+    (void)string2;
 #ifndef QT_NO_DEBUG
     qDebug() << string << " " << string1 << " " << string2;
 #endif
 }
 
 void criticalDebug(QString string){
+    (void)string;
 #ifndef QT_NO_DEBUG
     qDebug() << "\n\n" << string.toUpper() << "\n";
 #endif
 }
 
 void specialDebug(QString string){
+    (void)string;
 #ifndef QT_NO_DEBUG
     if(specialDebugOn)
         qDebug() << string;
@@ -34,6 +42,8 @@ void specialDebug(QString string){
 }
 
 void specialDebug(QString string, QString string1){
+    (void)string;
+    (void)string1;
 #ifndef QT_NO_DEBUG
     if(specialDebugOn)
         qDebug() << string << " " << string1;
@@ -41,6 +51,9 @@ void specialDebug(QString string, QString string1){
 }
 
 void specialDebug(QString string, QString string1, QString string2){
+    (void)string;
+    (void)string1;
+    (void)string2;
 #ifndef QT_NO_DEBUG
     if(specialDebugOn)
         qDebug() << string << " " << string1 << " " << string2;

@@ -44,6 +44,10 @@ QList<LRelation> Parser::getRelations(){
     return relationList;
 }
 
+QString Parser::getGameString(){
+    return gameString;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// INTERFACE
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -55,6 +59,13 @@ void Parser::generateHerbrandFromFile(QString filename){
 
 void Parser::generateHerbrandFromRawKif(const QStringList & rawKif){
     QStringList cleanKif = cleanRawKif(rawKif);
+    generateHerbrand(cleanKif);
+}
+
+void Parser::generateHerbrandFromRawKif(const QString & rawKif){
+    QStringList rawKifList;
+    rawKifList << rawKif;
+    QStringList cleanKif = cleanRawKif(rawKifList);
     generateHerbrand(cleanKif);
 }
 
@@ -212,6 +223,7 @@ void Parser::generateHerbrand(const QStringList& cleanKif){
 
     ruleList.clear();
     relationList.clear();
+    gameString.clear();
 
     for(QString line : cleanKif){
         processKifLine(line);
@@ -228,8 +240,10 @@ void Parser::processKifLine(QString line){
     // If it is a rule
     if(line.contains(ruleRegExp)){
         LRule rule = processRule(line);
-        debug("New rule processed : ", rule->toString());
+        debug("New rule processed     : ", rule->toString());
         ruleList.append(rule);
+
+        gameString.append(rule->toString());
     }
 
     // Else, it is a relation
@@ -238,6 +252,7 @@ void Parser::processKifLine(QString line){
         debug("New relation processed : ", relation->toString());
         relationList.append(relation);
         Q_ASSERT(relation->isGround());
+        gameString.append(relation->toString());
     }
 }
 
@@ -376,6 +391,16 @@ LTerm Parser::parseTerm(QString term){
     return processTerm(term);
 }
 
+QVector<LRelation> Parser::parseRelations(QString relations){
+    QStringList splits = splitSeveral(relations);
+    QVector<LRelation> answer;
+    for(QString split : splits){
+        LRelation relation = processRelation(split);
+        answer << relation;
+    }
+    return answer;
+}
+
 LRelation Parser::parseRelation(QString relation){
     // Some preprocessing to split
     relation.replace('(', " ( ");
@@ -415,8 +440,8 @@ QStringList Parser::split(QString line){
 
     // Either it's of the form "( blabla Ntimesblabla blabla )" or it's just "blabla"
     Q_ASSERT_X((leftPar.indexIn(rawSplit.first()) == 0 &&
-              rightPar.indexIn(rawSplit.last()) == 0) ||
-             (rawSplit.size() == 1), "Parser::split()", line.toLatin1().data());
+                rightPar.indexIn(rawSplit.last()) == 0) ||
+               (rawSplit.size() == 1), "Parser::split()", line.toLatin1().data());
 
     if(rawSplit.size() == 1){
         answer = rawSplit;
@@ -460,6 +485,9 @@ QStringList Parser::splitSeveral(QString l){
     QStringList answer;
     QString currentPart;
 
+    if(line.size() == 0){
+        return answer;
+    }
 
     QStringList rawSplit = line.split(whitespaceRegExp);
 
@@ -480,7 +508,7 @@ QStringList Parser::splitSeveral(QString l){
         }
         else if(rightPar.indexIn(rawSplit[i]) == 0){
             nbParenthesis--;
-            Q_ASSERT(nbParenthesis>=0);
+            Q_ASSERT_X(nbParenthesis>=0, "Wrong parenthesis", l.toLatin1().data());
 
             if(nbParenthesis == 0){
                 answer.append(currentPart);

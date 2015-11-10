@@ -1,6 +1,7 @@
 #include "machinestate.h"
 #include <QStringBuilder>
 
+
 MachineState::MachineState(){
     // contents will be empty, as expected
 }
@@ -15,8 +16,16 @@ QString MachineState::toString() const{
     QString answer;
     answer += "MachineState : ";
     for(LRelation relation : contents){
+        answer += "\n\t";
         answer += relation->toString();
-        answer += "\t";
+    }
+    return answer;
+}
+
+QStringList MachineState::toStringList() const{
+    QStringList answer;
+    for(LRelation relation : contents){
+        answer << relation->toString();
     }
     return answer;
 }

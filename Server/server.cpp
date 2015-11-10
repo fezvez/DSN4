@@ -4,14 +4,14 @@
 #include <QDateTime>
 
 
+QRegExp Server::rxStatusAvailable = QRegExp("(status\\s+available)");
+QRegExp Server::rxReady = QRegExp("ready");
+QRegExp Server::rxPlayerName = QRegExp("\\(\\s*name\\s+(\\S+)\\s*\\)");
+
 Server::Server()
 {
     matchId = QString("x") % QString::number(QDateTime::currentMSecsSinceEpoch());
     waitingForMessage = WAITING_FOR_MESSAGE::NOTHING;
-
-    rxStatusAvailable = QRegExp("(status\\s+available)");
-    rxReady = QRegExp("ready");
-    rxPlayerName = QRegExp("\\(\\s*name\\s+(\\S+)\\s*\\)");
 }
 
 Server::~Server()
@@ -36,22 +36,19 @@ QStringList Server::getRoles(){
 
 void Server::setupGame(QString filename){
     qDebug() << "Server::setupGame() " << filename;
-//    KifLoader kifLoader(nullptr, filename);
-//    QStringList gameStringList = kifLoader.runSynchronously();
-//    // Much more efficient than looping over the strings and concatenating them
-//    gameString = "( " % gameStringList.join(" ") % " )";
 
-//    Parser parser;
-//    parser.generateHerbrandFromRawKif(gameStringList);
+    parser.generateHerbrandFromFile(filename);
+    gameString = parser.getGameString();
 
-    prover.initialize(filename);
-//    prover.initialize(parser.getRelations(), parser.getRules());
-    currentState = prover.getInitialState();
+    qDebug() << "GameString : " << gameString;
+
+    proverSM.initialize(parser.getRelations(), parser.getRules());
+    currentState = proverSM.getInitialState();
 
     emit emitOutput(QString("\nLoading a new game"));
 
     roles.clear();
-    QVector<Role> rolesTerm = prover.getRoles();
+    QVector<Role> rolesTerm = proverSM.getRoles();
     for(Role role : rolesTerm){
         roles << role.getTerm()->toString();
         emit emitOutput(QString("This game requires a player to play the role of : %1").arg(roles.last()));
@@ -66,7 +63,7 @@ void Server::setupGame(QString filename){
 }
 
 void Server::setupPlayers(QStringList adressesList, QVector<int> portList){
-//    qDebug() << "Server::setupPlayers()";
+    qDebug() << "Server::setupPlayers()";
     addresses = adressesList;
     ports = portList;
 
@@ -115,15 +112,15 @@ void Server::start(){
     waitForNewMessage(WAITING_FOR_MESSAGE::START);
 
     stepCounter = 0;    // Incrementation is in handleTransition()
-    currentState = prover.getInitialState(); // Update handeld in handleTransition()
+    currentState = proverSM.getInitialState(); // Update handled in handleTransition()
 
     emit emitOutput(QString("\nMETAGAME"));
 
     int nbPlayers = addresses.size();
     QString messageStart = QString("(start ") % matchId % " ";
-    QString messageEnd = gameString % " " % QString::number(startclock) % " " % QString::number(playclock) % ")";
+    QString messageEnd = gameString % ") " % QString::number(startclock) % " " % QString::number(playclock) % ")";
     for(int i = 0; i<nbPlayers; ++i){
-        QString message = messageStart % roles[i] % messageEnd;
+        QString message = messageStart % roles[i] % " (" % messageEnd;
         networkConnections[i]->request(message, startclock);
     }
 }
@@ -169,7 +166,7 @@ void Server::stop(){
     waitForNewMessage(WAITING_FOR_MESSAGE::DONE);
 
     emit emitOutput(QString("\nMATCH FINISHED"));
-    emit matchFinished(prover.getGoals(currentState));
+    emit matchFinished(proverSM.getGoals(currentState));
 
     QThread::currentThread()->msleep(500);
 
@@ -330,7 +327,7 @@ void Server::handleTransition(){
 void Server::computeNextTurn(){
     qDebug() << "\nServer::computeNextTurn()";
     QList<Move> jointMove;
-    QList<Move> randomJointMove = prover.getRandomLegalJointMove(currentState);
+    QList<Move> randomJointMove = proverSM.getRandomLegalJointMove(currentState);
 
 
     for(int i = 0; i<moves.size(); ++i){
@@ -341,21 +338,21 @@ void Server::computeNextTurn(){
             qDebug() << "Generated random move for player " << i << " : " << randomJointMove[i].toString();
         }
         else{
-            jointMove.append(prover.getMoveFromString(potentialMove));
+            jointMove.append(proverSM.getMoveFromString(potentialMove));
         }
     }
 
-    currentState = prover.getNextState(currentState, jointMove);
+    currentState = proverSM.getNextState(currentState, jointMove);
 
     qDebug() << "Current state is now : " << currentState.toString();
 }
 
 bool Server::isLegal(int playerIndex, QString message){
 //    qDebug() << "isLegal() : " << message;
-    Move move = prover.getMoveFromString(message);
+    Move move = proverSM.getMoveFromString(message);
 //    qDebug() << move.getTerm()->toString();
 
-    QList<Move> legalMoves = prover.getLegalMoves(currentState, prover.getRoles()[playerIndex]);
+    QList<Move> legalMoves = proverSM.getLegalMoves(currentState, proverSM.getRoles()[playerIndex]);
     for(Move potentialMove : legalMoves){
 //        qDebug() << potentialMove.getTerm()->toString();
         if(move == potentialMove){
@@ -366,9 +363,9 @@ bool Server::isLegal(int playerIndex, QString message){
 }
 
 bool Server::isTerminal(){
-    return prover.isTerminal(currentState);
+    return proverSM.isTerminal(currentState);
 }
 
 int Server::getGoal(int playerIndex){
-    return prover.getGoal(currentState, playerIndex);
+    return proverSM.getGoal(currentState, playerIndex);
 }

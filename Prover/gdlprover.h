@@ -81,7 +81,7 @@ public:
 
         // All of these can be computed from the rules (legal can not)
         QMap<QString, LRelation> basePropositions;
-        QMap<QString, LRelation> initPropositions;
+        QMap<QString, LRelation> initPropositions;  // contains only things such as (base (control black))
         QMap<QString, LRelation> inputPropositions; // either this line
         QMap<QString, LRelation> doesPropositions;  // or that one will disappear
 

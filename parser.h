@@ -15,6 +15,7 @@
 #include <QSharedPointer>
 #include <QMap>
 #include <QSet>
+#include <QVector>
 
 
 /**
@@ -34,14 +35,17 @@ public slots:
     QStringList cleanRawKif(const QStringList &rawKif);
     void generateHerbrandFromFile(QString filename);
     void generateHerbrandFromRawKif(const QStringList &rawKif);
+    void generateHerbrandFromRawKif(const QString & rawKif);
 
 public slots:
     LTerm parseTerm(QString term);
     LRelation parseRelation(QString relation);
+    QVector<LRelation> parseRelations(QString relations);
 
 public slots:
     QList<LRule> getRules();
     QList<LRelation> getRelations();
+    QString getGameString();
 
 protected:
     QStringList removeComments(const QStringList &kif);
@@ -61,6 +65,7 @@ private:
 protected:
     QList<LRule> ruleList;
     QList<LRelation> relationList;
+    QString gameString;
 
     /**
       *

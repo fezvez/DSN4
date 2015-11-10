@@ -3,6 +3,7 @@
 
 #include <QSharedPointer>
 #include <QVector>
+#include <QStringList>
 
 
 #include "../Logic/logic_relation.h"
@@ -17,6 +18,7 @@ public:
     MachineState(QVector<LRelation> c);
 
     QString toString() const;
+    QStringList toStringList() const;
     const QVector<LRelation> getContents() const;
 
 private:

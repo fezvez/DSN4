@@ -496,28 +496,31 @@ void GDLProver::buildBaseInitInputDoesPropositions(){
 //        LRelation relationWithoutInit = Logic_Relation::clone(relation);
 //        relationWithoutInit->setQualifier(Logic::LOGIC_QUALIFIER::NO_QUAL);
 //        initPropositions[relationWithoutInit->toString()] = relationWithoutInit;
-
+        debug("init relation ", relation->toString());
         LRelation relationSwappedToBase = Logic_Relation::clone(relation);
         relationSwappedToBase->setQualifier(Logic::LOGIC_QUALIFIER::BASE);
         initPropositions[relationSwappedToBase->toString()] = relationSwappedToBase;
     }
 
     for(LRule rule : initRules){
-        //qDebug () << "init rule " << rule->toString();
+        debug("init rule ", rule->toString());
         LRelation head = rule->getHead();
         //qDebug () << "Head  " << head->toString();
         QList<LRelation> evaluatedRelations = evaluate(head);
         for(LRelation relation : evaluatedRelations){
-            QString stringRelation = relation->toString();
-            if(!initPropositions.contains(stringRelation)){
-                initPropositions[stringRelation] = basePropositions[stringRelation];
+            debug("init evaluated relation : ", relation->toString());
+            LRelation relationSwappedToBase = Logic_Relation::clone(relation);
+            relationSwappedToBase->setQualifier(Logic::LOGIC_QUALIFIER::BASE);
+
+            if(!initPropositions.contains(relationSwappedToBase->toString())){
+                initPropositions[relationSwappedToBase->toString()] = relationSwappedToBase;
             }
         }
     }
 #ifndef QT_NO_DEBUG
-    qDebug() << "There are " << initPropositions.size() << " init propositions";
+    qDebug() << "There are " << initPropositions.size() << " init propositions (base propositions which are true at the start)";
     for(QString s : initPropositions.keys()){
-        qDebug() << "\tInit proposition : " << s;
+        qDebug() << "\tinit proposition : " << s;
     }
 #endif
 
@@ -584,8 +587,10 @@ void GDLProver::buildRolePropositions(QList<LRelation> relations){
         rolePropositions.insert(relation->toString(), relation);
     }
 
+    // Should not exist, roles are supposed to be ordered
+    // But one can imagine a rule with a single possible unification
     for(LRule rule : roleRules){
-        qDebug () << "Role rule " << rule->toString();  // Should not exist, see below
+        qDebug () << "Role rule " << rule->toString();
         LRelation head = rule->getHead();
         QList<LRelation> evaluatedRelations = evaluate(head);
         for(LRelation relation : evaluatedRelations){
@@ -594,7 +599,7 @@ void GDLProver::buildRolePropositions(QList<LRelation> relations){
     }
 
     roles.clear();
-    // Exception, the roles are in the order given by the rules, we can't do that :
+    // The roles are in the order given by the rules, so we can't do that :
     /**
     for(LRelation roleRelation : rolePropositions.values()){
         roles.append(roleRelation->getBody()[0]);

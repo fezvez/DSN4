@@ -121,6 +121,8 @@ void PropnetProver::generatePropnet(){
                         continue;
                     }
                     qDebug() << "Bug with relation constant that is in no rule and no relation : " << term->toString();
+                    // HACK
+                    continue;
                     Q_ASSERT(false);
                 }
             }
@@ -265,10 +267,13 @@ QList<LRule> PropnetProver::getGrounding(LRule rule){
 bool PropnetProver::addRuleToDatabase(LRule rule){
     // line x :- (cell 1 1 x) (cell 1 2 x) (cell 1 3 x)
 
-
+#ifndef QT_NO_DEBUG
+    qDebug() << "Trying to Adding rule to DB : " << rule->toString();
+#endif
     QString ruleString = rule->toString();
 
     if(alreadyInDatabase.contains(ruleString)){
+//        qDebug () << "Rule " << rule->toString() << " Already in DB";
         return false;
     }
 

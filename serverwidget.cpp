@@ -10,20 +10,27 @@
 
 #include "parser.h"
 #include "Prover/gdlprover.h"
+#include "flags.h"
 
 // WARNING : I keep on invoking several methods in a row, in an object in another thread
 // Because I rely on calling these methods in order, it WILL fail one day
 
+QRegExp ServerWidget::regEndsInKif = QRegExp("\\.kif$");
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// CONSTRUCTOR
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ServerWidget::ServerWidget()
 {
     qDebug() << "Thread ServerWidget " << thread();
-    regEndsInKif = QRegExp("\\.kif$");
+
     server = new Server();
     serverThread = new QThread(this);
-    qDebug() << "Thread server " << server->thread();
+    qDebug() << "Thread server before moving it " << server->thread();
     server->moveToThread(serverThread);
-    qDebug() << "Thread server " << server->thread();
-    serverThread->start();
+    qDebug() << "Thread server after  moving it" << server->thread();
+    serverThread->start(); // Doesn't actually start anything for server, just starts the event loop
 
 
     setupGUI();
@@ -36,6 +43,10 @@ ServerWidget::~ServerWidget()
 {
 
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// SETUP
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ServerWidget::setupGUI(){
     filesTable = new QTableWidget(0,2,this);
@@ -114,6 +125,10 @@ void ServerWidget::setupSignalsSlots(){
     connect(server, SIGNAL(done()), this, SLOT(done()));
 
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// DISPLAY GUI STUFF
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ServerWidget::displayError(int playerIndex, QAbstractSocket::SocketError socketError){
     qDebug() << "Error for player " << playerIndex;
@@ -199,6 +214,10 @@ void ServerWidget::output(QString s){
     textEdit->append(s);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// SLOTS FOR ACTIVE THINGS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void ServerWidget::ping(){
     textEdit->append("\nPING");
 
@@ -279,7 +298,9 @@ QVector<int> ServerWidget::getPortList(){
 }
 
 
-// INIT
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// LOAD KIF FILES
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ServerWidget::setupFilesTable()
 {
@@ -339,10 +360,11 @@ void ServerWidget::findAndDisplayFiles()
 
 void ServerWidget::openFile(int row)
 {
-    //    qDebug() << "OPEN FILE";
+
     QTableWidgetItem *item = filesTable->item(row, 0);
     QString filename(currentDir.absoluteFilePath(item->text()));
 
+    qDebug() << "ServerWidget::openFile() : " << filename;
 
     QMetaObject::invokeMethod(server, "setupGame", Qt::DirectConnection,
                               Q_ARG(QString, filename));
@@ -353,10 +375,14 @@ void ServerWidget::openFile(int row)
     QMetaObject::invokeMethod(server, "getRoles", Qt::DirectConnection,
                               Q_RETURN_ARG(QStringList, roles));
     // QStringList roles = server->getRoles();
-    qDebug() << "Nb roles " << roles.size();
+    debug("Nb roles : ", QString::number(roles.size()));
     nbRoles = roles.size();
     setupPlayers(roles);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// CONSEQUENCE OF CHOOSING A KIF FILE (Only GUI things happen here)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ServerWidget::setupPlayers(QStringList roles){
     int nbCurrentPlayers = labelPlayerInstructions.size();

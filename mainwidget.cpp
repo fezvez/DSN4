@@ -17,7 +17,7 @@ MainWidget::MainWidget()
     layout->addWidget(tabWidget);
 
     setLayout(layout);
-    resize(1120, 800);
+    resize(1280, 800);
 
     // Choose which tab you show at startup
     tabWidget->setCurrentIndex(0);

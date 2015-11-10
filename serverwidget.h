@@ -15,6 +15,20 @@
 #include "Prover/gdlprover.h"
 #include "Server/server.h"
 
+
+/**
+ * @brief The ServerWidget class
+ * Has one Server* which resides in a different thread
+ *
+ * When you load a file, it invokes setupGame
+ * When you PING, it invokes setupPlayers (to get IP/port) and ping
+ * When you START, it invokes setupPlayers, setupClocks and start
+ *
+ * This class is mostly passive once the game starts, it just receives messages to display
+ * The Server does actually all the message passing, check illegal moves, compute next state...
+ */
+
+
 class ServerWidget : public QWidget
 {
     Q_OBJECT
@@ -53,7 +67,7 @@ private:
 private:
     QTableWidget * filesTable;
     QDir currentDir;
-    QRegExp regEndsInKif;
+
     QString gameString;
     int nbRoles;
 
@@ -71,7 +85,6 @@ private:
     QPushButton * startButton;
     QPushButton * abortButton;
 
-
     QWidget * inputWidget;
     QWidget * playersWidget;
     QGridLayout * playersWidgetLayout;
@@ -81,6 +94,9 @@ private:
     GDLProver prover;
     Server * server;
     QThread* serverThread;
+
+public:
+    static QRegExp regEndsInKif;
 };
 
 #endif // SERVERWIDGET_H
