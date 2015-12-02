@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QLinkedList>
 
-#include "Unification/unification_relation.h"
+
 #include "flags.h"
 
 int KnowledgeBase::skolemNumber = 1000;
@@ -421,6 +421,20 @@ void KnowledgeBase::generateStratum(){
  * @return
  * Takes a relation (optionaly with variables) and returns all the grounded
  * relations that are true
+ *
+ * Explanation on how it works
+ * One day I will be great and use magic sets
+ * Currently, that's what I hacked in
+ * You get a relation like (legal ?x ?y)
+ * You build a rule (legal ?x ?y) :- (legal ?x ?y) (excuse the mix between KIF and HRF)
+ * You put this rule in the "Could potentially be a solution"
+ *
+ * At each step, you pop the first rule in "Could potentially be a solution"
+ * You try to unify the first element of the body
+ * If you can unify it with a relation (necessarily grounded) just remove the first element
+ * If you can unify it with a rule, just replace the first element with the body of that rule
+ * If no unification is possible, fail
+ * In the end, you should end up with an empty body and the head of the rule has been fully grounded
  */
 QList<LRelation> KnowledgeBase::evaluate(QString relation){
     return evaluate(manageRelation(parser.parseRelation(relation)));
@@ -553,6 +567,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
                 specialDebug("    Unification is valid and gives : ", tempRule->toString());
                 //unification->printSolverResults();
 
+                // Because we unified with a relation, we know the first element of the body is valid
                 QList<LRelation> endOfBody = tempRule->getBody();
                 endOfBody.removeFirst();
 
@@ -561,7 +576,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
                 answer.append(partialAnswer);
             }
             else{
-                specialDebug("    Unification fails");
+                specialDebug("    Unification fails with relation", r->toString());
             }
         }
     }
@@ -578,6 +593,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
                 specialDebug("    Unification is valid and gives : ", tempRule->toString());
                 //unification->printSolverResults();
 
+                // Because we unified with a relation, we know the first element of the body is valid
                 QList<LRelation> endOfBody = tempRule->getBody();
                 endOfBody.removeFirst();
 
@@ -586,7 +602,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
                 answer.append(partialAnswer);
             }
             else{
-                specialDebug("    Unification fails");
+                specialDebug("    Unification fails with relation", r->toString());
             }
         }
     }
@@ -607,6 +623,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
                 specialDebug("    and the skolem : ", skolemRule->toString());
                 //unification->printSolverResults();
 
+                // We replace the first element of the original body with the full body of the rule
                 QList<LRelation> body;
                 body.append(skolemRule->getBody());
                 QList<LRelation> endOfBody = tempRule->getBody();
@@ -618,7 +635,7 @@ QList<LRule> KnowledgeBase::ruleSubstitution(LRule rule){
                 answer.append(partialAnswer);
             }
             else{
-                specialDebug("    Unification fails");
+                specialDebug("    Unification fails with rule", r->toString());
             }
         }
     }
@@ -925,7 +942,7 @@ bool Stratum::updateStrataStrongly(){
 void KnowledgeBase::printRuleEvaluation(){
     qDebug() << "printRuleEvaluation()";
     for(LRule rule : evaluationRules){
-        qDebug() << rule->toString() << " with head ";
+        qDebug() << rule->toString() << " with head " << rule->getHead()->getHead()->toString();
     }
 }
 

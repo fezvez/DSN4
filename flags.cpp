@@ -2,6 +2,15 @@
 
 bool specialDebugOn = false;
 
+/**
+ * For those curious about all the "(void)string;" that are in this file
+ * If the flag QT_NO_DEBUG is on, I don't want to call these functions at all
+ * So, the body of the functions becomes empty
+ * But, this means that the function arguments are never used
+ * The compiler sends warning that the parameters are unused
+ * (void)string; expands to nothing, and gets rid of the warning
+ */
+
 void debug(QString string){
     (void)string;
 #ifndef QT_NO_DEBUG
@@ -61,6 +70,8 @@ void specialDebug(QString string, QString string1, QString string2){
 }
 
 void debugStringList(const QStringList &stringList, QString title){
+    (void)stringList;
+    (void)title;
 #ifndef QT_NO_DEBUG
     qDebug() << "Printing full list : " << title << " of size : " << stringList.size();
     for(QString string : stringList){

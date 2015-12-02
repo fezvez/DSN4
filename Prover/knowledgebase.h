@@ -13,6 +13,7 @@
 #include "Logic/logic_rule.h"
 
 #include "parser.h"
+#include "Unification/unification_relation.h"
 
 /**
   * Knowledge Base
@@ -164,7 +165,40 @@ protected:
     QMap<LTerm, QList<LRelation>> constantToRelationEvaluationMap;
     QMap<LTerm, QList<LRelation>> constantToTempRelationEvaluationMap;
 
+    // Memoization
+private:
+    // Let's suppose we know that (legal ?r ?a) is true and can be unified with
+    // (legal white noop) and (legal black (mark 1 1))
+    // Then LTerm is "legal"
+    // The LRelation is (legal ?r ?a)
+    // The LRelations are (legal white noop) and (legal black (mark 1 1))
+    //
+    // Easiest case, we ask for (legal ?x ?y), which unifies with (legal ?r ?a)
+    // Actually, (legal ?r ?a) (in memory) is more general
+    // We can unify all the LRelation with (legal ?x ?y), this gives us a unification
+    // We apply the unification to the rest of the body of the problem
+    //
+    // A bit more complicated, let's suppose we ask (legal white ?a)
+    // We have in memory the relation (legal ?r ?a), which is strictly more general
+    // Interestingly, any relation which is more general is sufficient (there can be several)
+    // Anyways, once we unify, and notice that not only it works, but (legal ?r ?a) is more general
+    // We unify all the LRelation with (legal white ?a)
+    //
+    // Trickier, let's suppose that we know that
+    // (legal white ?a) can be unified with (legal white noop)
+    // (legal ?r (mark 1 1)) can be unified with (legal black (mark 1 1))
+    // We can't do anything with (legal ?r ?a) (or can we?)
+    // However, once it is done, we can realize that (legal ?r ?a) is more general
+    // Both of them are going to dissapear (because their subsolutions are already inside
+    //
+    // We only do this for LTerm with stratum >= 1
+    // Otherwise, it's just useless, direct comparison is faster
+    // i.e : when asking (index ?x), I dont' want to bother with unification and shit
+    // I just look up the fact that we have (index 1), (index 2) and (index 3) in memory
 
+
+
+    QMap<LTerm, QMap<LRelation, QList<URelation>>> alreadyAnsweredQueries;
 
     // Debug
 public:

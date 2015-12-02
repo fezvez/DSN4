@@ -41,6 +41,7 @@ Logic_Term::Logic_Term(LTerm h, QList<LTerm> b)
 // Should never happen
 // Logic_Term should always be wrapped in a QSharedPointer (typedef LTerm)
 Logic_Term::Logic_Term(const Logic_Term & l){
+    (void)l;
     Q_ASSERT(false);
 }
 

@@ -2,13 +2,6 @@
 
 #include <QString>
 
-void Logic_Test::toUpper()
-{
-    QString str = "Hello";
-    QCOMPARE(str.toUpper(), QString("HELLO"));
-}
-
-
 
 void Logic_Test::termIsGround(){
     LTerm termA = LTerm(new Logic_Term("a", LOGIC_TERM_TYPE::CONSTANT));

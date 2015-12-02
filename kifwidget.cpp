@@ -45,6 +45,8 @@ void KifWidget::setUpLayout(){
     // Top menu
     labelTopMenu = new QLabel("Make a query", this);
     lineEditQuery = new QLineEdit("legal ?x ?y", this);
+
+//    lineEditDoes = new QLineEdit("(does white (mark 3 1))", this);
     lineEditDoes = new QLineEdit("(does white (set (mark 3 3 1) (set (mark 3 3 2) nil)))", this);
     checkBoxInit = new QCheckBox("Init ", this);
     queryButton = createButton(tr("&Query"), SLOT(query()));
@@ -357,7 +359,7 @@ void KifWidget::query(){
     for(LRelation relation : moves){
         LRelation cleanRelation = gdlProver.manageRelation(relation);;
         cleanMoves << cleanRelation;
-        qDebug () << "BLABLA " << cleanRelation->toString();
+        qDebug () << "Does move loaded : " << cleanRelation->toString();
     }
     gdlProver.loadAdditionalTempRelations(cleanMoves);
 
@@ -367,8 +369,20 @@ void KifWidget::query(){
     LRelation relationQuery = parser.parseRelation(queryString);
     qDebug() << "relationQuery " << relationQuery->toString();
 
+    // Ask the prover the question(s)
     specialDebugOn = true;
-    QList<LRelation> answer = gdlProver.evaluate(queryString);
+    QList<LRelation> answer;
+    if(relationQuery->getHead()->toString() == QString("next_")){
+        // Special case (hack?) for next
+        auto nextQueries = gdlProver.getNextQueries();
+        for(auto nextQuery : nextQueries.values()){
+            qDebug() << "Next query " << nextQuery->toString();
+            answer.append(gdlProver.evaluate(nextQuery));
+        }
+    }
+    else{
+        answer = gdlProver.evaluate(queryString);
+    }
     specialDebugOn = false;
 
     gdlProver.printRuleEvaluation();

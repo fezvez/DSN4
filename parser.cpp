@@ -297,7 +297,7 @@ LRelation Parser::processRelation(QString line, Logic::LOGIC_QUALIFIER q, bool i
     }
 
     if(splitLine[0] == QString("next")){
-        Q_ASSERT(splitLine.size() == 2);
+        Q_ASSERT_X(splitLine.size() == 2, "Next should have a body of size exactly 1", line.toLatin1().data());
         LRelation relation = processRelation(splitLine[1], q, isNegative, true);
         return relation;
     }
@@ -456,7 +456,7 @@ QStringList Parser::split(QString line){
         }
         else if(rightPar.indexIn(rawSplit[i]) == 0){
             nbParenthesis--;
-            Q_ASSERT(nbParenthesis>=0);
+            Q_ASSERT_X(nbParenthesis>=0, "Negative number of parenthesis", line.toLatin1().data());
         }
 
         currentPart.append(rawSplit[i]);

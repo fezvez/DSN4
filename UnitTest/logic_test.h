@@ -10,7 +10,6 @@ class Logic_Test: public QObject
 {
     Q_OBJECT
 private slots:
-    void toUpper();
 
     void termIsGround();
     void termFreeVariables();

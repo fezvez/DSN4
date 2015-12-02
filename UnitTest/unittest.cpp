@@ -28,8 +28,8 @@ UnitTest::UnitTest(int argc, char* argv[])
     ProverStateMachine_Test proverStateMachineTest;
     QTest::qExec(&proverStateMachineTest, argc, argv);
 
-//    Propnet_Test propnetTest;
-//    QTest::qExec(&propnetTest, argc, argv);
+    Propnet_Test propnetTest;
+    QTest::qExec(&propnetTest, argc, argv);
 
 //    PropnetStateMachine_Test propnetStateMachineTest;
 //    QTest::qExec(&propnetStateMachineTest, argc, argv);
