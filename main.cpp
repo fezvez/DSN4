@@ -14,20 +14,27 @@
 #include "PropNet/componentor.h"
 
 #include <QFont>
+#include <QDebug>
 
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    // Set up font size
     QFont font;
     font.setPointSize(18);
     a.setFont(font);
 
-    Logic::init();
+    // Set up QT things
+    qDebug().noquote();
 
     qRegisterMetaType<QVector<int> >("QVector<int>");
     qRegisterMetaType<QVector<int> >("QList<int>");
 //    qRegisterMetaType<QVector<int> >("QAbstractSocket::SocketError");
+
+    // Set up my own things
+    Logic::init();
 
     MainWidget w;
     w.show();

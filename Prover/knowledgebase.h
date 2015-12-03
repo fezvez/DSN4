@@ -195,10 +195,16 @@ private:
     // Otherwise, it's just useless, direct comparison is faster
     // i.e : when asking (index ?x), I dont' want to bother with unification and shit
     // I just look up the fact that we have (index 1), (index 2) and (index 3) in memory
+    //
+    // Here, suppose we have already computed (legal white ?a) and (legal ?r (mark 1 1))
+    // QMap<LTerm, XXX> only has "legal" key
+    // XXX is a QMap<LRelation, QList<LRelation>> with two entries
+    //  - (legal white ?a) with values (legal white (mark 1 1)) and (legal white (mark 2 3))
+    //  - (legal ?r (mark 1 1)) with values (legal white (mark 1 1))
 
 
 
-    QMap<LTerm, QMap<LRelation, QList<URelation>>> alreadyAnsweredQueries;
+    QMap<LTerm, QMap<LRelation, QList<LRelation>>> alreadyAnsweredQueries;
 
     // Debug
 public:
