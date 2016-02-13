@@ -1,5 +1,4 @@
 #include "kifwidget.h"
-#include "ui_widget.h"
 #include "fileloader.h"
 
 #include <QGridLayout>
@@ -8,6 +7,7 @@
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QProgressDialog>
+#include <QHeaderView>
 
 #include <QTextStream>
 #include <QDebug>
@@ -170,7 +170,7 @@ void KifWidget::createMainDisplay(){
 //// INITIALIZE
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void KifWidget::initialize(){
-    regEndsInKif = QRegExp("\\.kif$");
+    regEndsInKif = QRegularExpression("\\.kif$");
 
     // Some default text
     output(tr("  --------------------------- HELLO! ---------------------------  \n"));
@@ -464,7 +464,7 @@ Highlighter::Highlighter(QTextDocument *parent)
     QStringList logicQualifierPatterns;
     logicQualifierPatterns << "\\binit\\b" << "\\btrue\\b" << "\\bbase\\b";
     foreach (const QString &pattern, logicQualifierPatterns) {
-        rule.pattern = QRegExp(pattern);
+        rule.pattern = QRegularExpression(pattern);
         rule.format = logicQualifierFormat;
         highlightingRules.append(rule);
     }
@@ -476,7 +476,7 @@ Highlighter::Highlighter(QTextDocument *parent)
                          << "\\bterminal\\b" << "\\blegal\\b" << "\\binput\\b"
                          << "\\bdoes\\b";
     foreach (const QString &pattern, logicKeywordPatterns) {
-        rule.pattern = QRegExp(pattern);
+        rule.pattern = QRegularExpression(pattern);
         rule.format = logicKeywordFormat;
         highlightingRules.append(rule);
 
@@ -486,18 +486,18 @@ Highlighter::Highlighter(QTextDocument *parent)
     QStringList logicSemanticsPatterns;
     logicSemanticsPatterns << "\\bdistinct\\b" << "\\bset\\b" << "\\bnot\\b";
     foreach (const QString &pattern, logicSemanticsPatterns) {
-        rule.pattern = QRegExp(pattern);
+        rule.pattern = QRegularExpression(pattern);
         rule.format = logicSemanticsFormat;
         highlightingRules.append(rule);
     }
 
     singleLineCommentFormat.setForeground(Qt::darkGreen);
-    rule.pattern = QRegExp(";[^\n]*");
+    rule.pattern = QRegularExpression(";[^\n]*");
     rule.format = singleLineCommentFormat;
     highlightingRules.append(rule);
 
     variableFormat.setForeground(Qt::darkRed);
-    rule.pattern = QRegExp("\\?[A-Za-z0-9_]+");
+    rule.pattern = QRegularExpression("\\?[A-Za-z0-9_]+");
     rule.format = variableFormat;
     highlightingRules.append(rule);
 
@@ -506,12 +506,16 @@ Highlighter::Highlighter(QTextDocument *parent)
 void Highlighter::highlightBlock(const QString &text)
 {
     foreach (const HighlightingRule &rule, highlightingRules) {
-        QRegExp expression(rule.pattern);
-        int index = expression.indexIn(text);
-        while (index >= 0) {
-            int length = expression.matchedLength();
+        QRegularExpression expression(rule.pattern);
+        auto match = expression.match(text);
+
+        while (match.hasMatch()) {
+
+            int index = match.capturedStart(0);
+            int length = match.capturedLength(0);
             setFormat(index, length, rule.format);
-            index = expression.indexIn(text, index + length);
+
+            match = expression.match(text, index+length);
         }
     }
 }

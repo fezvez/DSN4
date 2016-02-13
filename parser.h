@@ -9,7 +9,7 @@
 
 #include <QStringList>
 #include <QObject>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QStringList>
 #include <QList>
 #include <QSharedPointer>
@@ -83,14 +83,14 @@ public:
     static QStringList splitSeveral(QString lines);
 
 public:
-    static QRegExp ruleRegExp;
-    static QRegExp whitespaceRegExp;
-    static QRegExp wordRegExp;
-    static QRegExp leftPar;
-    static QRegExp rightPar;
-    static QRegExp inputRegExp;
-    static QRegExp nextRegExp;
-    static QRegExp newlineRegExp;
+    static QRegularExpression ruleRegExp;
+    static QRegularExpression whitespaceRegExp;
+    static QRegularExpression wordRegExp;
+    static QRegularExpression leftPar;
+    static QRegularExpression rightPar;
+    static QRegularExpression inputRegExp;
+    static QRegularExpression nextRegExp;
+    static QRegularExpression newlineRegExp;
 };
 
 

@@ -13,7 +13,7 @@
 
 #include <QSharedPointer>
 #include <QDir>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QCheckBox>
 
 #include <QSyntaxHighlighter>
@@ -105,7 +105,7 @@ private:
     QTableWidget *filesTable;
 
     QDir currentDir;
-    QRegExp regEndsInKif;
+    QRegularExpression regEndsInKif;
 
     // Top menu
     QLabel *labelTopMenu;
@@ -158,7 +158,7 @@ protected:
 private:
     struct HighlightingRule
     {
-        QRegExp pattern;
+        QRegularExpression pattern;
         QTextCharFormat format;
     };
     QVector<HighlightingRule> highlightingRules;

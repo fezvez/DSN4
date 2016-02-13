@@ -7,7 +7,7 @@
 #include <QMap>
 #include <QVector>
 #include <QSharedPointer>
-#include <QRegExp>
+#include <QRegularExpression>
 
 #include "Logic/logic_term.h"
 #include "Logic/logic_rule.h"
@@ -229,14 +229,14 @@ protected:
 
 
 public:
-    static QRegExp ruleRegExp;
-    static QRegExp whitespaceRegExp;
-    static QRegExp wordRegExp;
-    static QRegExp leftPar;
-    static QRegExp rightPar;
-    static QRegExp inputRegExp;
-    static QRegExp nextRegExp;
-    static QRegExp newlineRegExp;
+    static QRegularExpression ruleRegExp;
+    static QRegularExpression whitespaceRegExp;
+    static QRegularExpression wordRegExp;
+    static QRegularExpression leftPar;
+    static QRegularExpression rightPar;
+    static QRegularExpression inputRegExp;
+    static QRegularExpression nextRegExp;
+    static QRegularExpression newlineRegExp;
 
     Parser parser;
 };

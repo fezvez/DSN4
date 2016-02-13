@@ -8,12 +8,9 @@
 
 
 /**
- * Typical example of unification equation
- * f(a,g(X,Y)) = f(X,Z)
- * where f and g are functional constants
- * You end up with the substitution :
- * X->a
- * Z->g(a,Y)
+ * Unification_Term
+ *
+ * Just hold 2 terms
  */
 
 class Unification_Term;
@@ -37,10 +34,6 @@ public:
 private:
     LTerm term1;
     LTerm term2;
-
-
-//    QList<LTerm> variable1;
-//    QList<LTerm> variable2;
 };
 
 #endif // LOGIC_EQUATION_H

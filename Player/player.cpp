@@ -11,7 +11,12 @@
 Player::Player(int p)
 {
     playerNetwork = new PlayerNetwork(p, this);
-    emit emitOutput(QString("Player port is : %1").arg(playerNetwork->getPort()));
+
+//    moveToThread(&thread);
+//    playerNetwork->moveToThread(&thread);
+
+    // No point in emitting during constructor
+    //    emit emitOutput(QString("Player port is : %1").arg(playerNetwork->getPort()));
 
     setName("AbstractCppPlayer");
 
@@ -21,20 +26,25 @@ Player::Player(int p)
     connect(playerNetwork, SIGNAL(emitOutput(QString)), this, SIGNAL(emitOutput(QString)));
 }
 
+
+
+
 void Player::setName(QString s){
     playerName = s;
     playerNetwork->playerName = this->playerName;
 }
 
 Player::~Player(){
-    delete playerNetwork;
+//    thread.quit();
+//    thread.wait();
+//    delete playerNetwork;
 }
 
 void Player::play(QString newMoves, qint64 timeout){
     updateState(newMoves);
 
-//    FirstPlayer* p = dynamic_cast<FirstPlayer*>(this);
-//    QFuture<void> future = QtConcurrent::run(p, &FirstPlayer::selectMove, timeout);
+    //    FirstPlayer* p = dynamic_cast<FirstPlayer*>(this);
+    //    QFuture<void> future = QtConcurrent::run(p, &FirstPlayer::selectMove, timeout);
     selectMove(timeout);
 }
 
@@ -64,6 +74,10 @@ StateMachine* Player::getStateMachine(){
 
 int Player::getPort(){
     return playerNetwork->getPort();
+}
+
+PlayerNetwork* Player::getPlayerNetwork(){
+    return playerNetwork;
 }
 
 QString Player::getName(){

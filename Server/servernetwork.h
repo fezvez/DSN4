@@ -6,6 +6,11 @@
 #include <QTcpSocket>
 #include <QTimer>
 
+///
+/// ServerNetwork
+///
+/// Handles communication between the Server and exactly one client
+///
 
 class Server;
 

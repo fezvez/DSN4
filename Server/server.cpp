@@ -4,9 +4,13 @@
 #include <QDateTime>
 
 
-QRegExp Server::rxStatusAvailable = QRegExp("(status\\s+available)");
-QRegExp Server::rxReady = QRegExp("ready");
-QRegExp Server::rxPlayerName = QRegExp("\\(\\s*name\\s+(\\S+)\\s*\\)");
+QRegularExpression Server::rxStatusAvailable = QRegularExpression("(status\\s+available)");
+QRegularExpression Server::rxReady = QRegularExpression("ready");
+QRegularExpression Server::rxPlayerName = QRegularExpression("\\(\\s*name\\s+(\\S+)\\s*\\)");
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// CONSTRUCTOR
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Server::Server()
 {
@@ -19,6 +23,10 @@ Server::~Server()
 
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// GETTERS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int Server::getPlayerIndex(QString address, int port){
     for(int i = 0; i<addresses.size(); ++i){
         if(addresses[i] == address && ports[i] == port){
@@ -30,22 +38,30 @@ int Server::getPlayerIndex(QString address, int port){
 }
 
 QStringList Server::getRoles(){
-    qDebug() << "Server::getRoles()";
+    //    qDebug() << "Server::getRoles()";
     return roles;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// SETUP OF THE GAME
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Server::setupGame(QString filename){
-    qDebug() << "Server::setupGame() " << filename;
+    //    qDebug() << "Server::setupGame() " << filename;
+
+    if(waitingForMessage != WAITING_FOR_MESSAGE::NOTHING){
+        return;
+    }
 
     parser.generateHerbrandFromFile(filename);
     gameString = parser.getGameString();
 
-    qDebug() << "GameString : " << gameString;
+    //    qDebug() << "GameString : " << gameString;
 
     proverSM.initialize(parser.getRelations(), parser.getRules());
     currentState = proverSM.getInitialState();
 
-    emit emitOutput(QString("\nLoading a new game"));
+    emit emitOutput(QString("\nLoading a new game : %1").arg(filename));
 
     roles.clear();
     QVector<Role> rolesTerm = proverSM.getRoles();
@@ -58,12 +74,15 @@ void Server::setupGame(QString filename){
     for(int i = 0; i<roles.size(); ++i){
         moves.append("");
     }
-
-
 }
 
 void Server::setupPlayers(QStringList adressesList, QVector<int> portList){
-    qDebug() << "Server::setupPlayers()";
+    //    qDebug() << "Server::setupPlayers()";
+
+    if(waitingForMessage != WAITING_FOR_MESSAGE::NOTHING){
+        return;
+    }
+
     addresses = adressesList;
     ports = portList;
 
@@ -72,7 +91,7 @@ void Server::setupPlayers(QStringList adressesList, QVector<int> portList){
 
     // Add additional players if need be
     for(int i = networkConnections.size(); i<nbPlayers; ++i){
-        qDebug() << "creation";
+        qDebug() << "Creation of a new server network object";
         networkConnections.append(new ServerNetwork(this));
         connect(networkConnections.last(), SIGNAL(emitError(QString, int, QAbstractSocket::SocketError)),
                 this, SLOT(manageError(QString,int,QAbstractSocket::SocketError)));
@@ -90,16 +109,30 @@ void Server::setupPlayers(QStringList adressesList, QVector<int> portList){
         networkAnswers[i] = "";
     }
 
-    qDebug() << "Thread Server " << thread();
+    qDebug() << "Server::setupPlayers is done, Nb players : " << nbPlayers;
 }
 
 void Server::setupClock(int startClock, int playClock){
+    //    qDebug() << "Server::setupClock()";
+
+    if(waitingForMessage != WAITING_FOR_MESSAGE::NOTHING){
+        return;
+    }
+
     startclock = startClock;
     playclock = playClock;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// SLOTS TO HANDLE THE PHASES : PING, START, PLAY, STOP, ABORT
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Server::ping(){
-        qDebug() << "Server::ping()";
+    if(waitingForMessage != WAITING_FOR_MESSAGE::NOTHING){
+        return;
+    }
+    //        qDebug() << "Server::ping()";
+    emit emitOutput(QString("\nPING sent to all players"));
     waitForNewMessage(WAITING_FOR_MESSAGE::INFO);
 
     int nbPlayers = addresses.size();
@@ -109,12 +142,16 @@ void Server::ping(){
 }
 
 void Server::start(){
+    if(waitingForMessage != WAITING_FOR_MESSAGE::NOTHING){
+        return;
+    }
+
     waitForNewMessage(WAITING_FOR_MESSAGE::START);
 
     stepCounter = 0;    // Incrementation is in handleTransition()
     currentState = proverSM.getInitialState(); // Update handled in handleTransition()
 
-    emit emitOutput(QString("\nMETAGAME"));
+    emit emitOutput(QString("\nMETAGAME : "));
 
     int nbPlayers = addresses.size();
     QString messageStart = QString("(start ") % matchId % " ";
@@ -128,7 +165,7 @@ void Server::start(){
 void Server::play(){
     waitForNewMessage(WAITING_FOR_MESSAGE::PLAY);
 
-        emit emitOutput(QString("\nPLAY step %1").arg(stepCounter));
+    emit emitOutput(QString("\nPLAY step %1").arg(stepCounter));
 
 
     QThread::currentThread()->msleep(500);
@@ -138,18 +175,18 @@ void Server::play(){
         message += "nil)";
     }
     else{
-//        bool singlePlayer = (moves.size() == 1);
+        //        bool singlePlayer = (moves.size() == 1);
 
-//        if(!singlePlayer){
-            message += "( ";
-//        }
+        //        if(!singlePlayer){
+        message += "( ";
+        //        }
 
         for(QString move : moves){
             message += move % " ";
         }
-//        if(!singlePlayer){
-                    message += QString(") ");
-//        }
+        //        if(!singlePlayer){
+        message += QString(") ");
+        //        }
         message += ")";
     }
 
@@ -194,12 +231,24 @@ void Server::stop(){
 }
 
 void Server::abort(){
+    qDebug() << "Server::abort()";
 
+    waitForNewMessage(WAITING_FOR_MESSAGE::NOTHING);
 
+    int nbPlayers = addresses.size();
+    QString message = QString("(abort ") % matchId % ")";
+
+    for(int i = 0; i<nbPlayers; ++i){
+        networkConnections[i]->request(message, startclock);
+    }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// ?
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Server::waitForNewMessage(WAITING_FOR_MESSAGE type){
-//    qDebug() << "wait for message ";// << type;
+    //    qDebug() << "wait for message ";// << type;
     waitingForMessage = type;
     for(int i = 0; i<networkAnswers.size(); ++i){
         networkAnswers[i] = "";
@@ -207,8 +256,13 @@ void Server::waitForNewMessage(WAITING_FOR_MESSAGE type){
     nbNetworkAnswers = 0;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// TWO WAYS TO HANDLE MESSAGE : EITHER IT'S A STRING, OR IT'S AN ERROR
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Server::processMessage(QString address, int port, QString message){
-//    qDebug() << "\nServer::processMessage()";
+    //    qDebug() << "\nServer::processMessage()";
     int playerIndex = getPlayerIndex(address, port);
     Q_ASSERT(playerIndex >=0);
 
@@ -220,35 +274,43 @@ void Server::processMessage(QString address, int port, QString message){
                  << networkAnswers[playerIndex] << " then message " <<  message;
     }
     networkAnswers[playerIndex] = message;
-//    qDebug() << "Player " << playerIndex << " : " << message;
+    //    qDebug() << "Player " << playerIndex << " : " << message;
 
     // Send immediate feedback
     switch(waitingForMessage){
     case(WAITING_FOR_MESSAGE::INFO):
-        if(rxPlayerName.indexIn(message)>=0){
-            emit playerName(playerIndex, rxPlayerName.cap(1));
+    {
+        auto match = rxPlayerName.match(message);
+        if(match.hasMatch()){
+            emit playerName(playerIndex, match.captured(1));
         }
-        if(rxStatusAvailable.indexIn(message) >= 0){
+        match = rxStatusAvailable.match(message);
+        if(match.hasMatch()){
             emit playerAvailable(playerIndex, true);
         }
         else{
             emit playerAvailable(playerIndex, false);
         }
         break;
+    }
     case(WAITING_FOR_MESSAGE::START):
-        if(rxReady.indexIn(message) >= 0){
+    {
+        auto match = rxReady.match(message);
+        if(match.hasMatch()){
             emit playerReady(playerIndex, true);
         }
         else{
             emit playerReady(playerIndex, false);
         }
         break;
+    }
     case(WAITING_FOR_MESSAGE::PLAY):
         moves[playerIndex] = message;
         emit outputPlayerMessage(playerIndex, message);
         break;
     case(WAITING_FOR_MESSAGE::DONE):
         if(message != "done"){
+            qDebug() << "WOLOLO";
             manageError(address, port, QAbstractSocket::UnknownSocketError);
         }
         emit outputPlayerMessage(playerIndex, message);
@@ -258,9 +320,9 @@ void Server::processMessage(QString address, int port, QString message){
     }
 
     //
-    if(nbNetworkAnswers == addresses.size()){
+    if(nbNetworkAnswers == addresses.size() && waitingForMessage != WAITING_FOR_MESSAGE::NOTHING){
         // Finish the job
-//        qDebug() << "Server::processMessage() : Got all the messages";
+        //        qDebug() << "Server::processMessage() : Got all the messages";
         handleTransition();
     }
 }
@@ -297,9 +359,14 @@ void Server::manageError(QString address, int port, QAbstractSocket::SocketError
     emit emitError(playerIndex, error);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// ONCE WE HAVE A MESSAGE/ERROR FROM EACH PLAYER, WE CAN TRANSITION
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Server::handleTransition(){
     switch(waitingForMessage){
     case(WAITING_FOR_MESSAGE::INFO):
+        waitingForMessage = WAITING_FOR_MESSAGE::NOTHING;
         break;
     case(WAITING_FOR_MESSAGE::START):
         play();
@@ -314,18 +381,13 @@ void Server::handleTransition(){
             play();
         }
         break;
-    case(WAITING_FOR_MESSAGE::DONE):
-        emit done();
-        break;
-    case(WAITING_FOR_MESSAGE::ABORT):
-        break;
     default:
         break;
     }
 }
 
 void Server::computeNextTurn(){
-    qDebug() << "\nServer::computeNextTurn()";
+
     QList<Move> jointMove;
     QList<Move> randomJointMove = proverSM.getRandomLegalJointMove(currentState);
 
@@ -344,17 +406,17 @@ void Server::computeNextTurn(){
 
     currentState = proverSM.getNextState(currentState, jointMove);
 
-    qDebug() << "Current state is now : " << currentState.toString();
+    emit emitOutput(QString("Server::computeNextTurn() : ").append(currentState.toString()));
 }
 
 bool Server::isLegal(int playerIndex, QString message){
-//    qDebug() << "isLegal() : " << message;
+    //    qDebug() << "isLegal() : " << message;
     Move move = proverSM.getMoveFromString(message);
-//    qDebug() << move.getTerm()->toString();
+    //    qDebug() << move.getTerm()->toString();
 
     QList<Move> legalMoves = proverSM.getLegalMoves(currentState, proverSM.getRoles()[playerIndex]);
     for(Move potentialMove : legalMoves){
-//        qDebug() << potentialMove.getTerm()->toString();
+        //        qDebug() << potentialMove.getTerm()->toString();
         if(move == potentialMove){
             return true;
         }

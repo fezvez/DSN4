@@ -36,7 +36,7 @@ void MonteCarloGamer::metagame(qint64 timeout){
 Move MonteCarloGamer::selectMove(qint64 timeout){
 
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
-    qDebug() << "\n\nSELECT MOVE : I have " << (timeout - startTime) << " ms";
+    qDebug() << "\n\nMonteCarloGamer : SELECT MOVE : I have " << (timeout - startTime) << " ms";
     qDebug() << "selectMove current state " << currentState.toString();
 
     nbDepthCharge = 0;

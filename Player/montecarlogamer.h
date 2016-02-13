@@ -21,7 +21,6 @@ public:
 
     int nbDepthCharge;
     int nbStatesExplored;
-
     int myRoleIndex;
 };
 

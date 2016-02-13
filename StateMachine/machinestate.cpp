@@ -16,7 +16,7 @@ QString MachineState::toString() const{
     QString answer;
     answer += "MachineState : ";
     for(LRelation relation : contents){
-        answer += "\n\t";
+        answer += " ";
         answer += relation->toString();
     }
     return answer;

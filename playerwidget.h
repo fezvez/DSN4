@@ -8,8 +8,13 @@
 #include <QLabel>
 #include <QMap>
 #include <QTextEdit>
+#include <QThread>
 
 #include "Player/player.h"
+
+class PlayerController : public QObject{
+
+};
 
 class PlayerWidget : public QWidget
 {
@@ -33,7 +38,11 @@ private:
     QTabWidget *tabPlayers;
 
     QMap<int, QTextEdit* > playerTextEdit;
+
+    // We want the players to be in their own thread
+    // among other things so that the UI is still responsive
     QMap<int, Player*> players;
+    QMap<int, QThread*> playerThreads;
 };
 
 #endif // PLAYERWIDGET_H

@@ -5,7 +5,28 @@
 
 #include <QSet>
 
-
+/**
+ * Logic_Term
+ *
+ * This class represents a Herbrand Logic term
+ * Terms are of three kind
+ *  - Object constants
+ *  - Variables
+ *  - Functional terms which are made of a function constant (head) and a vector of terms (body)
+ * The type of term is embedded in the LOGIC_TERM_TYPE enum. It was previously done as separate
+ * classes which inherited Logic_Term, but for performance reasons, it was siply put as an enum
+ * (Virtual table calls can be expensive, especially if accurate branch prediction can be done
+ * on the LOGIC_TERM_TYPE enum)
+ *
+ * This class just holds the data, except for making a single nontrivial computation of building
+ * the free variables.
+ *
+ * This class is (nearly) never used as is, it should always be embedded in a shared pointer
+ * This is why we use the typedef LTerm throughout the class except for vey fundamental things
+ * like the copy constructor or cloning
+ *
+ *
+ */
 
 class Logic_Term;
 typedef QSharedPointer<Logic_Term> LTerm;

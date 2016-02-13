@@ -23,15 +23,15 @@ int main(int argc, char *argv[])
 
     // Set up font size
     QFont font;
-    font.setPointSize(18);
+    font.setPointSize(14);
     a.setFont(font);
 
     // Set up QT things
     qDebug().noquote();
 
     qRegisterMetaType<QVector<int> >("QVector<int>");
-    qRegisterMetaType<QVector<int> >("QList<int>");
-//    qRegisterMetaType<QVector<int> >("QAbstractSocket::SocketError");
+    qRegisterMetaType<QList<int> >("QList<int>");
+    qRegisterMetaType<QAbstractSocket::SocketError >("QAbstractSocket::SocketError");
 
     // Set up my own things
     Logic::init();
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     MainWidget w;
     w.show();
 
-    UnitTest unitTest(argc, argv);
+//    UnitTest unitTest(argc, argv);
 
     //    FirstPlayer player;
     //    MonteCarloGamer player;

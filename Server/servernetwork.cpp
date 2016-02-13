@@ -4,6 +4,7 @@
 #include <QStringBuilder>
 #include <QTextStream>
 #include <QThread>
+#include <QRegularExpression>
 
 ServerNetwork::ServerNetwork(QObject *parent) : QObject(parent)
 {
@@ -18,13 +19,11 @@ ServerNetwork::ServerNetwork(QObject *parent) : QObject(parent)
     connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(handleError(QAbstractSocket::SocketError)));
 
-
-    qDebug() << "Thread ServerNetwork " << thread();
 }
 
 ServerNetwork::~ServerNetwork()
 {
-
+//    qDebug() << "ServerNetwork::~ServerNetwork()";
 }
 
 void ServerNetwork::setPlayerIP(QString IP){
@@ -61,6 +60,8 @@ void ServerNetwork::request(QString message, int time)
     isAcceptingMessage = true;
     timer->stop();
     timer->start(time*1000);
+
+    // When the connection is established, the writeMessage() SLOT is called
 }
 
 void ServerNetwork::writeMessage(){
@@ -84,14 +85,15 @@ void ServerNetwork::readMessage()
         return;
     }
 
-//    qDebug() << "\nServerNetwork::readMessage() We have a message for the server";
+    //    qDebug() << "\nServerNetwork::readMessage() We have a message for the server";
     QTextStream in(tcpSocket);
 
     if (blockSize == 0) {
         QString line;
         do {
             line = in.readLine();
-//            qDebug() << "Line " << line;
+            //            qDebug() << "Line " << line;
+            // WARNING Regular Expression
             if(line.contains("Content-Length", Qt::CaseInsensitive)){
                 QRegExp endNumbers("(\\d+)$");
                 int pos = 0;
@@ -103,7 +105,7 @@ void ServerNetwork::readMessage()
                 break;
             }
         } while (!line.isNull());
-//        qDebug() << "(Block size : " << blockSize << ")";
+        //        qDebug() << "(Block size : " << blockSize << ")";
     }
 
 
@@ -127,7 +129,7 @@ void ServerNetwork::readMessage()
     tcpSocket->disconnectFromHost();
     timer->stop();
 
-//    qDebug() << "Full player message " << line;
+//    qDebug() << "ServerNetwork::readMessage() : Full player message : " << line;
     emit emitMessage(address, port, line);
 }
 
@@ -135,7 +137,7 @@ void ServerNetwork::noMessageReceived(){
     isAcceptingMessage = false;
     tcpSocket->disconnectFromHost();
     timer->stop();  // Likely to be not needed if everything goes well
-
+    qDebug() << "ServerNetwork::noMessageReceived";
     emit emitError(address, port, QAbstractSocket::SocketError::SocketTimeoutError);
 }
 

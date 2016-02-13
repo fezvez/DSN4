@@ -143,7 +143,7 @@ void ProverStateMachine::initialize(QList<LRelation> relations, QList<LRule> rul
 void ProverStateMachine::buildInitialState(){
     QMap<QString, LRelation> map = prover.getInitPropositions();
 
-    qDebug() <<"Init size " << map.size();
+//    qDebug() <<"Init size " << map.size();
     QVector<LRelation> initialPropositions;
     initialPropositions.reserve(map.size());
     for(auto entry : map){

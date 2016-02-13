@@ -4,6 +4,7 @@
 #include <QString>
 #include <QTcpServer>
 #include <QDateTime>
+//#include <QThread>
 
 #include "../StateMachine/move.h"
 #include "../StateMachine/machinestate.h"
@@ -21,6 +22,7 @@ class Player : public QObject
 public:
     Player(int p = 9147);
     ~Player();
+
 
     virtual void initializeStateMachine(QString filename, QString role) = 0;
 
@@ -40,6 +42,7 @@ public:
     QString getName();
     StateMachine* getStateMachine();
     int getPort();
+    PlayerNetwork* getPlayerNetwork();
 
     void setName(QString s);
 
@@ -57,6 +60,8 @@ protected:
 
     // Sancho or example
     QString playerName;
+
+//    QThread thread;
 
 };
 

@@ -1,10 +1,7 @@
 #include "unification_term.h"
 
-#include <QStringBuilder>
+//#include <QStringBuilder>
 #include <QDebug>
-
-
-
 
 
 

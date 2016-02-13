@@ -151,6 +151,13 @@ void Unification_Test::unificationRelation_2(){
 
     UTerm eq1;
     UTerm eq2;
+
+//    int i = 0;
+//    while(true){
+//        i++;
+//        if(i%100 == 0){
+//            qDebug() << (i/100);
+//        }
     urelation->clear();
     eq1 = UTerm(new Unification_Term(a, x));
     urelation->addEquation(eq1);
@@ -233,6 +240,7 @@ void Unification_Test::unificationRelation_2(){
     urelation->addEquation(eq2);
     urelation->solve();
     Q_ASSERT(urelation->isUnificationValid());
+//    }
 
 }
 

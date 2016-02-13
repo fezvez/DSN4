@@ -135,6 +135,13 @@ void ProverStateMachine_Test::tictactoe(){
         QCOMPARE(goalValue, 50);
     }
 
+    int i = 0;
+    while(i<100){
+        i++;
+//        if(i%100 == 0){
+//            qDebug() << (i/100);
+//        }
+
     QCOMPARE(psm.isTerminal(initialState), false);
     for(Role role : roles){
         QList<Move> legalMoves = psm.getLegalMoves(initialState, role);
@@ -151,7 +158,6 @@ void ProverStateMachine_Test::tictactoe(){
 
     QList<Move> moves;
     moves.append(Move(moveTerm1));
-
     moves.append(Move(moveTerm2));
     MachineState nextState = psm.getNextState(initialState, moves);
     QCOMPARE(nextState.getContents().size(), 10);
@@ -160,9 +166,12 @@ void ProverStateMachine_Test::tictactoe(){
     for(LRelation relation : nextState.getContents()){
         if(relation->toString() == "(base (cell 1 1 x))"){
             isCorrect = true;
+            break;
         }
     }
     QVERIFY(isCorrect);
+
+    }
 }
 
 void ProverStateMachine_Test::connectfour(){

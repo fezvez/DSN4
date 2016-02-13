@@ -36,6 +36,9 @@ public:
     ServerWidget();
     ~ServerWidget();
 
+signals:
+    void emitAbort();
+
 public slots:
     void openFile(int row);
     void ping();
@@ -95,8 +98,10 @@ private:
     Server * server;
     QThread* serverThread;
 
+    bool isPlaying;
+
 public:
-    static QRegExp regEndsInKif;
+    static QRegularExpression regEndsInKif;
 };
 
 #endif // SERVERWIDGET_H

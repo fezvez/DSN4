@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QFile>
 #include <QComboBox>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QThread>
 
 #include "../StateMachine/proverstatemachine.h"
@@ -16,8 +16,7 @@ enum class WAITING_FOR_MESSAGE{
     INFO,
     START,
     PLAY,
-    DONE,
-    ABORT
+    DONE
 };
 
 /**
@@ -54,7 +53,7 @@ signals:
     void playerName(int, QString);
     void outputPlayerMessage(int, QString);
     void outputMessage(QString);
-    void matchFinished(QList<int>);
+    void matchFinished(QList<int>); // Emitted at the end of the game with each player score
     void done();
 
 public slots:
@@ -97,9 +96,9 @@ protected:
     int stepCounter;
 
 public:
-    static QRegExp rxStatusAvailable;
-    static QRegExp rxReady;
-    static QRegExp rxPlayerName;
+    static QRegularExpression rxStatusAvailable;
+    static QRegularExpression rxReady;
+    static QRegularExpression rxPlayerName;
 
 protected:
 };

@@ -5,6 +5,7 @@
 #include <QTcpServer>
 #include <QMap>
 #include <QSignalMapper>
+#include <QRegularExpression>
 
 class Player;
 
@@ -66,16 +67,16 @@ public:
     // Helper function
 //    QStringList split(QString line);
 
-//    QRegExp ruleRegExp;
-//    QRegExp whitespaceRegExp;
-//    QRegExp leftPar;
-//    QRegExp rightPar;
+//    QRegularExpression ruleRegExp;
+//    QRegularExpression whitespaceRegExp;
+//    QRegularExpression leftPar;
+//    QRegularExpression rightPar;
 
-    QRegExp infoRegExp;
-    QRegExp startRegExp;
-    QRegExp playRegExp;
-    QRegExp stopRegExp;
-    QRegExp abortRegExp;
+    QRegularExpression infoRegExp;
+    QRegularExpression startRegExp;
+    QRegularExpression playRegExp;
+    QRegularExpression stopRegExp;
+    QRegularExpression abortRegExp;
 };
 
 #endif // NETWORKING_H

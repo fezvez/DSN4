@@ -8,8 +8,34 @@
 #include "Logic/logic_rule.h"
 
 /**
- * Unification_Problem unifies 2 relations
+ * Unification_Relation
+ *
+ * Unification_Relation unifies 2 relations
  * It does so by matching terms with each other (Unification_Term)
+ * At the end of the unification procedure, you end up with a list
+ * of substitutions of the form "X->a" which means that variable X
+ * should be substituted with object constant a
+ * If every single unification suceeds, then isValid is true
+ *
+ * You can then take any term/relation/rule and apply the substitutions.
+ * For example, if you have this code :
+ *
+ * Unification_Relation u = Unification_Relation(relation1, relation2)
+ * u.solve();
+ * if(u.isUnificationValid()){
+ *   u.applySubstitutionInPlace(relation1);
+ *   u.applySubstitutionInPlace(relation2);
+ *   // Here, you are guaranteed that relation1 and relation2 are identical
+ * }
+ */
+
+/**
+ * Typical example of unification between two terms
+ * f(a,g(X,Y)) and f(X,Z)
+ * where f and g are functional constants
+ * You end up with the substitution :
+ * X->a
+ * Z->g(a,Y)
  */
 
 class Unification_Relation;

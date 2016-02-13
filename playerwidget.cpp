@@ -39,7 +39,18 @@ PlayerWidget::PlayerWidget()
 
 PlayerWidget::~PlayerWidget()
 {
+    auto it = playerThreads.constBegin();
+    while (it != playerThreads.constEnd()) {
+        it.value()->quit();
+        it.value()->wait();
+        ++it;
+    }
 
+    auto it2 = players.constBegin();
+    while (it2 != players.constEnd()) {
+        delete it2.value();
+        ++it2;
+    }
 }
 
 void PlayerWidget::createPlayer(){
@@ -64,17 +75,14 @@ void PlayerWidget::createPlayer(){
         break;
     }
 
+
+
     // The port may have changed
     port = newPlayer->getPort();
     portString = QString::number(port);
-
-
+    
     QTextEdit * textEdit = new QTextEdit(this);
-
     tabPlayers->addTab(textEdit, portString);
-    playerTextEdit.insert(port, textEdit);
-    connect(newPlayer, SIGNAL(emitOutput(QString)), textEdit, SLOT(append(QString)));
-
 
     QString initialString = QString("Player created on port : %1").arg(portString);
     textEdit->append(initialString);
@@ -83,5 +91,16 @@ void PlayerWidget::createPlayer(){
 
     tabPlayers->setCurrentIndex(tabPlayers->count() - 1);
 
-    players.insert(players.size(), newPlayer);
+    QThread * newThread = new QThread();
+    newPlayer->moveToThread(newThread);
+//    newPlayer->getPlayerNetwork()->moveToThread(newThread);
+    int index = players.size();
+
+    connect(newPlayer, SIGNAL(emitOutput(QString)), textEdit, SLOT(append(QString)), Qt::QueuedConnection);
+
+    players.insert(index, newPlayer);
+    playerThreads.insert(index, newThread);
+    playerTextEdit.insert(port, textEdit);
+
+    newThread->start();
 }

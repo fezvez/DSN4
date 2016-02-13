@@ -15,11 +15,11 @@ PlayerNetwork::PlayerNetwork(int port, Player* p):
     player(p)
 {
     // Regular expressions
-    infoRegExp = QRegExp("^info$");
-    startRegExp = QRegExp("^start$");
-    playRegExp = QRegExp("^play$");
-    stopRegExp = QRegExp("^stop$");
-    abortRegExp = QRegExp("^abort$");
+    infoRegExp = QRegularExpression("^(info|ping)$", QRegularExpression::CaseInsensitiveOption);
+    startRegExp = QRegularExpression("^start$", QRegularExpression::CaseInsensitiveOption);
+    playRegExp = QRegularExpression("^play$", QRegularExpression::CaseInsensitiveOption);
+    stopRegExp = QRegularExpression("^stop$", QRegularExpression::CaseInsensitiveOption);
+    abortRegExp = QRegularExpression("^abort$", QRegularExpression::CaseInsensitiveOption);
 
     // Connections
     myServer = new QTcpServer(this);
@@ -49,7 +49,8 @@ int PlayerNetwork::getPort(){
 
 void PlayerNetwork::newConnection(){
 //    qDebug() << "PlayerNetwork::newConnection() : New connection with the game manager";
-//    emit emitOutput("PlayerNetwork::newConnection() : New connection with the game manager");
+//    emit emitOutput("New connection with the game manager");
+
     blockSize = 0;
     QTcpSocket* tcpSocket = myServer->nextPendingConnection();
 
@@ -63,7 +64,9 @@ void PlayerNetwork::newConnection(){
 }
 
 void PlayerNetwork::receiveMessage(int indexOfTheSocket){
-//    qDebug() << "Networking::receiveMessage() : MESSAGE FROM NETWORK : ";
+//    qDebug() << "PlayerNetwork::receiveMessage() : MESSAGE FROM NETWORK : ";
+//    emit emitOutput("PlayerNetwork::receiveMessage() : MESSAGE FROM NETWORK : ");
+
     QTcpSocket* tcpSocket = tcpSockets[indexOfTheSocket];
     QTextStream in(tcpSocket);
 
@@ -100,7 +103,7 @@ void PlayerNetwork::receiveMessage(int indexOfTheSocket){
     } while (!line.isNull());
 
     emit emitOutput(QString("\nMessage from game manager : %1").arg(message));
-//    qDebug() << "Networking::receiveMessage() : MESSAGE FROM NETWORK : " << message;
+//    qDebug() << "PlayerNetwork::receiveMessage() : MESSAGE FROM NETWORK : " << message;
     processMessage(message, indexOfTheSocket);
 }
 
@@ -117,7 +120,7 @@ void PlayerNetwork::processMessage(QString message, int index){
     QString messageType = splitMessage[0];
 
     // INFO
-    if(infoRegExp.exactMatch(messageType)){
+    if(infoRegExp.match(messageType).hasMatch()){
 //        qDebug() << "It's an Info message";
         QString answer = QString("( ( name ");
         answer += playerName;
@@ -135,7 +138,7 @@ void PlayerNetwork::processMessage(QString message, int index){
     }
 
     // START
-    if(startRegExp.exactMatch(messageType)){
+    if(startRegExp.match(messageType).hasMatch()){
 //        qDebug() << "It's a Start message";
 
         if(isPlaying){
@@ -178,7 +181,7 @@ void PlayerNetwork::processMessage(QString message, int index){
     }
 
     // PLAY
-    if(playRegExp.exactMatch(messageType)){
+    if(playRegExp.match(messageType).hasMatch()){
 
 
         if(!isPlaying){
@@ -192,12 +195,13 @@ void PlayerNetwork::processMessage(QString message, int index){
 
         currentIndex = index;
         qint64 timeout = startTime + playclock*1000;
-        qDebug() << "PlayerNetwork::processMessage() : It's a Play message : " << splitMessage[2];
+//        qDebug() << "PlayerNetwork::processMessage() : It's a Play message : " << splitMessage[2];
+//        emit emitOutput(QString("PlayerNetwork::processMessage() : It's a Play message : ").append(splitMessage[2]));
         emit emitPlay(splitMessage[2], timeout);
     }
 
     // STOP
-    if(stopRegExp.exactMatch(messageType)){
+    if(stopRegExp.match(messageType).hasMatch()){
 //        qDebug() << "It's a Stop message";
 
         isPlaying = false;
@@ -206,7 +210,7 @@ void PlayerNetwork::processMessage(QString message, int index){
     }
 
     // ABORT
-    if(abortRegExp.exactMatch(messageType)){
+    if(abortRegExp.match(messageType).hasMatch()){
 //        qDebug() << "It's an Abort message";
         isPlaying = false;
         sendMessage(QString("aborted"), index);
@@ -218,11 +222,8 @@ void PlayerNetwork::processMessage(QString message, int index){
 
 
 
-
-
-
 void PlayerNetwork::sendMessage(QString message, int indexOfTheSocket){
-//    qDebug() << "Networking::sendMessage() : SENDING MESSAGE : " << message;
+//    qDebug() << "PlayerNetwork::sendMessage() : SENDING MESSAGE : " << message;
     emit emitOutput(QString("Sending message : %1").arg(message));
 
     QTcpSocket* tcpSocket = tcpSockets[indexOfTheSocket];

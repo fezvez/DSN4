@@ -4,6 +4,8 @@
 
 MainWidget::MainWidget()
 {
+    qDebug() << "Thread GUI " << QThread::currentThreadId();
+
     fileWidget = new KifWidget();
     playerWidget = new PlayerWidget();
     serverWidget = new ServerWidget();
@@ -20,7 +22,7 @@ MainWidget::MainWidget()
     resize(1280, 800);
 
     // Choose which tab you show at startup
-    tabWidget->setCurrentIndex(0);
+    tabWidget->setCurrentIndex(1);
 
     setWindowTitle("Dynamic Semantic Net");
 }

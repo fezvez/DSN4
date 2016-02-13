@@ -11,14 +11,14 @@
 //// STATIC
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-QRegExp Parser::ruleRegExp = QRegExp("<=");
-QRegExp Parser::whitespaceRegExp = QRegExp("\\s+");
-QRegExp Parser::wordRegExp = QRegExp("^\\S+$");
-QRegExp Parser::leftPar = QRegExp("^\\($");
-QRegExp Parser::rightPar = QRegExp("^\\)$");
-QRegExp Parser::inputRegExp = QRegExp("(\\(|\\s)input(?![\\w|_|-])");
-QRegExp Parser::nextRegExp = QRegExp("^next_");
-QRegExp Parser::newlineRegExp = QRegExp("[\\n\\r]");
+QRegularExpression Parser::ruleRegExp = QRegularExpression("<=");
+QRegularExpression Parser::whitespaceRegExp = QRegularExpression("\\s+");
+QRegularExpression Parser::wordRegExp = QRegularExpression("^\\S+$");
+QRegularExpression Parser::leftPar = QRegularExpression("^\\($");
+QRegularExpression Parser::rightPar = QRegularExpression("^\\)$");
+QRegularExpression Parser::inputRegExp = QRegularExpression("(\\(|\\s)input(?![\\w|_|-])");
+QRegularExpression Parser::nextRegExp = QRegularExpression("^next_");
+QRegularExpression Parser::newlineRegExp = QRegularExpression("[\\n\\r]");
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -414,7 +414,8 @@ LRelation Parser::parseRelation(QString relation){
     }
 
     // Ease of use, we convert "f ?x ?y" into "(f ?x ?y)"
-    if(leftPar.indexIn(rawSplit.first()) != 0){
+    auto match = leftPar.match(rawSplit.first());
+    if(!(match.hasMatch() && match.capturedStart(0) == 0)){
         relation = QString("(") % relation % ")";
     }
 
@@ -439,8 +440,13 @@ QStringList Parser::split(QString line){
     QStringList rawSplit = line.split(whitespaceRegExp);
 
     // Either it's of the form "( blabla Ntimesblabla blabla )" or it's just "blabla"
-    Q_ASSERT_X((leftPar.indexIn(rawSplit.first()) == 0 &&
-                rightPar.indexIn(rawSplit.last()) == 0) ||
+
+
+
+    Q_ASSERT_X((leftPar.match(rawSplit.first()).hasMatch() &&
+                leftPar.match(rawSplit.first()).capturedStart(0) == 0 &&
+                rightPar.match(rawSplit.last()).hasMatch() &&
+                rightPar.match(rawSplit.last()).capturedStart(0) == 0) ||
                (rawSplit.size() == 1), "Parser::split()", line.toLatin1().data());
 
     if(rawSplit.size() == 1){
@@ -451,12 +457,17 @@ QStringList Parser::split(QString line){
     int nbParenthesis = 0;
 
     for(int i = 1 ; i<rawSplit.size() - 1; ++i){
-        if(leftPar.indexIn(rawSplit[i]) == 0){
+        auto match = leftPar.match(rawSplit[i]);
+        if(match.hasMatch() && match.capturedStart(0) == 0){
             nbParenthesis++;
         }
-        else if(rightPar.indexIn(rawSplit[i]) == 0){
-            nbParenthesis--;
-            Q_ASSERT_X(nbParenthesis>=0, "Negative number of parenthesis", line.toLatin1().data());
+
+        else {
+            match = rightPar.match(rawSplit[i]);
+            if(match.hasMatch() && match.capturedStart(0) == 0){
+                nbParenthesis--;
+                Q_ASSERT_X(nbParenthesis>=0, "Negative number of parenthesis", line.toLatin1().data());
+            }
         }
 
         currentPart.append(rawSplit[i]);
@@ -502,24 +513,30 @@ QStringList Parser::splitSeveral(QString l){
 
         currentPart.append(rawSplit[i]);
 
-
-        if(leftPar.indexIn(rawSplit[i]) == 0){
+        auto match = leftPar.match(rawSplit[i]);
+        if(match.hasMatch() && match.capturedStart(0) == 0){
             nbParenthesis++;
         }
-        else if(rightPar.indexIn(rawSplit[i]) == 0){
-            nbParenthesis--;
-            Q_ASSERT_X(nbParenthesis>=0, "Wrong parenthesis", l.toLatin1().data());
+        else{
+            match = rightPar.match(rawSplit[i]);
+            if(match.hasMatch() && match.capturedStart(0) == 0){
+                nbParenthesis--;
+                Q_ASSERT_X(nbParenthesis>=0, "Wrong parenthesis", l.toLatin1().data());
 
-            if(nbParenthesis == 0){
-                answer.append(currentPart);
-                currentPart.clear();
-                continue;
+                if(nbParenthesis == 0){
+                    answer.append(currentPart);
+                    currentPart.clear();
+                    continue;
+                }
             }
-        }
-        else if(nbParenthesis==0 && wordRegExp.indexIn(rawSplit[i]) == 0){
-            answer.append(currentPart);
-            currentPart.clear();
-            continue;
+            else{
+                match = wordRegExp.match(rawSplit[i]);
+                if(nbParenthesis==0 && match.hasMatch() && match.capturedStart(0) == 0){
+                    answer.append(currentPart);
+                    currentPart.clear();
+                    continue;
+                }
+            }
         }
         currentPart.append(' ');
     }

@@ -8,14 +8,14 @@
 
 int KnowledgeBase::skolemNumber = 1000;
 
-QRegExp KnowledgeBase::ruleRegExp = QRegExp("<=");
-QRegExp KnowledgeBase::whitespaceRegExp = QRegExp("\\s+");
-QRegExp KnowledgeBase::wordRegExp = QRegExp("^\\S+$");
-QRegExp KnowledgeBase::leftPar = QRegExp("^\\($");
-QRegExp KnowledgeBase::rightPar = QRegExp("^\\)$");
-QRegExp KnowledgeBase::inputRegExp = QRegExp("(\\(|\\s)input(?![\\w|_|-])");
-QRegExp KnowledgeBase::nextRegExp = QRegExp("^next_");
-QRegExp KnowledgeBase::newlineRegExp = QRegExp("[\\n\\r]");
+QRegularExpression KnowledgeBase::ruleRegExp = QRegularExpression("<=");
+QRegularExpression KnowledgeBase::whitespaceRegExp = QRegularExpression("\\s+");
+QRegularExpression KnowledgeBase::wordRegExp = QRegularExpression("^\\S+$");
+QRegularExpression KnowledgeBase::leftPar = QRegularExpression("^\\($");
+QRegularExpression KnowledgeBase::rightPar = QRegularExpression("^\\)$");
+QRegularExpression KnowledgeBase::inputRegExp = QRegularExpression("(\\(|\\s)input(?![\\w|_|-])");
+QRegularExpression KnowledgeBase::nextRegExp = QRegularExpression("^next_");
+QRegularExpression KnowledgeBase::newlineRegExp = QRegularExpression("[\\n\\r]");
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// CONSTRUCTOR

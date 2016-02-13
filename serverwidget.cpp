@@ -15,7 +15,7 @@
 // WARNING : I keep on invoking several methods in a row, in an object in another thread
 // Because I rely on calling these methods in order, it WILL fail one day
 
-QRegExp ServerWidget::regEndsInKif = QRegExp("\\.kif$");
+QRegularExpression ServerWidget::regEndsInKif = QRegularExpression("\\.kif$");
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// CONSTRUCTOR
@@ -23,15 +23,16 @@ QRegExp ServerWidget::regEndsInKif = QRegExp("\\.kif$");
 
 ServerWidget::ServerWidget()
 {
-    qDebug() << "Thread ServerWidget " << thread();
+    //    qDebug() << "Thread Of GUI ServerWidget " << QThread::currentThreadId();
 
     server = new Server();
     serverThread = new QThread(this);
-    qDebug() << "Thread server before moving it " << server->thread();
+    //    qDebug() << "Thread server before moving it " << server->thread();
     server->moveToThread(serverThread);
-    qDebug() << "Thread server after  moving it" << server->thread();
+    //    qDebug() << "Thread server after  moving it" << server->thread();
     serverThread->start(); // Doesn't actually start anything for server, just starts the event loop
 
+    isPlaying = false;
 
     setupGUI();
     setupSignalsSlots();
@@ -41,7 +42,10 @@ ServerWidget::ServerWidget()
 
 ServerWidget::~ServerWidget()
 {
+    serverThread->quit();
+    serverThread->wait();
 
+    delete server;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -219,7 +223,7 @@ void ServerWidget::output(QString s){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ServerWidget::ping(){
-    textEdit->append("\nPING");
+    //    textEdit->append("\nPING");
 
     QStringList adressList = getAdressList();
     QVector<int> portList = getPortList();
@@ -227,18 +231,28 @@ void ServerWidget::ping(){
     adressList = adressList.mid(0, nbRoles);
     portList = portList.mid(0, nbRoles);
 
+
+
+    // I should also setup some signals and slots instead of this
+    // The methods could be called out of order
+    // I need a single slot for the server
     QMetaObject::invokeMethod(server, "setupPlayers", Qt::AutoConnection,
                               Q_ARG(QStringList, adressList),
                               Q_ARG(QVector<int>, portList));
     QMetaObject::invokeMethod(server, "ping", Qt::AutoConnection);
 
     // Direct calls like this would execute the function in the current thread
-//    server->setupPlayers(adressList, portList);
-//    server->ping();
+    //    server->setupPlayers(adressList, portList);
+    //    server->ping();
 }
 
 void ServerWidget::start(){
-    textEdit->append("\nSTART");
+    //    textEdit->append("\nSTART");
+    isPlaying = true;
+
+    pingButton->setDisabled(true);
+    startButton->setDisabled(true);
+    abortButton->setDisabled(false);
 
     for(QLabel* label : labelStatus){
         label->setText("-");
@@ -247,38 +261,43 @@ void ServerWidget::start(){
     QStringList adressList = getAdressList();
     QVector<int> portList = getPortList();
 
+    adressList = adressList.mid(0, nbRoles);
+    portList = portList.mid(0, nbRoles);
+
+
     QMetaObject::invokeMethod(server, "setupPlayers", Qt::AutoConnection,
                               Q_ARG(QStringList, adressList),
                               Q_ARG(QVector<int>, portList));
     QMetaObject::invokeMethod(server, "setupClock", Qt::AutoConnection,
                               Q_ARG(int, lineEditStartclock->text().toInt()),
                               Q_ARG(int, lineEditPlayclock->text().toInt()));
-
-//    server->setupPlayers(adressList, portList);
-//    server->setupClock(lineEditStartclock->text().toInt(), lineEditPlayclock->text().toInt());
-
-    pingButton->setDisabled(true);
-    startButton->setDisabled(true);
-    abortButton->setDisabled(false);
-
     QMetaObject::invokeMethod(server, "start", Qt::AutoConnection);
-//    server->start();
 }
 
 void ServerWidget::abort(){
-    qDebug() << "Abort";
+    //    textEdit->append("\nABORT");
+
+    isPlaying = false;
+
     pingButton->setDisabled(false);
     startButton->setDisabled(false);
     abortButton->setDisabled(true);
+
+
+
+
 }
 
 // A bit different, is launched after all the player return "done"
 void ServerWidget::done(){
     textEdit->append("\nDONE");
 
+    isPlaying = false;
+
     pingButton->setDisabled(false);
     startButton->setDisabled(false);
     abortButton->setDisabled(true);
+
 }
 
 QStringList ServerWidget::getAdressList(){
@@ -360,6 +379,10 @@ void ServerWidget::findAndDisplayFiles()
 
 void ServerWidget::openFile(int row)
 {
+    if(isPlaying){
+        qDebug() << "Can't open a file while a game is running";
+        return;
+    }
 
     QTableWidgetItem *item = filesTable->item(row, 0);
     QString filename(currentDir.absoluteFilePath(item->text()));
@@ -368,7 +391,7 @@ void ServerWidget::openFile(int row)
 
     QMetaObject::invokeMethod(server, "setupGame", Qt::DirectConnection,
                               Q_ARG(QString, filename));
-//    server->setupGame(filename);
+    //    server->setupGame(filename);
 
 
     QStringList roles;

@@ -5,6 +5,22 @@
 #include <QSharedPointer>
 #include <QMap>
 
+/**
+ * Logic
+ *
+ * This is an abstract (virtual pure) class
+ * It is inherited by all classes that represent a Herbrand Logic construct (Term, Relation, Rule)
+ *
+ * The fundamental idea is that all constructs can be entirely identified by their string representation
+ * Of course, it is better to know that (mark (cell 1 1)) is a functional term with function constant "mark"
+ * and body the single term "(cell 1 1)" which itself is a functional term with function constant "cell" and...
+ * etc etc...
+ *
+ * Each instance of Logic will carry both its fundamental representation (QString) and the relevant
+ * things that were computed from it
+ *
+ */
+
 class Logic;
 typedef QSharedPointer<Logic> LLogic;
 
